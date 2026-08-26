@@ -1,0 +1,110 @@
+{
+  "analysisRun": {
+    "configuration": {
+      "evidenceSnippetLimit": 240,
+      "maxCallDepth": 3,
+      "maxSourceFileBytes": 1048576
+    },
+    "id": "analysis:ee3cc130a64357410374949159552c09",
+    "repositoryRevision": "fixture-revision",
+    "tool": {
+      "name": "api-intel",
+      "typescriptVersion": "5.9.3",
+      "version": "0.1.0"
+    },
+    "tsconfigPath": "tsconfig.json"
+  },
+  "assertions": [
+    {
+      "evidenceIds": [
+        "evidence:87d9e8d99ef203894244d64cce1e3119",
+        "evidence:bedc5fcb4211492945845b3bdd0ab9b9"
+      ],
+      "id": "assertion:c298abab0189f2e4271b291cf424800e",
+      "objectId": "method:45eabcabe9bb0f272f503f198d93c640",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:86080ce72bd4e904267f63e242928559"
+    }
+  ],
+  "classes": [
+    {
+      "declarationEvidenceId": "evidence:26a36841f53aaa5db05f588caa7c21bb",
+      "displayName": "HealthController",
+      "id": "class:4f899e1023651c0ff4854d59b95503f0",
+      "qualifiedName": "HealthController",
+      "roles": [
+        "controller"
+      ],
+      "sourceFileId": "source:e62f16af0cec9612b6612a148579d72d"
+    }
+  ],
+  "diagnostics": [],
+  "endpoints": [
+    {
+      "httpMethod": "GET",
+      "id": "endpoint:86080ce72bd4e904267f63e242928559",
+      "path": "/health"
+    }
+  ],
+  "entities": [],
+  "evidence": [
+    {
+      "contentHash": "sha256:c32bba7690434194020320c101a8a6dd8292f07e25750ceb4c37479999c7f22f",
+      "endColumn": 2,
+      "endLine": 7,
+      "fileId": "source:e62f16af0cec9612b6612a148579d72d",
+      "id": "evidence:26a36841f53aaa5db05f588caa7c21bb",
+      "role": "declaration",
+      "snippet": "export class HealthController",
+      "startColumn": 1,
+      "startLine": 2
+    },
+    {
+      "contentHash": "sha256:c32bba7690434194020320c101a8a6dd8292f07e25750ceb4c37479999c7f22f",
+      "endColumn": 4,
+      "endLine": 6,
+      "fileId": "source:e62f16af0cec9612b6612a148579d72d",
+      "id": "evidence:87d9e8d99ef203894244d64cce1e3119",
+      "role": "declaration",
+      "snippet": "check(): string { return 'ok'; }",
+      "startColumn": 3,
+      "startLine": 4
+    },
+    {
+      "contentHash": "sha256:c32bba7690434194020320c101a8a6dd8292f07e25750ceb4c37479999c7f22f",
+      "endColumn": 9,
+      "endLine": 3,
+      "fileId": "source:e62f16af0cec9612b6612a148579d72d",
+      "id": "evidence:bedc5fcb4211492945845b3bdd0ab9b9",
+      "role": "decorator",
+      "snippet": "@Get()",
+      "startColumn": 3,
+      "startLine": 3
+    }
+  ],
+  "guards": [],
+  "methods": [
+    {
+      "classId": "class:4f899e1023651c0ff4854d59b95503f0",
+      "declarationEvidenceId": "evidence:87d9e8d99ef203894244d64cce1e3119",
+      "displayName": "check",
+      "id": "method:45eabcabe9bb0f272f503f198d93c640",
+      "qualifiedName": "HealthController.check",
+      "signature": "check(): string"
+    }
+  ],
+  "repositoryBindings": [],
+  "resultState": "completed",
+  "schemaVersion": "1.0.0",
+  "sourceFiles": [
+    {
+      "byteLength": 106,
+      "contentHash": "sha256:c32bba7690434194020320c101a8a6dd8292f07e25750ceb4c37479999c7f22f",
+      "id": "source:e62f16af0cec9612b6612a148579d72d",
+      "path": "src/health.controller.ts"
+    }
+  ],
+  "tables": []
+}

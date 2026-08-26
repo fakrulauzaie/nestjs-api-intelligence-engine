@@ -1,0 +1,49 @@
+{
+  "name": "backend-api-intelligence-engine",
+  "version": "0.1.0",
+  "description": "Evidence-backed static endpoint tracing for NestJS and TypeORM repositories.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "api-intel": "dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "cli": "node dist/cli/index.js",
+    "demo": "node scripts/demo.mjs"
+  },
+  "engines": {
+    "node": ">=22.13 <25"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "keywords": [
+    "nestjs",
+    "typeorm",
+    "static-analysis"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "cytoscape": "3.34.0",
+    "libpg-query": "18.1.2",
+    "zod": "4.1.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "@types/node": "22.13.1",
+    "eslint": "9.39.1",
+    "globals": "16.4.0",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.3",
+    "vitest": "3.2.4"
+  }
+}

@@ -1,0 +1,109 @@
+import { Body, Controller, Get, Param, Post, Query, Res } from '@nestjs/common';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+
+export class BaseNoteDto {
+  @IsOptional()
+  clientRequestId?: string;
+}
+
+export class CreateNoteDto extends BaseNoteDto {
+  // CASE:contract-dto-fields
+  @IsString()
+  @MaxLength(120)
+  title!: string;
+
+  @IsOptional()
+  summary?: string;
+}
+
+// CASE:contract-mapped-type
+export class UpdateNoteDto extends PartialType(CreateNoteDto) {}
+
+export interface ImportNoteDto {
+  title: string;
+  source: string;
+}
+
+export interface LegacyNoteDto {
+  title: string;
+  legacyCode: number;
+}
+
+export class NoteViewDto {
+  id!: number;
+  title!: string;
+}
+
+@Entity('note')
+export class Note {
+  // CASE:contract-entity-columns
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({
+    name: 'note_title',
+    length: 120,
+    transformer: {
+      to: (value: string) => value.trim(),
+      from: (value: string) => value,
+    },
+  })
+  title!: string;
+
+  @Column({ name: 'internal_code', select: false, update: false })
+  internalCode!: string;
+}
+
+function LocalBody(): ParameterDecorator {
+  return () => undefined;
+}
+
+@Controller('tenants/:tenantId/notes')
+export class NotesController {
+  // CASE:contract-request-sources
+  @Post()
+  create(
+    @Param('tenantId') tenantId: string,
+    @Body() dto: CreateNoteDto,
+    @Query('dryRun') dryRun?: string,
+  ): Promise<NoteViewDto> {
+    void tenantId;
+    void dto;
+    void dryRun;
+    return Promise.resolve(new NoteViewDto());
+  }
+
+  // CASE:contract-body-selector
+  @Post('title')
+  createTitle(@Body('title') title: string): NoteViewDto {
+    void title;
+    return new NoteViewDto();
+  }
+
+  // CASE:contract-ambiguous-body
+  @Post('import')
+  import(@Body() dto: ImportNoteDto | LegacyNoteDto): NoteViewDto {
+    void dto;
+    return new NoteViewDto();
+  }
+
+  // CASE:contract-manual-response
+  @Get('manual')
+  manual(@Res() response: { json(value: unknown): void }): void {
+    response.json({ ok: true });
+  }
+
+  // CASE:contract-local-lookalike
+  localDecorator(@LocalBody() value: string): string {
+    return value;
+  }
+
+  // CASE:contract-any-response
+  @Get('untyped')
+  untyped(): any {
+    return { value: 'runtime' };
+  }
+}
+

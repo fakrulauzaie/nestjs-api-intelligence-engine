@@ -1,0 +1,189 @@
+import { Controller, Get, Injectable } from '@nestjs/common';
+import { HttpService as NestHttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import {
+  defer,
+  firstValueFrom,
+  lastValueFrom,
+  map,
+  Observable,
+} from 'rxjs';
+
+const STATIC_SUFFIX = '/lookup';
+const spreadRequest = { method: 'POST' };
+
+function passthrough<T>(value: T): T {
+  return value;
+}
+
+@Injectable()
+export class HttpGateway {
+  private readonly paymentBase = this.config.get<string>('PAYMENT_URL')!;
+  private readonly environmentBase = process.env.AUTH_SERVICE_URL!;
+  private readonly assignedBase: string;
+  private mutableBase = process.env.MUTABLE_URL!;
+
+  constructor(
+    private readonly http: NestHttpService,
+    private readonly config: ConfigService,
+  ) {
+    this.assignedBase = config.get<string>('ASSIGNED_SERVICE_URL')!;
+  }
+
+  first(id: string): Promise<unknown> {
+    return firstValueFrom(
+      this.http
+        .get(`${this.paymentBase}/charges/${id}?token=do-not-store#private`, {
+          headers: { Authorization: 'Bearer header-secret' },
+        })
+        .pipe(map((value) => value)),
+    );
+  }
+
+  last(): Promise<unknown> {
+    return lastValueFrom(
+      this.http.post(
+        this.environmentBase + '/events?apiKey=do-not-store',
+        { secret: 'body-secret' },
+      ),
+    );
+  }
+
+  subscribed(): void {
+    this.http
+      .delete(`${this.assignedBase}/old`)
+      .pipe(map((value) => value))
+      .subscribe();
+  }
+
+  cold(): void {
+    this.http.get('https://cold.example/path').pipe(map((value) => value));
+  }
+
+  stored(): Observable<unknown> {
+    const request$ = this.http.get('https://stored.example/path');
+    return request$;
+  }
+
+  reassigned(): Observable<unknown> {
+    let request$ = this.http.get('https://reassigned.example/one');
+    request$ = this.http.get('https://reassigned.example/two');
+    return request$;
+  }
+
+  dynamic(token: string): void {
+    this.http.get(this.config.get<string>(token)!);
+  }
+
+  axiosReference(id: string): void {
+    this.http.axiosRef.patch(
+      `${this.paymentBase}/eager/${id}?credential=do-not-store#fragment`,
+      { privateValue: 'axios-ref-body-secret' },
+      { headers: { Authorization: 'axios-ref-header-secret' } },
+    );
+    this.http.axiosRef.request({
+      url: this.environmentBase + '/request',
+      method: 'POST',
+      headers: { Authorization: 'request-header-secret' },
+    });
+    this.http.axiosRef(this.paymentBase + '/callable?key=do-not-store', {
+      method: 'PUT',
+    });
+  }
+
+  spreadConfig(url: string): Promise<unknown> {
+    return firstValueFrom(this.http.request({ ...spreadRequest, url }));
+  }
+
+  wrapped(): Promise<unknown> {
+    return firstValueFrom(
+      passthrough(this.http.get('https://unsupported-wrapper.example/path')),
+    );
+  }
+
+  concatenated(): Promise<unknown> {
+    return firstValueFrom(this.http.get(this.paymentBase + STATIC_SUFFIX));
+  }
+
+  mutable(): void {
+    this.mutableBase = 'https://runtime-change.example';
+    this.http.get(this.mutableBase);
+  }
+
+  callback(): Observable<unknown> {
+    return defer(() => this.http.get('https://callback.example/path'));
+  }
+}
+
+@Injectable()
+export class AliasGateway {
+  private readonly client: NestHttpService;
+
+  constructor(client: NestHttpService) {
+    this.client = client;
+  }
+
+  activate(): Promise<unknown> {
+    return firstValueFrom(this.client.get('https://alias.example/path'));
+  }
+}
+
+class HttpService {
+  get(_url: string): Observable<unknown> {
+    return new Observable<unknown>();
+  }
+}
+
+@Injectable()
+export class LookalikeGateway {
+  constructor(private readonly local: HttpService) {}
+
+  ignored(): void {
+    this.local.get('https://lookalike-http-service.example/path').subscribe();
+  }
+}
+
+@Injectable()
+export class AmbiguousGateway {
+  constructor(private readonly mixed: NestHttpService | HttpService) {}
+
+  unsupported(): void {
+    this.mixed.get('https://ambiguous-http-service.example/path').subscribe();
+  }
+}
+
+@Injectable()
+export class ReassignedReceiverGateway {
+  constructor(private http: NestHttpService) {}
+
+  unsupported(replacement: NestHttpService): void {
+    this.http = replacement;
+    this.http.get('https://reassigned-receiver.example/path').subscribe();
+  }
+}
+
+@Controller('http')
+export class HttpController {
+  constructor(
+    private readonly http: NestHttpService,
+    private readonly gateway: HttpGateway,
+  ) {}
+
+  @Get('stream')
+  stream(): Observable<unknown> {
+    return this.http
+      .get(`${process.env.STREAM_SERVICE_URL}/items?token=do-not-store`)
+      .pipe(map((value) => value));
+  }
+
+  @Get('gateway')
+  gatewayCall(): Promise<unknown> {
+    return this.gateway.first('42');
+  }
+
+  @Get('stored')
+  stored(): Observable<unknown> {
+    const stream$ = this.http.get('https://controller-stored.example/path');
+    return stream$;
+  }
+}

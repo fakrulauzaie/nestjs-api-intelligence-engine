@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.api-intel/
+.tmp/
+example-nestjs-app/
+backend_api_intelligence_personal_project_plan.md
+backend_api_intelligence_implementation_plan.md
+test/fixtures/*.json
+test/fixtures/distributed/**/gate.expected.json

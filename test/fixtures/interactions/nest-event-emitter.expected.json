@@ -1,0 +1,34 @@
+{
+  "applications": 2,
+  "interactions": 9,
+  "handlers": 21,
+  "handlerRegistrationStates": {
+    "proven_registered": 18,
+    "declared_candidate": 2,
+    "registration_unknown": 1
+  },
+  "interactionMethods": {
+    "EventsController.create": 1,
+    "EventsController.asyncEvent": 1,
+    "EventsController.symbol": 1,
+    "EventsController.dynamic": 1,
+    "EventsController.cycle": 1,
+    "EventsController.stateLimit": 1,
+    "OrderHandlers.cycleA": 1,
+    "OrderHandlers.cycleB": 1,
+    "AliasPublisher.publish": 1
+  },
+  "mustNotEmit": [
+    "lookalike.event",
+    "ambiguous.event",
+    "reassigned.event",
+    "callback.event",
+    "manual.listener"
+  ],
+  "diagnostics": [
+    "EVENT_EMITTER_CONFIGURATION_UNKNOWN",
+    "EVENT_HANDLER_REGISTRATION_UNKNOWN",
+    "INTERACTION_RECEIVER_AMBIGUOUS",
+    "INTERACTION_TARGET_DYNAMIC"
+  ]
+}

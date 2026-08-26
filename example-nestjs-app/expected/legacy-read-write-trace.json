@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "name": "messy direct-repository read and write trace",
+  "endpoint": { "method": "PUT", "path": "/notes/legacy/:id", "handler": "NotesController.updateLegacy" },
+  "directGuardState": "none_declared",
+  "steps": [
+    {
+      "from": "endpoint:PUT /notes/legacy/:id",
+      "relation": "ENDPOINT_IMPLEMENTED_BY",
+      "to": "NotesController.updateLegacy",
+      "status": "resolved",
+      "evidence": [
+        { "role": "decorator", "file": "src/notes/notes.controller.ts", "startLine": 47, "endLine": 47 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 48, "endLine": 101 }
+      ]
+    },
+    {
+      "from": "NotesController.updateLegacy",
+      "relation": "METHOD_READS_TABLE",
+      "to": "note",
+      "operation": "findOne",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.controller.ts", "startLine": 60, "endLine": 60 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 14, "endLine": 18 },
+        { "role": "decorator", "file": "src/notes/entities/note.entity.ts", "startLine": 3, "endLine": 3 }
+      ]
+    },
+    {
+      "from": "NotesController.updateLegacy",
+      "relation": "METHOD_WRITES_TABLE",
+      "to": "note",
+      "operation": "save",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.controller.ts", "startLine": 84, "endLine": 84 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 14, "endLine": 18 },
+        { "role": "decorator", "file": "src/notes/entities/note.entity.ts", "startLine": 3, "endLine": 3 }
+      ]
+    }
+  ],
+  "terminals": [
+    { "direction": "READ", "table": "note" },
+    { "direction": "WRITE", "table": "note" }
+  ],
+  "diagnostics": ["TYPEORM_SAVE_COLUMNS_UNKNOWN"],
+  "limitations": ["AUTH_GLOBAL_POLICY_UNKNOWN"]
+}

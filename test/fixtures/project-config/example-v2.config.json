@@ -1,0 +1,17 @@
+{
+  "$schema": "https://example.invalid/editor-metadata-only.json",
+  "version": 2,
+  "analysis": {
+    "maxCallDepth": 3
+  },
+  "rules": {
+    "require-guard-on-write-endpoint": "warn"
+  },
+  "reports": {
+    "graph": {
+      "enabled": true,
+      "maxNodesPerEndpoint": 40,
+      "maxEdgesPerEndpoint": 60
+    }
+  }
+}

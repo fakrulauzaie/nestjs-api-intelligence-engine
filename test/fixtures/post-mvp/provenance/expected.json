@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "phase12-expectation-1",
+  "feature": "provenance",
+  "status": "pending",
+  "sourceFiles": ["provenance.ts.txt"],
+  "cases": [
+    {
+      "id": "provenance-direct",
+      "classification": "positive",
+      "expectation": "Body field title directly influences Note.title/database note_title at an insert object-literal sink.",
+      "mustNotEmit": ["Exact runtime stored value"]
+    },
+    {
+      "id": "provenance-derived",
+      "classification": "positive",
+      "expectation": "Body title has derived influence on Note.slug; Param id is criteria only.",
+      "mustNotEmit": ["Direct title-to-slug", "id written as a column"]
+    },
+    {
+      "id": "provenance-destructured",
+      "classification": "positive",
+      "expectation": "A unique destructured alias preserves direct body.title influence on note_title.",
+      "mustNotEmit": ["Unknown alias diagnostic"]
+    },
+    {
+      "id": "provenance-inter-method",
+      "classification": "positive",
+      "expectation": "Conditional Phase 21 may map the controller dto argument to NotesService.create and then to note_title.",
+      "mustNotEmit": ["Route reachability used as value-flow proof"]
+    },
+    {
+      "id": "provenance-criterion-not-write",
+      "classification": "negative",
+      "expectation": "Param id used only as update criteria does not influence the reviewed write column.",
+      "mustNotEmit": ["id-to-reviewed provenance"]
+    },
+    {
+      "id": "provenance-static-field",
+      "classification": "negative",
+      "expectation": "An unused request DTO does not influence a static title value.",
+      "mustNotEmit": ["body.title-to-note_title provenance"]
+    },
+    {
+      "id": "provenance-ambiguous-origin",
+      "classification": "ambiguous",
+      "expectation": "A union body preserves both DTO field origins or emits explicit origin ambiguity.",
+      "mustNotEmit": ["Arbitrary CreateNoteDto-only origin"]
+    },
+    {
+      "id": "provenance-spread",
+      "classification": "unsupported",
+      "expectation": "Object spread crosses the first explicit sink-property boundary.",
+      "mustNotEmit": ["One edge for every DTO field"]
+    },
+    {
+      "id": "provenance-computed-key",
+      "classification": "unsupported",
+      "expectation": "A computed sink key cannot be mapped to a proven entity column.",
+      "mustNotEmit": ["title-to-note_title provenance"]
+    },
+    {
+      "id": "provenance-external-mapper",
+      "classification": "unsupported",
+      "expectation": "An arbitrary external mapper is not interpreted; influence is unknown at the sink.",
+      "mustNotEmit": ["Direct provenance"]
+    },
+    {
+      "id": "provenance-save-unknown-columns",
+      "classification": "unsupported",
+      "expectation": "Repository.save retains table-write/unknown-column behavior and emits no column provenance.",
+      "mustNotEmit": ["body.title-to-note_title provenance"]
+    }
+  ]
+}

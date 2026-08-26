@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "expectedRunState": "completed_with_gaps",
+  "diagnostics": [
+    {
+      "code": "NEST_ROUTE_DYNAMIC",
+      "subject": "NotesController.computedStatus",
+      "messageContains": "computed route path",
+      "evidence": [
+        { "file": "src/notes/notes.controller.ts", "startLine": 104, "endLine": 104 },
+        { "file": "src/notes/notes.controller.ts", "startLine": 10, "endLine": 10 }
+      ]
+    },
+    {
+      "code": "DI_TOKEN_UNSUPPORTED",
+      "subject": "LegacyNotifierService.sink",
+      "messageContains": "string injection token",
+      "evidence": [
+        { "file": "src/notes/legacy-notifier.service.ts", "startLine": 12, "endLine": 13 },
+        { "file": "src/notes/legacy-notifier.service.ts", "startLine": 3, "endLine": 3 }
+      ]
+    },
+    {
+      "code": "TYPEORM_OPERATION_UNSUPPORTED",
+      "subject": "NotesService.unsupportedPreload",
+      "messageContains": "preload",
+      "evidence": [
+        { "file": "src/notes/notes.service.ts", "startLine": 50, "endLine": 50 }
+      ]
+    },
+    {
+      "code": "TYPEORM_SAVE_COLUMNS_UNKNOWN",
+      "subject": "NotesController.updateLegacy",
+      "messageContains": "exact written columns",
+      "evidence": [
+        { "file": "src/notes/notes.controller.ts", "startLine": 84, "endLine": 84 }
+      ]
+    }
+  ],
+  "globalLimitations": [
+    {
+      "code": "AUTH_GLOBAL_POLICY_UNKNOWN",
+      "meaning": "Only direct controller and method UseGuards declarations are analyzed."
+    }
+  ],
+  "diagnosticsThatMustNotAppear": [
+    "TS_PARSE_ERROR",
+    "TS_IMPORT_UNRESOLVED",
+    "CALL_TARGET_UNRESOLVED",
+    "TYPEORM_ENTITY_UNRESOLVED"
+  ]
+}

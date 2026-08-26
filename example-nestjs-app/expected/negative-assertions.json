@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "assertionsThatMustNotExist": [
+    {
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "subject": "GET /notes/computed/status",
+      "object": "NotesController.computedStatus",
+      "reason": "The route path is computed beyond the supported simple const rule."
+    },
+    {
+      "predicate": "METHOD_CALLS_METHOD",
+      "subject": "NotesController.findAll",
+      "object": "NotesService.findAllBackup",
+      "reason": "The method has a similar name but is never called."
+    },
+    {
+      "predicate": "CLASS_INJECTS_CLASS",
+      "subject": "LegacyNotifierService",
+      "object": "LegacySink",
+      "reason": "The constructor uses an unsupported string-valued injection token and an interface type."
+    },
+    {
+      "predicate": "METHOD_WRITES_TABLE",
+      "subject": "LegacyNotifierService.notify",
+      "object": "note",
+      "reason": "LegacySink.write is not a TypeORM repository receiver or operation."
+    },
+    {
+      "predicate": "METHOD_READS_TABLE",
+      "subject": "NotesService.unsupportedPreload",
+      "object": "note",
+      "reason": "Repository.preload is outside the supported operation catalogue."
+    },
+    {
+      "predicate": "METHOD_WRITES_TABLE",
+      "subject": "NotesService.unsupportedPreload",
+      "object": "note",
+      "reason": "Repository.preload is outside the supported operation catalogue."
+    },
+    {
+      "predicate": "ENTITY_MAPS_TO_TABLE",
+      "subject": "AuditRecord",
+      "object": "auditrecord",
+      "reason": "The explicit @Entity('audit_log') name overrides the default-name rule."
+    }
+  ],
+  "propertiesThatMustNotBeClaimed": [
+    {
+      "subject": "NotesService.create",
+      "property": "writtenColumns",
+      "reason": "save() proves a table write but not exact columns."
+    },
+    {
+      "subject": "NotesController.updateLegacy",
+      "property": "writtenColumns",
+      "reason": "save() proves a table write but not exact columns despite visible mutations."
+    },
+    {
+      "subject": "any endpoint without direct UseGuards",
+      "property": "public",
+      "reason": "Global authentication policy is not analyzed."
+    }
+  ]
+}

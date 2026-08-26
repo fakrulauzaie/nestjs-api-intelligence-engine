@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "kind": "semantic-expectation-not-canonical-output",
+  "fixture": "example-nestjs-app",
+  "expectedRunState": "completed_with_gaps",
+  "counts": {
+    "supportedEndpoints": 7,
+    "excludedDynamicRouteCandidates": 1,
+    "entityTableMappings": 2,
+    "repositoryBindings": 2,
+    "classInjectionEdges": 4,
+    "directMethodCallEdges": 7,
+    "supportedRepositoryOperations": 8,
+    "unsupportedRepositoryOperations": 1,
+    "directGuardDeclarations": 3
+  },
+  "entityTableMappings": [
+    {
+      "entity": "Note",
+      "table": "note",
+      "naming": "default_lowercase_class_name",
+      "evidence": { "file": "src/notes/entities/note.entity.ts", "startLine": 3, "endLine": 4 }
+    },
+    {
+      "entity": "AuditRecord",
+      "table": "audit_log",
+      "naming": "explicit",
+      "evidence": { "file": "src/notes/entities/audit-record.entity.ts", "startLine": 3, "endLine": 4 }
+    }
+  ],
+  "repositoryBindings": [
+    {
+      "class": "NotesController",
+      "member": "notesRepository",
+      "entity": "Note",
+      "evidence": { "file": "src/notes/notes.controller.ts", "startLine": 14, "endLine": 18 }
+    },
+    {
+      "class": "NotesService",
+      "member": "notesRepository",
+      "entity": "Note",
+      "evidence": { "file": "src/notes/notes.service.ts", "startLine": 10, "endLine": 14 }
+    }
+  ],
+  "classInjectionEdges": [
+    { "from": "AppController", "member": "appService", "to": "AppService" },
+    { "from": "NotesController", "member": "notesService", "to": "NotesService" },
+    { "from": "AdminNotesController", "member": "notesService", "to": "NotesService" },
+    { "from": "NotesService", "member": "notesFormatter", "to": "NotesFormatterService" }
+  ],
+  "directMethodCallEdges": [
+    { "from": "AppController.getHello", "to": "AppService.getHello" },
+    { "from": "NotesController.create", "to": "NotesService.create" },
+    { "from": "NotesController.findAll", "to": "NotesService.findAll" },
+    { "from": "NotesController.findArchived", "to": "NotesService.findArchived" },
+    { "from": "NotesController.remove", "to": "NotesService.remove" },
+    { "from": "AdminNotesController.count", "to": "NotesService.count" },
+    { "from": "NotesService.create", "to": "NotesFormatterService.normalize" }
+  ],
+  "repositoryOperations": [
+    { "method": "NotesService.create", "operation": "insert", "direction": "WRITE", "table": "note", "line": 18 },
+    { "method": "NotesService.findAll", "operation": "find", "direction": "READ", "table": "note", "line": 25 },
+    { "method": "NotesService.findArchived", "operation": "findBy", "direction": "READ", "table": "note", "line": 29 },
+    { "method": "NotesService.count", "operation": "count", "direction": "READ", "table": "note", "line": 33 },
+    { "method": "NotesService.remove", "operation": "delete", "direction": "WRITE", "table": "note", "line": 37 },
+    { "method": "NotesService.findAllBackup", "operation": "find", "direction": "READ", "table": "note", "line": 45 },
+    { "method": "NotesController.updateLegacy", "operation": "findOne", "direction": "READ", "table": "note", "line": 60 },
+    { "method": "NotesController.updateLegacy", "operation": "save", "direction": "WRITE", "table": "note", "line": 84 },
+    { "method": "NotesService.unsupportedPreload", "operation": "preload", "direction": "UNSUPPORTED", "table": null, "line": 50 }
+  ],
+  "guardDeclarations": [
+    { "endpoint": "DELETE /notes/:id", "guard": "AuthGuard", "scope": "method" },
+    { "endpoint": "GET /admin/notes/count", "guard": "AuthGuard", "scope": "controller" },
+    { "endpoint": "GET /admin/notes/count", "guard": "AuditGuard", "scope": "method" }
+  ],
+  "expectationFiles": [
+    "expected/endpoint-catalogue.json",
+    "expected/read-trace.json",
+    "expected/write-trace.json",
+    "expected/guarded-write-trace.json",
+    "expected/legacy-read-write-trace.json",
+    "expected/diagnostics.json",
+    "expected/negative-assertions.json"
+  ]
+}

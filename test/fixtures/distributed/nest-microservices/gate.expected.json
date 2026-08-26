@@ -1,0 +1,852 @@
+{
+  "schemaVersion": "1.0.0",
+  "technology": "nest_microservices",
+  "compatibilityTarget": {
+    "verifiedOn": "2026-08-26",
+    "packages": [
+      {
+        "name": "@nestjs/common",
+        "version": "11.2.1",
+        "sourceUrl": "https://github.com/nestjs/nest",
+        "declarationSurface": [
+          "Controller",
+          "Inject",
+          "Injectable",
+          "Module"
+        ]
+      },
+      {
+        "name": "@nestjs/core",
+        "version": "11.2.1",
+        "sourceUrl": "https://github.com/nestjs/nest",
+        "declarationSurface": [
+          "INestApplication.connectMicroservice",
+          "NestFactory.createMicroservice"
+        ]
+      },
+      {
+        "name": "@nestjs/microservices",
+        "version": "11.2.1",
+        "sourceUrl": "https://github.com/nestjs/nest/tree/master/packages/microservices",
+        "declarationSurface": [
+          "ClientProxy.emit",
+          "ClientProxy.send",
+          "ClientsModule.register",
+          "EventPattern",
+          "MessagePattern",
+          "Transport"
+        ]
+      },
+      {
+        "name": "rxjs",
+        "version": "7.8.2",
+        "sourceUrl": "https://github.com/ReactiveX/rxjs",
+        "declarationSurface": [
+          "firstValueFrom",
+          "Observable.subscribe"
+        ]
+      }
+    ]
+  },
+  "requiredTopologies": [
+    "colocated",
+    "producer_only",
+    "consumer_only"
+  ],
+  "globalMustNotInfer": [
+    "broker_delivery_guaranteed",
+    "local_handler_reachability_without_module_visibility",
+    "missing_consumer_as_failure",
+    "pattern_match_implies_delivery",
+    "request_response_fan_out",
+    "same_repository_implies_same_deployment",
+    "transport_equivalence",
+    "unsupported_provider_registered"
+  ],
+  "cases": [
+    {
+      "caseId": "microservices-client-binding-ambiguous",
+      "fixture": "transports.ts.txt",
+      "classification": "negative",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-client-binding-ambiguous"
+      ],
+      "expectation": {
+        "producer": "unknown",
+        "handler": "absent",
+        "match": "unknown",
+        "activation": "eager",
+        "boundary": "unknown",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "exact_transport",
+        "local_delivery_candidate"
+      ],
+      "mustNotInfer": [
+        "pattern_match_implies_delivery",
+        "transport_equivalence"
+      ],
+      "counterpartCaseIds": [
+        "microservices-transport-tcp"
+      ],
+      "rationale": "The same client token registered under different application roots does not prove one transport binding."
+    },
+    {
+      "caseId": "microservices-client-lookalike",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-client-lookalike"
+      ],
+      "expectation": {
+        "producer": "unsupported",
+        "handler": "not_applicable",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "lookalike_rejection"
+      ],
+      "mustNotEmit": [
+        "producer_interaction",
+        "target_pattern"
+      ],
+      "mustNotInfer": [
+        "dynamic_identity_resolved"
+      ],
+      "counterpartCaseIds": [
+        "microservices-producer-only-billing"
+      ],
+      "rationale": "A same-shaped local ClientProxy class is not package-proven and cannot create a microservice interaction."
+    },
+    {
+      "caseId": "microservices-colocated-get-user",
+      "fixture": "colocated.ts.txt",
+      "classification": "positive",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:microservices-colocated-get-user"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "exact",
+        "activation": "proven_activated",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "local_delivery_candidate",
+        "producer_interaction",
+        "request_response_mode"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "event_mode_match"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "pattern_match_implies_delivery",
+        "request_response_fan_out"
+      ],
+      "counterpartCaseIds": [
+        "microservices-message-duplicate-handlers",
+        "microservices-pattern-nonserializable"
+      ],
+      "rationale": "An activated send and MessagePattern form one local request-response candidate without a delivery guarantee."
+    },
+    {
+      "caseId": "microservices-colocated-user-created",
+      "fixture": "colocated.ts.txt",
+      "classification": "positive",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:microservices-colocated-user-created"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "exact",
+        "activation": "eager",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "distributed_conditional"
+      },
+      "mustEmit": [
+        "distributed_conditional_effect",
+        "event_mode_match",
+        "handler_inventory",
+        "local_delivery_candidate",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "request_response_mode"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "pattern_match_implies_delivery",
+        "same_repository_implies_same_deployment"
+      ],
+      "counterpartCaseIds": [
+        "microservices-transport-mismatch"
+      ],
+      "rationale": "A transport-compatible local EventPattern is a conditional candidate whose database effect remains distributed."
+    },
+    {
+      "caseId": "microservices-consumer-only-stripe",
+      "fixture": "consumer-only.ts.txt",
+      "classification": "positive",
+      "topology": "consumer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-consumer-only-stripe"
+      ],
+      "expectation": {
+        "producer": "absent",
+        "handler": "proven_registered",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "distributed_conditional"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "handler_rooted_trace"
+      ],
+      "mustNotEmit": [
+        "producer_interaction",
+        "synthetic_local_producer"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "same_repository_implies_same_deployment"
+      ],
+      "counterpartCaseIds": [
+        "microservices-handler-provider-invalid"
+      ],
+      "rationale": "A consumer-only microservice publishes inbound handler inventory and conditional handler-rooted effects only."
+    },
+    {
+      "caseId": "microservices-event-multiple-handlers",
+      "fixture": "patterns.ts.txt",
+      "classification": "positive",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:microservices-event-multiple-handlers"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "multiple_candidates",
+        "match": "multiple_candidates",
+        "activation": "eager",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "event_mode_match",
+        "multiple_handler_candidates",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "single_handler_selection"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "single_consumer_selected"
+      ],
+      "counterpartCaseIds": [
+        "microservices-handler-lookalike"
+      ],
+      "rationale": "Nest event patterns may retain every matching local event handler candidate without selecting one."
+    },
+    {
+      "caseId": "microservices-handler-lookalike",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-handler-lookalike"
+      ],
+      "expectation": {
+        "producer": "not_applicable",
+        "handler": "unsupported",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "lookalike_rejection"
+      ],
+      "mustNotEmit": [
+        "handler_record",
+        "local_delivery_candidate"
+      ],
+      "mustNotInfer": [
+        "unsupported_provider_registered"
+      ],
+      "counterpartCaseIds": [
+        "microservices-event-multiple-handlers"
+      ],
+      "rationale": "A local same-named MessagePattern decorator is not a package-proven Nest microservice handler."
+    },
+    {
+      "caseId": "microservices-handler-provider-invalid",
+      "fixture": "negatives.ts.txt",
+      "classification": "unsupported",
+      "topology": "consumer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-handler-provider-invalid"
+      ],
+      "expectation": {
+        "producer": "absent",
+        "handler": "registration_unknown",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "unknown"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "registration_uncertainty"
+      ],
+      "mustNotEmit": [
+        "registered_handler",
+        "synthetic_local_producer"
+      ],
+      "mustNotInfer": [
+        "local_handler_reachability_without_module_visibility",
+        "unsupported_provider_registered"
+      ],
+      "counterpartCaseIds": [
+        "microservices-consumer-only-stripe"
+      ],
+      "rationale": "A message decorator on a provider is retained as uncertain inventory rather than a registered controller handler."
+    },
+    {
+      "caseId": "microservices-message-duplicate-handlers",
+      "fixture": "patterns.ts.txt",
+      "classification": "negative",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:microservices-message-duplicate-handlers"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "multiple_candidates",
+        "match": "multiple_candidates",
+        "activation": "proven_activated",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "unknown"
+      },
+      "mustEmit": [
+        "multiple_handler_candidates",
+        "producer_interaction",
+        "request_response_mode"
+      ],
+      "mustNotEmit": [
+        "request_response_fan_out",
+        "single_handler_selection"
+      ],
+      "mustNotInfer": [
+        "request_response_fan_out",
+        "single_consumer_selected"
+      ],
+      "counterpartCaseIds": [
+        "microservices-colocated-get-user"
+      ],
+      "rationale": "Duplicate request-response handlers are ambiguity candidates and are not event-style fan-out."
+    },
+    {
+      "caseId": "microservices-object-pattern-canonical",
+      "fixture": "patterns.ts.txt",
+      "classification": "positive",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:microservices-object-pattern-canonical"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "exact",
+        "activation": "proven_activated",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "canonical_object_pattern",
+        "local_delivery_candidate",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "dynamic_pattern",
+        "transport_inference"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "pattern_match_implies_delivery"
+      ],
+      "counterpartCaseIds": [
+        "microservices-pattern-nonserializable",
+        "microservices-pattern-spread-dynamic"
+      ],
+      "rationale": "Plain object patterns compare through canonical JSON key ordering while preserving request-response mode."
+    },
+    {
+      "caseId": "microservices-pattern-nonserializable",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-pattern-nonserializable"
+      ],
+      "expectation": {
+        "producer": "dynamic",
+        "handler": "absent",
+        "match": "unknown",
+        "activation": "constructed_cold",
+        "boundary": "unknown",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "producer_interaction",
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "canonical_object_pattern",
+        "local_delivery_candidate"
+      ],
+      "mustNotInfer": [
+        "dynamic_identity_resolved",
+        "pattern_match_implies_delivery"
+      ],
+      "counterpartCaseIds": [
+        "microservices-object-pattern-canonical"
+      ],
+      "rationale": "A function-valued object is not canonical JSON and cannot produce an exact microservice pattern."
+    },
+    {
+      "caseId": "microservices-pattern-spread-dynamic",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-pattern-spread-dynamic"
+      ],
+      "expectation": {
+        "producer": "dynamic",
+        "handler": "absent",
+        "match": "unknown",
+        "activation": "eager",
+        "boundary": "unknown",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "producer_interaction",
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "canonical_object_pattern",
+        "local_delivery_candidate"
+      ],
+      "mustNotInfer": [
+        "dynamic_identity_resolved",
+        "pattern_match_implies_delivery"
+      ],
+      "counterpartCaseIds": [
+        "microservices-object-pattern-canonical"
+      ],
+      "rationale": "A spread from runtime input preserves a dynamic pattern rather than guessing canonical object keys."
+    },
+    {
+      "caseId": "microservices-producer-only-billing",
+      "fixture": "producer-only.ts.txt",
+      "classification": "positive",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-producer-only-billing"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "eager",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "event_mode",
+        "external_boundary",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "local_effect",
+        "missing_consumer_failure"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "microservices-client-binding-ambiguous",
+        "microservices-pattern-spread-dynamic"
+      ],
+      "rationale": "A Kafka producer without an in-repository handler is a normal external boundary, not an unhandled-event error."
+    },
+    {
+      "caseId": "microservices-send-activation-unknown",
+      "fixture": "activation.ts.txt",
+      "classification": "negative",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-send-activation-unknown"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "unknown",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "producer_interaction",
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "activation_proof",
+        "local_effect"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "pattern_match_implies_delivery"
+      ],
+      "counterpartCaseIds": [
+        "microservices-send-first-value",
+        "microservices-send-route-returned",
+        "microservices-send-subscribed"
+      ],
+      "rationale": "An opaque Observable wrapper does not prove whether the cold ClientProxy send is activated."
+    },
+    {
+      "caseId": "microservices-send-constructed-cold",
+      "fixture": "activation.ts.txt",
+      "classification": "positive",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-send-constructed-cold"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "constructed_cold",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "constructed_cold_state",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "activation_proof",
+        "broker_dispatch_assertion"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "pattern_match_implies_delivery"
+      ],
+      "counterpartCaseIds": [
+        "microservices-send-activation-unknown"
+      ],
+      "rationale": "Constructing and discarding a ClientProxy send Observable proves the call but not broker dispatch."
+    },
+    {
+      "caseId": "microservices-send-first-value",
+      "fixture": "activation.ts.txt",
+      "classification": "positive",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-send-first-value"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "proven_activated",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "activation_proof",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "local_effect"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "microservices-send-activation-unknown"
+      ],
+      "rationale": "firstValueFrom subscribes to the cold send Observable and proves activation without proving delivery."
+    },
+    {
+      "caseId": "microservices-send-route-returned",
+      "fixture": "activation.ts.txt",
+      "classification": "positive",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-send-route-returned"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "proven_activated",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "activation_proof",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "local_effect"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "microservices-send-activation-unknown"
+      ],
+      "rationale": "A direct return from a supported Nest route is framework-consumed and proves cold Observable activation."
+    },
+    {
+      "caseId": "microservices-send-subscribed",
+      "fixture": "activation.ts.txt",
+      "classification": "positive",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:microservices-send-subscribed"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "proven_activated",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "activation_proof",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "local_effect"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "microservices-send-activation-unknown"
+      ],
+      "rationale": "A direct subscribe call proves activation of the cold request-response Observable without proving delivery."
+    },
+    {
+      "caseId": "microservices-transport-kafka",
+      "fixture": "transports.ts.txt",
+      "classification": "positive",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-transport-kafka"
+      ],
+      "expectation": {
+        "producer": "not_applicable",
+        "handler": "not_applicable",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "not_applicable"
+      },
+      "mustEmit": [
+        "kafka_transport_inventory"
+      ],
+      "mustNotEmit": [
+        "transport_delivery_assertion"
+      ],
+      "mustNotInfer": [
+        "transport_equivalence"
+      ],
+      "counterpartCaseIds": [
+        "microservices-transport-mismatch"
+      ],
+      "rationale": "Kafka is retained as application transport inventory without simulating topic routing or delivery."
+    },
+    {
+      "caseId": "microservices-transport-mismatch",
+      "fixture": "transports.ts.txt",
+      "classification": "negative",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:microservices-transport-mismatch"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "no_local_candidate",
+        "activation": "eager",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "producer_interaction",
+        "transport_mismatch"
+      ],
+      "mustNotEmit": [
+        "local_delivery_candidate",
+        "transport_inference"
+      ],
+      "mustNotInfer": [
+        "pattern_match_implies_delivery",
+        "transport_equivalence"
+      ],
+      "counterpartCaseIds": [
+        "microservices-colocated-user-created"
+      ],
+      "rationale": "Matching event patterns under incompatible proven transports do not form a local delivery candidate."
+    },
+    {
+      "caseId": "microservices-transport-redis",
+      "fixture": "transports.ts.txt",
+      "classification": "positive",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-transport-redis"
+      ],
+      "expectation": {
+        "producer": "not_applicable",
+        "handler": "not_applicable",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "not_applicable"
+      },
+      "mustEmit": [
+        "redis_transport_inventory"
+      ],
+      "mustNotEmit": [
+        "transport_delivery_assertion"
+      ],
+      "mustNotInfer": [
+        "transport_equivalence"
+      ],
+      "counterpartCaseIds": [
+        "microservices-transport-mismatch"
+      ],
+      "rationale": "Redis is retained as application transport inventory without simulating channel routing or delivery."
+    },
+    {
+      "caseId": "microservices-transport-rmq",
+      "fixture": "transports.ts.txt",
+      "classification": "positive",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-transport-rmq"
+      ],
+      "expectation": {
+        "producer": "not_applicable",
+        "handler": "not_applicable",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "not_applicable"
+      },
+      "mustEmit": [
+        "rmq_transport_inventory"
+      ],
+      "mustNotEmit": [
+        "transport_delivery_assertion"
+      ],
+      "mustNotInfer": [
+        "transport_equivalence"
+      ],
+      "counterpartCaseIds": [
+        "microservices-transport-mismatch"
+      ],
+      "rationale": "RMQ is retained as application transport inventory without simulating exchange or queue routing."
+    },
+    {
+      "caseId": "microservices-transport-tcp",
+      "fixture": "transports.ts.txt",
+      "classification": "positive",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:microservices-transport-tcp"
+      ],
+      "expectation": {
+        "producer": "not_applicable",
+        "handler": "not_applicable",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "not_applicable"
+      },
+      "mustEmit": [
+        "tcp_transport_inventory"
+      ],
+      "mustNotEmit": [
+        "transport_delivery_assertion"
+      ],
+      "mustNotInfer": [
+        "transport_equivalence"
+      ],
+      "counterpartCaseIds": [
+        "microservices-client-binding-ambiguous",
+        "microservices-transport-mismatch"
+      ],
+      "rationale": "TCP is retained as application transport inventory without simulating socket routing or delivery."
+    }
+  ],
+  "review": {
+    "semanticStatus": "approved",
+    "valueStatus": "approved",
+    "reviewedOn": "2026-08-26",
+    "extractorImplementationPresent": false,
+    "phaseRecommendation": "eligible_after_d0",
+    "estimatedPhaseHours": {
+      "minimum": 64,
+      "maximum": 112
+    },
+    "bases": [
+      "https://docs.nestjs.com/microservices/basics",
+      "https://github.com/nestjs/nest/blob/master/packages/microservices/client/client-proxy.ts",
+      "https://github.com/nestjs/nest/tree/master/packages/microservices"
+    ],
+    "decisions": [
+      "ClientProxy emit is eager while send remains cold until a supported activation site is proven.",
+      "EventPattern may fan out to multiple local candidates while duplicate MessagePattern handlers remain ambiguous.",
+      "Pattern equality requires matching communication mode and compatible proven transport and application bindings.",
+      "Producer-only and consumer-only repositories are normal open-world topologies rather than missing-peer failures.",
+      "TCP, Redis, RMQ, and Kafka are inventory-only transports; routing simulation remains outside Phase 36."
+    ],
+    "rationale": "The bounded Nest microservice surface provides useful producer and inbound-handler inventory while keeping delivery, routing, and cross-repository causal claims explicitly conditional."
+  }
+}

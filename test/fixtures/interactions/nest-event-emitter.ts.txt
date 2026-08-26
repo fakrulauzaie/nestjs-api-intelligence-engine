@@ -1,0 +1,241 @@
+import { Controller, Injectable, Module, Post } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import {
+  EventEmitter2,
+  EventEmitterModule,
+  OnEvent as NestOnEvent,
+} from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Entity, Repository } from 'typeorm';
+
+const ORDER_CREATED = 'order.created';
+enum DomainEvents {
+  Audited = 'order.audited',
+}
+export const ORDER_SYMBOL: unique symbol = Symbol('order.symbol');
+const HANDLED_EVENTS = [ORDER_CREATED, DomainEvents.Audited] as const;
+let dynamicEvent = 'runtime.event';
+const DYNAMIC_OPTIONS = getRuntimeOptions();
+
+declare function getRuntimeOptions(): unknown;
+
+@Entity('order_audit')
+class OrderAudit {}
+
+@Injectable()
+class OrderAuditWriter {
+  constructor(@InjectRepository(OrderAudit) private readonly repository: Repository<OrderAudit>) {}
+
+  writeCreated(): void {
+    void this.repository.save({ marker: 'created' });
+  }
+}
+
+@Injectable()
+class OrderAuditForwarder {
+  constructor(private readonly writer: OrderAuditWriter) {}
+
+  forwardCreated(): void {
+    this.writer.writeCreated();
+  }
+}
+
+@Injectable()
+class OrderHandlers {
+  constructor(
+    @InjectRepository(OrderAudit) private readonly repository: Repository<OrderAudit>,
+    private readonly events: EventEmitter2,
+    private readonly forwarder: OrderAuditForwarder,
+  ) {}
+
+  @NestOnEvent(ORDER_CREATED)
+  handleCreated(): void {
+    this.forwarder.forwardCreated();
+  }
+
+  @NestOnEvent(HANDLED_EVENTS)
+  audit(): void {
+    void this.repository.save({ marker: 'audit' });
+  }
+
+  @NestOnEvent(ORDER_SYMBOL, { async: true })
+  handleSymbol(): void {
+    void this.repository.save({ marker: 'symbol' });
+  }
+
+  @NestOnEvent('cycle.a')
+  cycleA(): void {
+    this.events.emit('cycle.b');
+  }
+
+  @NestOnEvent('cycle.b')
+  cycleB(): void {
+    this.events.emit('cycle.a');
+  }
+
+  @NestOnEvent('order.*')
+  wildcardDeferred(): void {}
+}
+
+@Injectable()
+class OrphanHandler {
+  constructor(@InjectRepository(OrderAudit) private readonly repository: Repository<OrderAudit>) {}
+
+  @NestOnEvent(ORDER_CREATED)
+  orphan(): void {
+    void this.repository.save({ marker: 'orphan' });
+  }
+}
+
+@Injectable()
+class UnreachableHandler {
+  constructor(@InjectRepository(OrderAudit) private readonly repository: Repository<OrderAudit>) {}
+
+  @NestOnEvent(ORDER_CREATED)
+  unreachable(): void {
+    void this.repository.save({ marker: 'unreachable' });
+  }
+}
+
+@Module({ providers: [UnreachableHandler] })
+class UnreachableModule {}
+
+@Controller('events')
+class EventsController {
+  constructor(
+    private readonly events: EventEmitter2,
+    @InjectRepository(OrderAudit) private readonly repository: Repository<OrderAudit>,
+  ) {}
+
+  @Post('create')
+  create(): void {
+    void this.repository.save({ marker: 'synchronous' });
+    this.events.emit(ORDER_CREATED, { secret: 'payload-secret-must-not-appear' });
+  }
+
+  @Post('async')
+  asyncEvent(): Promise<unknown[]> {
+    return this.events.emitAsync(DomainEvents.Audited, { token: 'async-secret' });
+  }
+
+  @Post('symbol')
+  symbol(): void {
+    this.events.emit(ORDER_SYMBOL);
+  }
+
+  @Post('dynamic')
+  dynamic(): void {
+    this.events.emit(dynamicEvent);
+  }
+
+  @Post('cycle')
+  cycle(): void {
+    this.events.emit('cycle.a');
+  }
+
+  @Post('state-limit')
+  stateLimit(): void {
+    this.events.emit('state.limit');
+  }
+
+  callbackAndManualListener(): void {
+    [1].forEach(() => this.events.emit('callback.event'));
+    this.events.on('manual.listener', () => undefined);
+  }
+}
+
+@Injectable()
+class AliasPublisher {
+  private readonly bus: EventEmitter2;
+
+  constructor(events: EventEmitter2) {
+    this.bus = events;
+  }
+
+  publish(): void {
+    this.bus.emit('alias.published');
+  }
+}
+
+@Injectable()
+class DynamicConfigHandler {
+  @NestOnEvent('dynamic.config')
+  handle(): void {}
+}
+
+@Injectable()
+class StateLimitHandlers {
+  @NestOnEvent('state.limit') handle01(): void {}
+  @NestOnEvent('state.limit') handle02(): void {}
+  @NestOnEvent('state.limit') handle03(): void {}
+  @NestOnEvent('state.limit') handle04(): void {}
+  @NestOnEvent('state.limit') handle05(): void {}
+  @NestOnEvent('state.limit') handle06(): void {}
+  @NestOnEvent('state.limit') handle07(): void {}
+  @NestOnEvent('state.limit') handle08(): void {}
+  @NestOnEvent('state.limit') handle09(): void {}
+  @NestOnEvent('state.limit') handle10(): void {}
+  @NestOnEvent('state.limit') handle11(): void {}
+}
+
+@Module({
+  imports: [EventEmitterModule.forRoot({ wildcard: false })],
+  controllers: [EventsController],
+  providers: [
+    OrderHandlers,
+    OrderAuditWriter,
+    OrderAuditForwarder,
+    AliasPublisher,
+    StateLimitHandlers,
+  ],
+})
+class AppModule {}
+
+@Module({
+  imports: [EventEmitterModule.forRoot(DYNAMIC_OPTIONS)],
+  providers: [DynamicConfigHandler],
+})
+class DynamicAppModule {}
+
+async function bootstrap(): Promise<void> {
+  await NestFactory.create(AppModule);
+  await NestFactory.create(DynamicAppModule);
+}
+
+function OnEvent(_event: string): MethodDecorator {
+  return () => undefined;
+}
+class EventEmitter2Lookalike {
+  emit(_event: string): void {}
+}
+
+@Injectable()
+class Lookalikes {
+  constructor(private readonly events: EventEmitter2Lookalike) {}
+
+  @OnEvent(ORDER_CREATED)
+  localHandler(): void {}
+
+  localEmit(): void {
+    this.events.emit('lookalike.event');
+  }
+}
+
+@Injectable()
+class AmbiguousPublisher {
+  constructor(private readonly events: EventEmitter2 | EventEmitter2Lookalike) {}
+
+  publish(): void {
+    this.events.emit('ambiguous.event');
+  }
+}
+
+@Injectable()
+class ReassignedPublisher {
+  constructor(private events: EventEmitter2) {}
+
+  replace(events: EventEmitter2): void {
+    this.events = events;
+    this.events.emit('reassigned.event');
+  }
+}

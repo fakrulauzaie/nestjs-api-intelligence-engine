@@ -1,0 +1,57 @@
+import { Controller, Inject, Injectable, Module, Post } from '@nestjs/common';
+import { ClientProxy, ClientsModule, Transport } from '@nestjs/microservices';
+import { firstValueFrom, Observable } from 'rxjs';
+
+const INVENTORY_CLIENT = 'INVENTORY_CLIENT';
+
+function opaqueObservable(source: Observable<unknown>): Observable<unknown> {
+  return source;
+}
+
+@Injectable()
+class ActivationPublisher {
+  constructor(@Inject(INVENTORY_CLIENT) private readonly client: ClientProxy) {}
+
+  // D0_CASE:microservices-send-constructed-cold
+  constructOnly(): void {
+    this.client.send('inventory.lookup', { sku: 'sku-1' });
+  }
+
+  // D0_CASE:microservices-send-first-value
+  firstValue(): Promise<unknown> {
+    return firstValueFrom(this.client.send('inventory.lookup', { sku: 'sku-1' }));
+  }
+
+  // D0_CASE:microservices-send-subscribed
+  subscribe(): void {
+    this.client.send('inventory.lookup', { sku: 'sku-1' }).subscribe();
+  }
+
+  // D0_CASE:microservices-send-activation-unknown
+  wrapped(): Observable<unknown> {
+    return opaqueObservable(this.client.send('inventory.lookup', { sku: 'sku-1' }));
+  }
+}
+
+@Controller('inventory')
+class ActivationController {
+  constructor(@Inject(INVENTORY_CLIENT) private readonly client: ClientProxy) {}
+
+  // D0_CASE:microservices-send-route-returned
+  @Post('lookup')
+  lookup(): Observable<unknown> {
+    return this.client.send('inventory.lookup', { sku: 'sku-1' });
+  }
+}
+
+@Module({
+  imports: [ClientsModule.register([{ name: INVENTORY_CLIENT, transport: Transport.TCP }])],
+  controllers: [ActivationController],
+  providers: [ActivationPublisher],
+})
+class ActivationModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 Nest microservices fixture must never execute: activation');
+})();
+void __D0_EXECUTION_SENTINEL__;

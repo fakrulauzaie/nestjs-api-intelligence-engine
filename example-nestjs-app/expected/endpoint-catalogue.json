@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "fixture": "example-nestjs-app",
+  "supportedEndpointCount": 7,
+  "selectedEvaluationEndpointCount": 5,
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/",
+      "handler": "AppController.getHello",
+      "status": "resolved",
+      "selectedForEvaluation": true,
+      "directGuardState": "none_declared",
+      "guards": [],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/app.controller.ts", "startLine": 4, "endLine": 4 },
+        { "role": "route_decorator", "file": "src/app.controller.ts", "startLine": 8, "endLine": 8 },
+        { "role": "declaration", "file": "src/app.controller.ts", "startLine": 9, "endLine": 11 }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/notes",
+      "handler": "NotesController.create",
+      "status": "resolved",
+      "selectedForEvaluation": true,
+      "directGuardState": "none_declared",
+      "guards": [],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/notes/notes.controller.ts", "startLine": 12, "endLine": 12 },
+        { "role": "route_decorator", "file": "src/notes/notes.controller.ts", "startLine": 21, "endLine": 21 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 22, "endLine": 24 }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/notes",
+      "handler": "NotesController.findAll",
+      "status": "resolved",
+      "selectedForEvaluation": true,
+      "directGuardState": "none_declared",
+      "guards": [],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/notes/notes.controller.ts", "startLine": 12, "endLine": 12 },
+        { "role": "route_decorator", "file": "src/notes/notes.controller.ts", "startLine": 27, "endLine": 27 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 28, "endLine": 30 }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/notes/archived",
+      "handler": "NotesController.findArchived",
+      "status": "resolved",
+      "selectedForEvaluation": false,
+      "directGuardState": "none_declared",
+      "guards": [],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/notes/notes.controller.ts", "startLine": 12, "endLine": 12 },
+        { "role": "route_decorator", "file": "src/notes/notes.controller.ts", "startLine": 33, "endLine": 33 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 9, "endLine": 9 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 34, "endLine": 36 }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/notes/:id",
+      "handler": "NotesController.remove",
+      "status": "resolved",
+      "selectedForEvaluation": true,
+      "directGuardState": "declared",
+      "guards": [
+        {
+          "name": "AuthGuard",
+          "scope": "method",
+          "evidence": { "role": "decorator", "file": "src/notes/notes.controller.ts", "startLine": 40, "endLine": 40 }
+        }
+      ],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/notes/notes.controller.ts", "startLine": 12, "endLine": 12 },
+        { "role": "route_decorator", "file": "src/notes/notes.controller.ts", "startLine": 39, "endLine": 39 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 41, "endLine": 44 }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/notes/legacy/:id",
+      "handler": "NotesController.updateLegacy",
+      "status": "resolved",
+      "selectedForEvaluation": true,
+      "directGuardState": "none_declared",
+      "guards": [],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/notes/notes.controller.ts", "startLine": 12, "endLine": 12 },
+        { "role": "route_decorator", "file": "src/notes/notes.controller.ts", "startLine": 47, "endLine": 47 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 48, "endLine": 101 }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/admin/notes/count",
+      "handler": "AdminNotesController.count",
+      "status": "resolved",
+      "selectedForEvaluation": false,
+      "directGuardState": "declared",
+      "guards": [
+        {
+          "name": "AuthGuard",
+          "scope": "controller",
+          "evidence": { "role": "decorator", "file": "src/notes/admin-notes.controller.ts", "startLine": 7, "endLine": 7 }
+        },
+        {
+          "name": "AuditGuard",
+          "scope": "method",
+          "evidence": { "role": "decorator", "file": "src/notes/admin-notes.controller.ts", "startLine": 12, "endLine": 12 }
+        }
+      ],
+      "evidence": [
+        { "role": "controller_decorator", "file": "src/notes/admin-notes.controller.ts", "startLine": 6, "endLine": 6 },
+        { "role": "route_decorator", "file": "src/notes/admin-notes.controller.ts", "startLine": 11, "endLine": 11 },
+        { "role": "declaration", "file": "src/notes/admin-notes.controller.ts", "startLine": 13, "endLine": 15 }
+      ]
+    }
+  ],
+  "excludedRouteCandidates": [
+    {
+      "handler": "NotesController.computedStatus",
+      "reason": "computed path is outside the simple const rule",
+      "expectedDiagnostic": "NEST_ROUTE_DYNAMIC",
+      "evidence": [
+        { "role": "route_decorator", "file": "src/notes/notes.controller.ts", "startLine": 104, "endLine": 104 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 10, "endLine": 10 }
+      ]
+    }
+  ]
+}

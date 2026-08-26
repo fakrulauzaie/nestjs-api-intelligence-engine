@@ -1,0 +1,46 @@
+import { Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
+
+export class AuditGuard {}
+
+export class NotesService {
+  findAll(): string[] {
+    return ['after'];
+  }
+
+  findOne(id: string): string {
+    return id;
+  }
+
+  create(title: string): string {
+    return title.trim();
+  }
+
+  update(id: string, title: string): string {
+    return `${id}:${title}`;
+  }
+}
+
+@Controller('notes')
+export class NotesController {
+  constructor(private readonly notes: NotesService) {}
+
+  // CASE:comparison-modified-handler
+  @Get()
+  findAll(): string[] {
+    return this.notes.findAll();
+  }
+
+  // CASE:comparison-unchanged-endpoint
+  @Post()
+  @UseGuards(AuditGuard)
+  create(title: string): string {
+    return this.notes.create(title);
+  }
+
+  // CASE:comparison-added-endpoint
+  @Patch(':id')
+  update(id: string, title: string): string {
+    return this.notes.update(id, title);
+  }
+}
+

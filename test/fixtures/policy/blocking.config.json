@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../schemas/api-intel.config.schema.json",
+  "version": 1,
+  "rules": {
+    "no-repository-access-in-controller": "error"
+  }
+}

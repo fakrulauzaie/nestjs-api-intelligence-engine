@@ -1,0 +1,107 @@
+import { DataSource, EntityManager, QueryRunner, Repository } from 'typeorm';
+
+const ACTIVE_NOTES_SQL = `
+  SELECT n.id, a.created_at
+  FROM public.note AS n
+  LEFT JOIN audit_log AS a ON a.note_id = n.id
+  WHERE n.archived = false
+`;
+
+class CustomSqlClient {
+  query(_sql: string): unknown[] {
+    return [];
+  }
+}
+
+export class RawSqlCases {
+  constructor(
+    private readonly notes: Repository<unknown>,
+    private readonly dataSource: DataSource,
+    private readonly manager: EntityManager,
+    private readonly runner: QueryRunner,
+    private readonly custom: CustomSqlClient,
+    private readonly mixed: DataSource | CustomSqlClient,
+  ) {}
+
+  // CASE:sql-static-select
+  staticSelect(): Promise<unknown[]> {
+    return this.dataSource.query(ACTIVE_NOTES_SQL);
+  }
+
+  // CASE:sql-insert-select
+  archive(): Promise<unknown> {
+    return this.manager.query(`
+      INSERT INTO note_archive (id, title)
+      SELECT id, title FROM note WHERE archived = true
+    `);
+  }
+
+  // CASE:sql-update-from
+  updateFromAudit(): Promise<unknown> {
+    return this.runner.query(`
+      UPDATE note AS n
+      SET reviewed = true
+      FROM audit_log AS a
+      WHERE a.note_id = n.id
+    `);
+  }
+
+  // CASE:sql-delete-using
+  purge(): Promise<unknown> {
+    return this.notes.query(`
+      DELETE FROM note AS n
+      USING expired_note AS e
+      WHERE e.id = n.id
+    `);
+  }
+
+  // CASE:sql-cte-physical-table
+  recent(): Promise<unknown[]> {
+    return this.dataSource.query(`
+      WITH recent_note AS (
+        SELECT id FROM note WHERE updated_at > now() - interval '1 day'
+      )
+      SELECT r.id, a.created_at
+      FROM recent_note AS r
+      JOIN audit_log AS a ON a.note_id = r.id
+    `);
+  }
+
+  // CASE:sql-tagged-value
+  byTitle(title: string): Promise<unknown[]> {
+    return this.dataSource.sql`
+      SELECT id FROM note WHERE title = ${title}
+    `;
+  }
+
+  // CASE:sql-custom-lookalike
+  customQuery(): unknown[] {
+    return this.custom.query('SELECT * FROM note');
+  }
+
+  // CASE:sql-ambiguous-receiver
+  ambiguousQuery(): unknown {
+    return this.mixed.query('SELECT * FROM note');
+  }
+
+  // CASE:sql-dynamic-string
+  dynamicTable(tableName: string): Promise<unknown> {
+    return this.dataSource.query('SELECT * FROM ' + tableName);
+  }
+
+  // CASE:sql-tagged-raw-identifier
+  rawIdentifier(tableName: string): Promise<unknown[]> {
+    return this.dataSource.sql`SELECT * FROM ${() => tableName}`;
+  }
+
+  // CASE:sql-invalid-postgresql
+  invalidSql(): Promise<unknown> {
+    return this.dataSource.query('SELECT FROM WHERE');
+  }
+
+  // CASE:sql-unsupported-statement
+  callProcedure(): Promise<unknown> {
+    return this.dataSource.query('CALL rebuild_note_index()');
+  }
+}
+

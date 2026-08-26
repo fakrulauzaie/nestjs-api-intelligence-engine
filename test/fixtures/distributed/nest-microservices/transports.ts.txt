@@ -1,0 +1,96 @@
+import { Controller, Inject, Injectable, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import {
+  ClientProxy,
+  ClientsModule,
+  EventPattern,
+  MicroserviceOptions,
+  Transport,
+} from '@nestjs/microservices';
+
+@Module({ imports: [ClientsModule.register([{ name: 'TCP_CLIENT', transport: Transport.TCP }])] })
+// D0_CASE:microservices-transport-tcp
+class TcpRootModule {}
+void NestFactory.createMicroservice<MicroserviceOptions>(TcpRootModule, {
+  transport: Transport.TCP,
+});
+
+@Module({
+  imports: [ClientsModule.register([{ name: 'REDIS_CLIENT', transport: Transport.REDIS }])],
+})
+// D0_CASE:microservices-transport-redis
+class RedisRootModule {}
+void NestFactory.createMicroservice<MicroserviceOptions>(RedisRootModule, {
+  transport: Transport.REDIS,
+});
+
+@Module({ imports: [ClientsModule.register([{ name: 'RMQ_CLIENT', transport: Transport.RMQ }])] })
+// D0_CASE:microservices-transport-rmq
+class RmqRootModule {}
+void NestFactory.createMicroservice<MicroserviceOptions>(RmqRootModule, {
+  transport: Transport.RMQ,
+});
+
+@Module({
+  imports: [ClientsModule.register([{ name: 'KAFKA_CLIENT', transport: Transport.KAFKA }])],
+})
+// D0_CASE:microservices-transport-kafka
+class KafkaRootModule {}
+void NestFactory.createMicroservice<MicroserviceOptions>(KafkaRootModule, {
+  transport: Transport.KAFKA,
+});
+
+@Injectable()
+class MismatchedPublisher {
+  constructor(@Inject('MISMATCHED_CLIENT') private readonly client: ClientProxy) {}
+
+  // D0_CASE:microservices-transport-mismatch
+  publish(): void {
+    this.client.emit('transport.mismatch', {});
+  }
+}
+
+@Controller()
+class MismatchedHandler {
+  @EventPattern('transport.mismatch')
+  handle(): void {}
+}
+
+@Module({
+  imports: [
+    ClientsModule.register([{ name: 'MISMATCHED_CLIENT', transport: Transport.KAFKA }]),
+  ],
+  controllers: [MismatchedHandler],
+  providers: [MismatchedPublisher],
+})
+class MismatchedModule {}
+void NestFactory.createMicroservice<MicroserviceOptions>(MismatchedModule, {
+  transport: Transport.RMQ,
+});
+
+@Injectable()
+class SharedClientPublisher {
+  constructor(@Inject('SHARED_CLIENT') private readonly client: ClientProxy) {}
+
+  // D0_CASE:microservices-client-binding-ambiguous
+  publish(): void {
+    this.client.emit('shared.event', {});
+  }
+}
+
+@Module({
+  imports: [ClientsModule.register([{ name: 'SHARED_CLIENT', transport: Transport.TCP }])],
+  providers: [SharedClientPublisher],
+})
+class SharedTcpModule {}
+
+@Module({
+  imports: [ClientsModule.register([{ name: 'SHARED_CLIENT', transport: Transport.KAFKA }])],
+  providers: [SharedClientPublisher],
+})
+class SharedKafkaModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 Nest microservices fixture must never execute: transports');
+})();
+void __D0_EXECUTION_SENTINEL__;

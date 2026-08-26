@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "phase12-expectation-1",
+  "feature": "raw-sql",
+  "status": "pending",
+  "sourceFiles": ["raw-sql.ts.txt"],
+  "cases": [
+    {
+      "id": "sql-static-select",
+      "classification": "positive",
+      "expectation": "Static PostgreSQL SELECT proves READ public.note and READ audit_log.",
+      "mustNotEmit": ["WRITE public.note"]
+    },
+    {
+      "id": "sql-insert-select",
+      "classification": "positive",
+      "expectation": "INSERT SELECT proves WRITE note_archive and READ note.",
+      "mustNotEmit": ["WRITE note"]
+    },
+    {
+      "id": "sql-update-from",
+      "classification": "positive",
+      "expectation": "UPDATE FROM proves WRITE note and READ audit_log.",
+      "mustNotEmit": ["WRITE audit_log"]
+    },
+    {
+      "id": "sql-delete-using",
+      "classification": "positive",
+      "expectation": "DELETE USING proves WRITE note and READ expired_note.",
+      "mustNotEmit": ["WRITE expired_note"]
+    },
+    {
+      "id": "sql-cte-physical-table",
+      "classification": "positive",
+      "expectation": "The CTE query proves READ note and READ audit_log but does not treat recent_note as physical.",
+      "mustNotEmit": ["READ recent_note"]
+    },
+    {
+      "id": "sql-tagged-value",
+      "classification": "positive",
+      "expectation": "An ordinary tagged-template value becomes a parser placeholder and proves READ note.",
+      "mustNotEmit": ["Dynamic identifier diagnostic"]
+    },
+    {
+      "id": "sql-custom-lookalike",
+      "classification": "negative",
+      "expectation": "CustomSqlClient.query creates no TypeORM SQL fact.",
+      "mustNotEmit": ["READ note"]
+    },
+    {
+      "id": "sql-ambiguous-receiver",
+      "classification": "ambiguous",
+      "expectation": "A union receiver containing a custom query method remains ambiguous.",
+      "mustNotEmit": ["Resolved READ note"]
+    },
+    {
+      "id": "sql-dynamic-string",
+      "classification": "unsupported",
+      "expectation": "String concatenation containing a table identifier is not parsed as a static query.",
+      "mustNotEmit": ["READ tableName", "READ note"]
+    },
+    {
+      "id": "sql-tagged-raw-identifier",
+      "classification": "unsupported",
+      "expectation": "A function-wrapped raw tagged-template fragment is an unsupported dynamic identifier.",
+      "mustNotEmit": ["READ runtime table"]
+    },
+    {
+      "id": "sql-invalid-postgresql",
+      "classification": "unsupported",
+      "expectation": "A parser error produces a bounded diagnostic and no regex-derived table fact.",
+      "mustNotEmit": ["Any table assertion"]
+    },
+    {
+      "id": "sql-unsupported-statement",
+      "classification": "unsupported",
+      "expectation": "CALL is parsed or recognized but excluded from table-access claims.",
+      "mustNotEmit": ["WRITE rebuild_note_index"]
+    }
+  ]
+}

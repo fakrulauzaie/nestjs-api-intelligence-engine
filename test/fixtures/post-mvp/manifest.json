@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "phase12-corpus-1",
+  "status": "frozen",
+  "fixtures": [
+    {
+      "feature": "comparison",
+      "expected": "comparison/expected.json",
+      "futurePhases": [13, 14]
+    },
+    {
+      "feature": "modules",
+      "expected": "modules/expected.json",
+      "futurePhases": [15]
+    },
+    {
+      "feature": "query-builder",
+      "expected": "query-builder/expected.json",
+      "futurePhases": [17]
+    },
+    {
+      "feature": "raw-sql",
+      "expected": "raw-sql/expected.json",
+      "futurePhases": [18]
+    },
+    {
+      "feature": "contracts",
+      "expected": "contracts/expected.json",
+      "futurePhases": [19]
+    },
+    {
+      "feature": "provenance",
+      "expected": "provenance/expected.json",
+      "futurePhases": [20, 21]
+    }
+  ]
+}

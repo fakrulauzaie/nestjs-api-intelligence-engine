@@ -1,0 +1,7 @@
+export class MaintenanceService {
+  // CASE:comparison-unreachable-change
+  compact(): string {
+    return 'after-but-still-unreachable';
+  }
+}
+

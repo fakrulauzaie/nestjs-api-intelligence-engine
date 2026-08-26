@@ -1,0 +1,42 @@
+import { Controller, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import {
+  EventPattern,
+  MicroserviceOptions,
+  Payload,
+  Transport,
+} from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Entity, PrimaryColumn, Repository } from 'typeorm';
+
+@Entity('stripe_payment')
+class StripePaymentEntity {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+@Controller()
+class StripeEventsController {
+  constructor(
+    @InjectRepository(StripePaymentEntity)
+    private readonly payments: Repository<StripePaymentEntity>,
+  ) {}
+
+  // D0_CASE:microservices-consumer-only-stripe
+  @EventPattern('stripe.payment_succeeded')
+  async paymentSucceeded(@Payload() payload: { readonly id: string }): Promise<void> {
+    await this.payments.save({ id: payload.id });
+  }
+}
+
+@Module({ controllers: [StripeEventsController] })
+class StripeConsumerModule {}
+
+void NestFactory.createMicroservice<MicroserviceOptions>(StripeConsumerModule, {
+  transport: Transport.RMQ,
+});
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 Nest microservices fixture must never execute: consumer-only');
+})();
+void __D0_EXECUTION_SENTINEL__;

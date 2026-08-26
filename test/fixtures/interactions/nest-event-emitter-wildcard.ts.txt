@@ -1,0 +1,106 @@
+import { Controller, Injectable, Module, Post } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { EventEmitter2, EventEmitterModule, OnEvent } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Entity, Repository } from 'typeorm';
+
+const DYNAMIC_OPTIONS = runtimeOptions();
+declare function runtimeOptions(): unknown;
+
+@Entity('event_effect')
+class EventEffect {}
+
+@Injectable()
+class DotHandlers {
+  constructor(@InjectRepository(EventEffect) private readonly repository: Repository<EventEffect>) {}
+
+  @OnEvent('order.created') exact(): void { void this.repository.save({ handler: 'exact' }); }
+  @OnEvent('order.*') singleOne(): void { void this.repository.save({ handler: 'single-one' }); }
+  @OnEvent('order.*') singleTwo(): void { void this.repository.save({ handler: 'single-two' }); }
+  @OnEvent('order.**') deep(): void { void this.repository.save({ handler: 'deep' }); }
+  @OnEvent('*.created') suffix(): void { void this.repository.save({ handler: 'suffix' }); }
+}
+
+@Controller('wildcards')
+class DotController {
+  constructor(private readonly events: EventEmitter2) {}
+
+  @Post('dot-created') dotCreated(): void { this.events.emit('order.created'); }
+  @Post('dot-deep') dotDeep(): void { this.events.emit('order.item.created'); }
+  @Post('dot-root') dotRoot(): void { this.events.emit('order'); }
+}
+
+@Injectable()
+class CustomHandlers {
+  constructor(@InjectRepository(EventEffect) private readonly repository: Repository<EventEffect>) {}
+
+  @OnEvent('order::*') single(): void { void this.repository.save({ handler: 'custom-single' }); }
+  @OnEvent('order::**') deep(): void { void this.repository.save({ handler: 'custom-deep' }); }
+}
+
+@Controller('wildcards')
+class CustomController {
+  constructor(private readonly events: EventEmitter2) {}
+
+  @Post('custom') publish(): void { this.events.emit('order::created'); }
+}
+
+@Injectable()
+class DisabledHandler {
+  @OnEvent('order.*') literalOnly(): void {}
+}
+
+@Controller('wildcards')
+class DisabledController {
+  constructor(private readonly events: EventEmitter2) {}
+
+  @Post('disabled') publish(): void { this.events.emit('order.created'); }
+}
+
+@Injectable()
+class DynamicHandler {
+  @OnEvent('order.*') unknown(): void {}
+}
+
+@Controller('wildcards')
+class DynamicController {
+  constructor(private readonly events: EventEmitter2) {}
+
+  @Post('dynamic') publish(): void { this.events.emit('order.created'); }
+}
+
+@Module({
+  imports: [EventEmitterModule.forRoot({ wildcard: true })],
+  controllers: [DotController],
+  providers: [DotHandlers],
+})
+class DotModule {}
+
+const CUSTOM_EVENT_OPTIONS = { wildcard: true, delimiter: '::' } as const;
+@Module({
+  imports: [EventEmitterModule.forRoot(CUSTOM_EVENT_OPTIONS)],
+  controllers: [CustomController],
+  providers: [CustomHandlers],
+})
+class CustomModule {}
+
+@Module({
+  imports: [EventEmitterModule.forRoot({ wildcard: false })],
+  controllers: [DisabledController],
+  providers: [DisabledHandler],
+})
+class DisabledModule {}
+
+@Module({
+  imports: [EventEmitterModule.forRoot(DYNAMIC_OPTIONS)],
+  controllers: [DynamicController],
+  providers: [DynamicHandler],
+})
+class DynamicModule {}
+
+async function bootstrap(): Promise<void> {
+  await NestFactory.create(DotModule);
+  await NestFactory.create(CustomModule);
+  await NestFactory.create(DisabledModule);
+  await NestFactory.create(DynamicModule);
+}

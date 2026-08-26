@@ -1,0 +1,96 @@
+import { forwardRef, Global, Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+
+declare const chooseGuardAtRuntime: boolean;
+
+export class AuthGuard {}
+export class AuditGuard {}
+export class NotesController {}
+export class NotesService {}
+
+// CASE:module-use-class-global-guard
+@Module({
+  providers: [
+    AuthGuard,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
+  exports: [AuthGuard],
+})
+export class AuthModule {}
+
+const AUDIT_GUARD_PROVIDER = {
+  provide: APP_GUARD,
+  useExisting: AuditGuard,
+};
+
+// CASE:module-use-existing-global-guard
+@Global()
+@Module({
+  providers: [AuditGuard, AUDIT_GUARD_PROVIDER],
+  exports: [AuditGuard],
+})
+export class AuditModule {}
+
+// CASE:module-forward-ref
+@Module({
+  imports: [forwardRef(() => AppModule)],
+  providers: [NotesService],
+  controllers: [NotesController],
+  exports: [NotesService],
+})
+export class NotesModule {}
+
+const STATIC_IMPORTS = [AuthModule, AuditModule] as const;
+const STATIC_PROVIDERS = [NotesService] as const;
+
+// CASE:module-static-metadata
+@Module({
+  imports: [...STATIC_IMPORTS, NotesModule],
+  providers: [...STATIC_PROVIDERS],
+  controllers: [NotesController],
+})
+export class AppModule {}
+
+// CASE:module-lookalike-token
+const LOCAL_APP_GUARD = 'APP_GUARD';
+@Module({
+  providers: [{ provide: LOCAL_APP_GUARD, useClass: AuditGuard }],
+})
+export class LookalikeTokenModule {}
+
+// CASE:module-ambiguous-guard-class
+const SelectedGuard = chooseGuardAtRuntime ? AuthGuard : AuditGuard;
+@Module({
+  providers: [{ provide: APP_GUARD, useClass: SelectedGuard }],
+})
+export class AmbiguousGuardModule {}
+
+function buildProviders(): unknown[] {
+  return [];
+}
+
+// CASE:module-dynamic-metadata
+@Module({
+  providers: [
+    ...buildProviders(),
+    {
+      provide: APP_GUARD,
+      useFactory: () => new AuthGuard(),
+    },
+  ],
+})
+export class DynamicProviderModule {
+  static forRoot(): unknown {
+    return DynamicProviderModule;
+  }
+}
+
+// CASE:module-dynamic-import
+@Module({
+  imports: [DynamicProviderModule.forRoot()],
+})
+export class DynamicImportConsumerModule {}
+

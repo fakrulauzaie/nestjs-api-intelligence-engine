@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "phase12-expectation-1",
+  "feature": "comparison",
+  "status": "pending",
+  "sourceFiles": [
+    "before/controllers.ts.txt",
+    "after/controllers.ts.txt",
+    "before/unreachable.ts.txt",
+    "after/unreachable.ts.txt",
+    "ambiguous.ts.txt"
+  ],
+  "cases": [
+    {
+      "id": "comparison-modified-handler",
+      "classification": "positive",
+      "expectation": "GET /notes is modified because its unique route slot changes handler from NotesController.list to NotesController.findAll.",
+      "mustNotEmit": ["Unrelated same-name match", "Raw canonical ID equality requirement"]
+    },
+    {
+      "id": "comparison-added-removed-endpoints",
+      "classification": "positive",
+      "expectation": "PATCH /notes/:id is added; GET /notes/:id and DELETE /notes/:id are removed.",
+      "mustNotEmit": ["Fuzzy pairing of GET and PATCH"]
+    },
+    {
+      "id": "comparison-guard-change",
+      "classification": "positive",
+      "expectation": "POST /notes keeps its route/handler identity but gains AuditGuard and is modified.",
+      "mustNotEmit": ["Endpoint removal/addition solely because evidence IDs changed"]
+    },
+    {
+      "id": "comparison-unreachable-change",
+      "classification": "negative",
+      "expectation": "MaintenanceService.compact is content-changed but impacts no endpoint because it is unreachable in both graphs.",
+      "mustNotEmit": ["Potential endpoint impact"]
+    },
+    {
+      "id": "comparison-duplicate-route",
+      "classification": "ambiguous",
+      "expectation": "Two GET /duplicate route-slot candidates remain comparison ambiguity.",
+      "mustNotEmit": ["First-by-order route match"]
+    },
+    {
+      "id": "comparison-incompatible-schema",
+      "classification": "unsupported",
+      "expectation": "An unknown analysis schema version fails before semantic projection.",
+      "mustNotEmit": ["Best-effort diff from unvalidated input"]
+    }
+  ]
+}

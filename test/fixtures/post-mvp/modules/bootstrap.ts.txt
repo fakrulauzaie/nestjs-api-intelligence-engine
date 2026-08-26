@@ -1,0 +1,18 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule, AuditGuard, AuthGuard } from './modules';
+
+// CASE:bootstrap-global-guards
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalGuards(new AuthGuard(), new AuditGuard());
+}
+
+// CASE:bootstrap-escaped-app
+async function unsupportedBootstrap(register: (app: unknown) => void): Promise<void> {
+  const app = await NestFactory.create(AppModule);
+  register(app);
+}
+
+void bootstrap;
+void unsupportedBootstrap;
+

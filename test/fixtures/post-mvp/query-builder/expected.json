@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "phase12-expectation-1",
+  "feature": "query-builder",
+  "status": "pending",
+  "sourceFiles": ["query-builder.ts.txt"],
+  "cases": [
+    {
+      "id": "qb-repository-select",
+      "classification": "positive",
+      "expectation": "QueryBuilderCases.readNote reads note through a proven Repository<Note> root and getOne terminal.",
+      "mustNotEmit": ["WRITE note"]
+    },
+    {
+      "id": "qb-local-variable",
+      "classification": "positive",
+      "expectation": "A uniquely assigned method-local builder retains its Note root through getMany.",
+      "mustNotEmit": ["Builder escape diagnostic"]
+    },
+    {
+      "id": "qb-explicit-join",
+      "classification": "positive",
+      "expectation": "The explicit entity root and join prove READ note and READ audit_log.",
+      "mustNotEmit": ["Relation-string inference"]
+    },
+    {
+      "id": "qb-write-builders",
+      "classification": "positive",
+      "expectation": "Insert, update, and delete execute terminals each prove WRITE note with their builder state.",
+      "mustNotEmit": ["SELECT direction for execute"]
+    },
+    {
+      "id": "qb-custom-lookalike",
+      "classification": "negative",
+      "expectation": "CustomRepository.createQueryBuilder produces no TypeORM table fact.",
+      "mustNotEmit": ["READ note"]
+    },
+    {
+      "id": "qb-get-sql-not-terminal",
+      "classification": "negative",
+      "expectation": "getSql inspects generated SQL and creates no executed table-access fact.",
+      "mustNotEmit": ["READ note", "WRITE note"]
+    },
+    {
+      "id": "qb-ambiguous-receiver",
+      "classification": "ambiguous",
+      "expectation": "A union of TypeORM Repository and custom repository is not selected arbitrarily.",
+      "mustNotEmit": ["Resolved READ note"]
+    },
+    {
+      "id": "qb-relation-string-join",
+      "classification": "unsupported",
+      "expectation": "The root note read is provable but note.comments adds no joined-table fact without relation metadata.",
+      "mustNotEmit": ["READ comment"]
+    },
+    {
+      "id": "qb-subquery-callback",
+      "classification": "unsupported",
+      "expectation": "A callback source crosses the first builder-flow boundary and creates an explicit diagnostic.",
+      "mustNotEmit": ["Resolved callback table set"]
+    },
+    {
+      "id": "qb-cte",
+      "classification": "unsupported",
+      "expectation": "A QueryBuilder CTE body is not parsed by the QueryBuilder rule.",
+      "mustNotEmit": ["READ audit_log"]
+    },
+    {
+      "id": "qb-conditional-reassignment",
+      "classification": "unsupported",
+      "expectation": "Conditional builder reassignment prevents a resolved builder flow.",
+      "mustNotEmit": ["First-assignment-wins READ note"]
+    }
+  ]
+}

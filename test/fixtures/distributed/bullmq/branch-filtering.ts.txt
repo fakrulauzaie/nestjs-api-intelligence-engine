@@ -1,0 +1,62 @@
+import { Injectable, Module } from '@nestjs/common';
+import { BullModule, InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bullmq';
+import { Entity, PrimaryColumn, Repository } from 'typeorm';
+
+@Entity('generated_pdf')
+class GeneratedPdfEntity {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+@Injectable()
+class BranchingProducer {
+  constructor(
+    @InjectQueue('reports')
+    private readonly reports: Queue<{ readonly id: string }, void, string>,
+  ) {}
+
+  // D0_CASE:bullmq-branch-generate-pdf
+  async generate(id: string): Promise<void> {
+    await this.reports.add('generate-pdf', { id });
+  }
+
+  // D0_CASE:bullmq-branch-cleanup
+  async cleanup(id: string): Promise<void> {
+    await this.reports.add('cleanup', { id });
+  }
+}
+
+@Processor('reports')
+class BranchingProcessor extends WorkerHost {
+  constructor(
+    @InjectRepository(GeneratedPdfEntity)
+    private readonly generated: Repository<GeneratedPdfEntity>,
+  ) {
+    super();
+  }
+
+  async process(job: Job<{ readonly id: string }, unknown, string>): Promise<void> {
+    switch (job.name) {
+      case 'generate-pdf':
+        await this.generated.save({ id: job.data.id });
+        return;
+      case 'cleanup':
+        return;
+      default:
+        return;
+    }
+  }
+}
+
+@Module({
+  imports: [BullModule.forRoot({}), BullModule.registerQueue({ name: 'reports' })],
+  providers: [BranchingProducer, BranchingProcessor],
+})
+class BranchingWorkerModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 BullMQ fixture must never execute: branch-filtering');
+})();
+void __D0_EXECUTION_SENTINEL__;

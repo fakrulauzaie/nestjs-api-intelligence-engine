@@ -1,0 +1,18 @@
+{
+  "applications": 4,
+  "interactions": 6,
+  "handlers": 9,
+  "matches": {
+    "DotController.dotCreated": 5,
+    "DotController.dotDeep": 1,
+    "DotController.dotRoot": 1,
+    "CustomController.publish": 2,
+    "DisabledController.publish": 0,
+    "DynamicController.publish": 0
+  },
+  "diagnostics": [
+    "EVENT_EMITTER_CONFIGURATION_UNKNOWN",
+    "EVENT_HANDLER_REGISTRATION_UNKNOWN",
+    "INTERACTION_TARGET_DYNAMIC"
+  ]
+}

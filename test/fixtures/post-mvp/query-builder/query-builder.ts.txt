@@ -1,0 +1,129 @@
+import { DataSource, Entity, EntityManager, Repository } from 'typeorm';
+
+@Entity('note')
+export class Note {}
+
+@Entity('audit_log')
+export class AuditRecord {}
+
+class CustomBuilder {
+  getMany(): unknown[] {
+    return [];
+  }
+}
+
+class CustomRepository {
+  createQueryBuilder(_alias: string): CustomBuilder {
+    return new CustomBuilder();
+  }
+}
+
+export class QueryBuilderCases {
+  constructor(
+    private readonly notes: Repository<Note>,
+    private readonly dataSource: DataSource,
+    private readonly manager: EntityManager,
+    private readonly custom: CustomRepository,
+    private readonly mixed: Repository<Note> | CustomRepository,
+  ) {}
+
+  // CASE:qb-repository-select
+  readNote(id: string): Promise<Note | null> {
+    return this.notes.createQueryBuilder('note').where('note.id = :id', { id }).getOne();
+  }
+
+  // CASE:qb-local-variable
+  readMany(): Promise<Note[]> {
+    const builder = this.notes.createQueryBuilder('note');
+    builder.where('note.archived = false');
+    return builder.getMany();
+  }
+
+  // CASE:qb-explicit-join
+  readWithAudit(): Promise<unknown[]> {
+    return this.dataSource
+      .createQueryBuilder()
+      .select('note')
+      .from(Note, 'note')
+      .leftJoin(AuditRecord, 'audit', 'audit.noteId = note.id')
+      .getRawMany();
+  }
+
+  // CASE:qb-insert
+  insert(title: string): Promise<unknown> {
+    return this.dataSource
+      .createQueryBuilder()
+      .insert()
+      .into(Note)
+      .values({ title })
+      .execute();
+  }
+
+  // CASE:qb-update
+  update(id: string, title: string): Promise<unknown> {
+    return this.manager
+      .createQueryBuilder()
+      .update(Note)
+      .set({ title })
+      .where('id = :id', { id })
+      .execute();
+  }
+
+  // CASE:qb-delete
+  delete(id: string): Promise<unknown> {
+    return this.dataSource
+      .createQueryBuilder()
+      .delete()
+      .from(Note)
+      .where('id = :id', { id })
+      .execute();
+  }
+
+  // CASE:qb-custom-lookalike
+  customRead(): unknown[] {
+    return this.custom.createQueryBuilder('note').getMany();
+  }
+
+  // CASE:qb-ambiguous-receiver
+  ambiguousRead(): unknown {
+    return this.mixed.createQueryBuilder('note').getMany();
+  }
+
+  // CASE:qb-relation-string-join
+  relationJoin(): Promise<Note[]> {
+    return this.notes
+      .createQueryBuilder('note')
+      .leftJoinAndSelect('note.comments', 'comment')
+      .getMany();
+  }
+
+  // CASE:qb-subquery-callback
+  callbackSubquery(): Promise<unknown[]> {
+    return this.dataSource
+      .createQueryBuilder()
+      .select('note')
+      .from((subquery) => subquery.select('*').from(Note, 'note'), 'note')
+      .getRawMany();
+  }
+
+  // CASE:qb-cte
+  cte(): Promise<Note[]> {
+    return this.notes
+      .createQueryBuilder('note')
+      .addCommonTableExpression('SELECT "noteId" FROM "audit_log"', 'recent_audit')
+      .getMany();
+  }
+
+  // CASE:qb-conditional-reassignment
+  reassigned(condition: boolean): Promise<Note[]> {
+    let builder = this.notes.createQueryBuilder('note');
+    if (condition) builder = this.notes.createQueryBuilder('other_note');
+    return builder.getMany();
+  }
+
+  // CASE:qb-get-sql-not-terminal
+  inspectOnly(): string {
+    return this.notes.createQueryBuilder('note').getSql();
+  }
+}
+

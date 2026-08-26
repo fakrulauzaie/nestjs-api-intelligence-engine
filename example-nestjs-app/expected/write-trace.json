@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "name": "clean write trace",
+  "endpoint": { "method": "POST", "path": "/notes", "handler": "NotesController.create" },
+  "directGuardState": "none_declared",
+  "steps": [
+    {
+      "from": "endpoint:POST /notes",
+      "relation": "ENDPOINT_IMPLEMENTED_BY",
+      "to": "NotesController.create",
+      "status": "resolved",
+      "evidence": [
+        { "role": "decorator", "file": "src/notes/notes.controller.ts", "startLine": 21, "endLine": 21 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 22, "endLine": 24 }
+      ]
+    },
+    {
+      "from": "NotesController.create",
+      "relation": "METHOD_CALLS_METHOD",
+      "to": "NotesService.create",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.controller.ts", "startLine": 23, "endLine": 23 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 14, "endLine": 18 },
+        { "role": "declaration", "file": "src/notes/notes.service.ts", "startLine": 16, "endLine": 22 }
+      ]
+    },
+    {
+      "from": "NotesService.create",
+      "relation": "METHOD_CALLS_METHOD",
+      "to": "NotesFormatterService.normalize",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.service.ts", "startLine": 17, "endLine": 17 },
+        { "role": "resolution_basis", "file": "src/notes/notes.service.ts", "startLine": 13, "endLine": 13 },
+        { "role": "declaration", "file": "src/notes/notes-formatter.service.ts", "startLine": 6, "endLine": 11 }
+      ]
+    },
+    {
+      "from": "NotesService.create",
+      "relation": "METHOD_WRITES_TABLE",
+      "to": "note",
+      "operation": "insert",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.service.ts", "startLine": 18, "endLine": 21 },
+        { "role": "resolution_basis", "file": "src/notes/notes.service.ts", "startLine": 10, "endLine": 14 },
+        { "role": "decorator", "file": "src/notes/entities/note.entity.ts", "startLine": 3, "endLine": 3 }
+      ]
+    }
+  ],
+  "terminals": [{ "direction": "WRITE", "table": "note" }],
+  "limitations": ["AUTH_GLOBAL_POLICY_UNKNOWN"]
+}

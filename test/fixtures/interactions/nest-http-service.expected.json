@@ -1,0 +1,37 @@
+{
+  "supportedMethods": {
+    "HttpGateway.first": 1,
+    "HttpGateway.last": 1,
+    "HttpGateway.subscribed": 1,
+    "HttpGateway.cold": 1,
+    "HttpGateway.stored": 1,
+    "HttpGateway.reassigned": 2,
+    "HttpGateway.dynamic": 1,
+    "HttpGateway.axiosReference": 3,
+    "HttpGateway.spreadConfig": 1,
+    "HttpGateway.wrapped": 1,
+    "HttpGateway.concatenated": 1,
+    "HttpGateway.mutable": 1,
+    "AliasGateway.activate": 1,
+    "HttpController.stream": 1,
+    "HttpController.stored": 1
+  },
+  "activations": {
+    "eager": 3,
+    "proven_activated": 7,
+    "constructed_cold": 3,
+    "unknown": 5
+  },
+  "mustNotEmit": [
+    "https://callback.example/path",
+    "https://lookalike-http-service.example/path",
+    "https://ambiguous-http-service.example/path",
+    "https://reassigned-receiver.example/path"
+  ],
+  "diagnostics": [
+    "OUTBOUND_HTTP_ACTIVATION_UNKNOWN",
+    "OUTBOUND_HTTP_CONFIG_UNSUPPORTED",
+    "OUTBOUND_HTTP_RECEIVER_UNSUPPORTED",
+    "OUTBOUND_HTTP_TARGET_DYNAMIC"
+  ]
+}

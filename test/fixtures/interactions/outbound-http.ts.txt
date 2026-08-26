@@ -1,0 +1,111 @@
+import { Controller, Get, Injectable } from '@nestjs/common';
+import axiosDefault, { axios as namedAxios, type AxiosInstance } from 'axios';
+import { fetch as undiciFetch } from 'undici';
+
+const HEALTH_URL = 'https://status.example/health?mode=full&token=do-not-store';
+const apiClient = axiosDefault.create({ baseURL: 'https://api.example/v1/' });
+declare const runtimeBase: string;
+const dynamicBaseClient = axiosDefault.create({ baseURL: runtimeBase });
+const spreadOptions = { method: 'POST' };
+
+const localAxios = {
+  get(_url: string): Promise<unknown> {
+    return Promise.resolve(undefined);
+  },
+};
+
+@Injectable()
+export class DownstreamService {
+  send(): void {
+    axiosDefault.get('https://downstream.example/path');
+  }
+}
+
+@Injectable()
+export class GatewayService {
+  constructor(private readonly downstream: DownstreamService) {}
+
+  private readonly propertyClient = axiosDefault.create({
+    baseURL: `https://tenant.example/${'acme'}`,
+  });
+
+  direct(id: string): void {
+    axiosDefault.get(HEALTH_URL);
+    namedAxios.post(
+      `https://users.example/users/${id}?view=full&authorization=do-not-store#private`,
+      { privateCustomerValue: 'body-must-not-appear' },
+      { headers: { Authorization: 'Bearer header-must-not-appear' } },
+    );
+    axiosDefault({
+      url: 'https://username:password@config.example/request?apiKey=do-not-store#fragment',
+      method: 'patch',
+      headers: { 'X-Custom': 'header-body-must-not-appear' },
+    });
+    axiosDefault.request({
+      url: '/relative?expand=owner',
+      baseURL: 'https://override.example/api',
+      method: 'DELETE',
+      params: { locale: 'en', page: 1 },
+    });
+    fetch('https://global.example/items?cursor=do-not-store', {
+      headers: { Authorization: 'Bearer global-secret' },
+    });
+    undiciFetch(`https://undici.example/items/${id}`, { method: 'PUT' });
+  }
+
+  instance(): void {
+    apiClient.put('/orders/42?expand=items', { privateOrder: 'body-secret' });
+    this.propertyClient.head('/ready');
+  }
+
+  dynamic(url: string, method: string): void {
+    axiosDefault.request({ url, method });
+    fetch(url, { method });
+    dynamicBaseClient.get('/relative');
+  }
+
+  spreadConfig(url: string): void {
+    axiosDefault.request({ ...spreadOptions, url });
+  }
+
+  unresolved(client: AxiosInstance): void {
+    client.get('https://unresolved.example/path');
+  }
+
+  computed(method: 'get'): void {
+    axiosDefault[method]('https://computed.example/path');
+  }
+
+  shadowed(fetch: (url: string) => unknown): void {
+    fetch('https://shadowed.example/path');
+    localAxios.get('https://lookalike.example/path');
+  }
+
+  unused(): void {
+    axiosDefault.get('https://unused.example/path');
+  }
+
+  deep(): void {
+    this.downstream.send();
+  }
+}
+
+@Controller('gateway')
+export class GatewayController {
+  constructor(private readonly gateway: GatewayService) {}
+
+  @Get('direct')
+  direct(): void {
+    this.gateway.direct('42');
+  }
+
+  @Get('instance')
+  instance(): void {
+    this.gateway.instance();
+  }
+
+  @Get('deep')
+  deep(): void {
+    this.gateway.deep();
+  }
+}

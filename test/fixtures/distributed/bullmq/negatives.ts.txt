@@ -1,0 +1,116 @@
+import { Injectable, Module } from '@nestjs/common';
+import { BullModule, InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job, Queue } from 'bullmq';
+
+declare function runtimeQueueName(): string;
+
+@Injectable()
+class DynamicQueueProducer {
+  constructor(
+    @InjectQueue(runtimeQueueName())
+    private readonly queue: Queue<unknown, unknown, string>,
+  ) {}
+
+  // D0_CASE:bullmq-dynamic-queue
+  async enqueue(): Promise<void> {
+    await this.queue.add('known-job', {});
+  }
+}
+
+@Injectable()
+class DynamicJobProducer {
+  constructor(
+    @InjectQueue('reports')
+    private readonly queue: Queue<unknown, unknown, string>,
+  ) {}
+
+  // D0_CASE:bullmq-dynamic-job
+  async enqueue(jobName: string): Promise<void> {
+    await this.queue.add(jobName, {});
+  }
+}
+
+class LocalQueue {
+  add(_name: string, _data: unknown): Promise<unknown> {
+    return Promise.resolve(undefined);
+  }
+}
+
+@Injectable()
+class AmbiguousQueueProducer {
+  constructor(
+    @InjectQueue('ambiguous')
+    private readonly queue: Queue<unknown, unknown, string> | LocalQueue,
+  ) {}
+
+  // D0_CASE:bullmq-ambiguous-receiver
+  async enqueue(): Promise<void> {
+    await this.queue.add('job', {});
+  }
+}
+
+namespace LocalBullMq {
+  export function Processor(_name: string): ClassDecorator {
+    return () => undefined;
+  }
+
+  export abstract class WorkerHost {
+    abstract process(job: { readonly name: string }): Promise<unknown>;
+  }
+}
+
+// D0_CASE:bullmq-local-lookalike
+@LocalBullMq.Processor('reports')
+class LookalikeProcessor extends LocalBullMq.WorkerHost {
+  async process(_job: { readonly name: string }): Promise<void> {}
+}
+
+// D0_CASE:bullmq-orphan-processor
+@Processor('orphan')
+class OrphanProcessor extends WorkerHost {
+  async process(_job: Job<unknown, unknown, string>): Promise<void> {}
+}
+
+@Injectable()
+class DuplicateProducer {
+  constructor(
+    @InjectQueue('duplicate')
+    private readonly queue: Queue<unknown, unknown, string>,
+  ) {}
+
+  // D0_CASE:bullmq-duplicate-processors
+  async enqueue(): Promise<void> {
+    await this.queue.add('duplicate-job', {});
+  }
+}
+
+@Processor('duplicate')
+class FirstDuplicateProcessor extends WorkerHost {
+  async process(_job: Job<unknown, unknown, string>): Promise<void> {}
+}
+
+@Processor('duplicate')
+class SecondDuplicateProcessor extends WorkerHost {
+  async process(_job: Job<unknown, unknown, string>): Promise<void> {}
+}
+
+@Module({
+  imports: [
+    BullModule.forRoot({}),
+    BullModule.registerQueue({ name: 'reports' }, { name: 'ambiguous' }, { name: 'duplicate' }),
+  ],
+  providers: [
+    DynamicQueueProducer,
+    DynamicJobProducer,
+    AmbiguousQueueProducer,
+    DuplicateProducer,
+    FirstDuplicateProcessor,
+    SecondDuplicateProcessor,
+  ],
+})
+class NegativeBullMqModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 BullMQ fixture must never execute: negatives');
+})();
+void __D0_EXECUTION_SENTINEL__;

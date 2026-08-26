@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "name": "clean read trace",
+  "endpoint": { "method": "GET", "path": "/notes", "handler": "NotesController.findAll" },
+  "directGuardState": "none_declared",
+  "steps": [
+    {
+      "from": "endpoint:GET /notes",
+      "relation": "ENDPOINT_IMPLEMENTED_BY",
+      "to": "NotesController.findAll",
+      "status": "resolved",
+      "evidence": [
+        { "role": "decorator", "file": "src/notes/notes.controller.ts", "startLine": 27, "endLine": 27 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 28, "endLine": 30 }
+      ]
+    },
+    {
+      "from": "NotesController.findAll",
+      "relation": "METHOD_CALLS_METHOD",
+      "to": "NotesService.findAll",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.controller.ts", "startLine": 29, "endLine": 29 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 14, "endLine": 18 },
+        { "role": "declaration", "file": "src/notes/notes.service.ts", "startLine": 24, "endLine": 26 }
+      ]
+    },
+    {
+      "from": "NotesService.findAll",
+      "relation": "METHOD_READS_TABLE",
+      "to": "note",
+      "operation": "find",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.service.ts", "startLine": 25, "endLine": 25 },
+        { "role": "resolution_basis", "file": "src/notes/notes.service.ts", "startLine": 10, "endLine": 14 },
+        { "role": "decorator", "file": "src/notes/entities/note.entity.ts", "startLine": 3, "endLine": 3 },
+        { "role": "declaration", "file": "src/notes/entities/note.entity.ts", "startLine": 4, "endLine": 19 }
+      ]
+    }
+  ],
+  "terminals": [{ "direction": "READ", "table": "note" }],
+  "limitations": ["AUTH_GLOBAL_POLICY_UNKNOWN"]
+}

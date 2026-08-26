@@ -1,0 +1,450 @@
+{
+  "schemaVersion": "1.0.0",
+  "technology": "bullmq",
+  "compatibilityTarget": {
+    "verifiedOn": "2026-08-26",
+    "packages": [
+      {
+        "name": "@nestjs/bullmq",
+        "version": "11.0.5",
+        "sourceUrl": "https://github.com/nestjs/bull",
+        "declarationSurface": [
+          "BullModule.forRoot",
+          "BullModule.registerQueue",
+          "InjectQueue",
+          "Processor",
+          "WorkerHost.process"
+        ]
+      },
+      {
+        "name": "@nestjs/common",
+        "version": "11.2.1",
+        "sourceUrl": "https://github.com/nestjs/nest",
+        "declarationSurface": [
+          "Controller",
+          "Injectable",
+          "Module"
+        ]
+      },
+      {
+        "name": "bullmq",
+        "version": "6.2.1",
+        "sourceUrl": "https://github.com/taskforcesh/bullmq",
+        "declarationSurface": [
+          "Job.data",
+          "Job.name",
+          "Queue.add"
+        ]
+      }
+    ]
+  },
+  "requiredTopologies": [
+    "colocated",
+    "producer_only",
+    "consumer_only"
+  ],
+  "globalMustNotInfer": [
+    "branch_write_overattribution",
+    "broker_delivery_guaranteed",
+    "job_specific_branch_proven",
+    "missing_consumer_as_failure",
+    "same_repository_implies_same_deployment",
+    "single_consumer_selected"
+  ],
+  "cases": [
+    {
+      "caseId": "bullmq-ambiguous-receiver",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-ambiguous-receiver"
+      ],
+      "expectation": {
+        "producer": "unknown",
+        "handler": "absent",
+        "match": "unknown",
+        "activation": "unknown",
+        "boundary": "unknown",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "exact_receiver",
+        "producer_interaction"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "dynamic_identity_resolved"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-colocated-reports"
+      ],
+      "rationale": "A union containing a package Queue and a local lookalike does not prove the injected receiver identity."
+    },
+    {
+      "caseId": "bullmq-branch-cleanup",
+      "fixture": "branch-filtering.ts.txt",
+      "classification": "unsupported",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-branch-cleanup"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "queue_wide",
+        "activation": "eager",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "unknown"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "producer_interaction",
+        "queue_wide_candidate"
+      ],
+      "mustNotEmit": [
+        "job_specific_effect",
+        "local_effect"
+      ],
+      "mustNotInfer": [
+        "branch_write_overattribution",
+        "broker_delivery_guaranteed",
+        "job_specific_branch_proven"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-branch-generate-pdf"
+      ],
+      "rationale": "Queue-wide WorkerHost discovery must not attribute the generate-pdf branch write to the cleanup job."
+    },
+    {
+      "caseId": "bullmq-branch-generate-pdf",
+      "fixture": "branch-filtering.ts.txt",
+      "classification": "positive",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-branch-generate-pdf"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "queue_wide",
+        "activation": "eager",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "distributed_conditional"
+      },
+      "mustEmit": [
+        "distributed_conditional_effect",
+        "handler_inventory",
+        "producer_interaction",
+        "queue_wide_candidate"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "job_specific_match"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "job_specific_branch_proven"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-branch-cleanup"
+      ],
+      "rationale": "The queue and worker are locally visible, but job-specific branch slicing remains a separately gated rule."
+    },
+    {
+      "caseId": "bullmq-colocated-reports",
+      "fixture": "colocated.ts.txt",
+      "classification": "positive",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-colocated-reports"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "proven_registered",
+        "match": "queue_wide",
+        "activation": "eager",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "distributed_conditional"
+      },
+      "mustEmit": [
+        "distributed_conditional_effect",
+        "handler_inventory",
+        "local_delivery_candidate",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "job_specific_match"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "job_specific_branch_proven",
+        "same_repository_implies_same_deployment"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-ambiguous-receiver",
+        "bullmq-duplicate-processors"
+      ],
+      "rationale": "A registered local worker is an in-repository delivery candidate across a broker boundary, never proof of delivery."
+    },
+    {
+      "caseId": "bullmq-consumer-only-webhooks",
+      "fixture": "consumer-only.ts.txt",
+      "classification": "positive",
+      "topology": "consumer_only",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-consumer-only-webhooks"
+      ],
+      "expectation": {
+        "producer": "absent",
+        "handler": "proven_registered",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "distributed_conditional"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "handler_rooted_trace"
+      ],
+      "mustNotEmit": [
+        "producer_interaction",
+        "synthetic_local_producer"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "same_repository_implies_same_deployment"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-orphan-processor"
+      ],
+      "rationale": "A consumer-only repository exposes a registered worker inventory and conditional handler-rooted effects only."
+    },
+    {
+      "caseId": "bullmq-duplicate-processors",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "colocated",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-duplicate-processors"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "multiple_candidates",
+        "match": "multiple_candidates",
+        "activation": "eager",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "unknown"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "multiple_handler_candidates",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "broker_delivery_assertion",
+        "single_handler_selection"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "single_consumer_selected"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-colocated-reports"
+      ],
+      "rationale": "Multiple local processors remain independent candidates and cannot be collapsed into a selected consumer."
+    },
+    {
+      "caseId": "bullmq-dynamic-job",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-dynamic-job"
+      ],
+      "expectation": {
+        "producer": "dynamic",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "eager",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "producer_interaction",
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "exact_job_identity",
+        "local_effect"
+      ],
+      "mustNotInfer": [
+        "dynamic_identity_resolved",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-producer-only-remote-audit"
+      ],
+      "rationale": "A method parameter proves that a job is enqueued but does not prove the job-name identity."
+    },
+    {
+      "caseId": "bullmq-dynamic-queue",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-dynamic-queue"
+      ],
+      "expectation": {
+        "producer": "dynamic",
+        "handler": "absent",
+        "match": "unknown",
+        "activation": "eager",
+        "boundary": "unknown",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "producer_interaction",
+        "uncertainty_classification"
+      ],
+      "mustNotEmit": [
+        "exact_queue_identity",
+        "local_delivery_candidate"
+      ],
+      "mustNotInfer": [
+        "dynamic_identity_resolved",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-producer-only-remote-audit"
+      ],
+      "rationale": "A runtime queue-name expression retains a dynamic target and cannot match a local processor exactly."
+    },
+    {
+      "caseId": "bullmq-local-lookalike",
+      "fixture": "negatives.ts.txt",
+      "classification": "negative",
+      "topology": "not_applicable",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-local-lookalike"
+      ],
+      "expectation": {
+        "producer": "not_applicable",
+        "handler": "unsupported",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "not_applicable",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "lookalike_rejection"
+      ],
+      "mustNotEmit": [
+        "handler_record",
+        "local_delivery_candidate"
+      ],
+      "mustNotInfer": [
+        "unsupported_provider_registered"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-consumer-only-webhooks"
+      ],
+      "rationale": "Same-named local decorators and WorkerHost classes are not package-proven BullMQ consumers."
+    },
+    {
+      "caseId": "bullmq-orphan-processor",
+      "fixture": "negatives.ts.txt",
+      "classification": "unsupported",
+      "topology": "consumer_only",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-orphan-processor"
+      ],
+      "expectation": {
+        "producer": "absent",
+        "handler": "registration_unknown",
+        "match": "not_applicable",
+        "activation": "not_applicable",
+        "boundary": "broker_or_worker_boundary",
+        "causalClass": "unknown"
+      },
+      "mustEmit": [
+        "handler_inventory",
+        "registration_uncertainty"
+      ],
+      "mustNotEmit": [
+        "registered_handler",
+        "synthetic_local_producer"
+      ],
+      "mustNotInfer": [
+        "local_handler_reachability_without_module_visibility",
+        "unsupported_provider_registered"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-consumer-only-webhooks"
+      ],
+      "rationale": "A package-proven processor omitted from module providers is inventory with unknown registration, not a proven worker."
+    },
+    {
+      "caseId": "bullmq-producer-only-remote-audit",
+      "fixture": "producer-only.ts.txt",
+      "classification": "positive",
+      "topology": "producer_only",
+      "sourceMarkers": [
+        "D0_CASE:bullmq-producer-only-remote-audit"
+      ],
+      "expectation": {
+        "producer": "exact",
+        "handler": "absent",
+        "match": "no_local_candidate",
+        "activation": "eager",
+        "boundary": "external_or_unobserved",
+        "causalClass": "none"
+      },
+      "mustEmit": [
+        "external_boundary",
+        "producer_interaction"
+      ],
+      "mustNotEmit": [
+        "local_effect",
+        "missing_consumer_failure"
+      ],
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "missing_consumer_as_failure"
+      ],
+      "counterpartCaseIds": [
+        "bullmq-dynamic-job",
+        "bullmq-dynamic-queue"
+      ],
+      "rationale": "A producer without a local processor is normal open-world behavior and retains only an external boundary."
+    }
+  ],
+  "review": {
+    "semanticStatus": "approved",
+    "valueStatus": "approved",
+    "reviewedOn": "2026-08-26",
+    "extractorImplementationPresent": false,
+    "phaseRecommendation": "eligible_after_d0",
+    "estimatedPhaseHours": {
+      "minimum": 56,
+      "maximum": 96
+    },
+    "bases": [
+      "https://docs.bullmq.io/",
+      "https://docs.nestjs.com/techniques/queues",
+      "https://github.com/nestjs/bull",
+      "https://github.com/taskforcesh/bullmq"
+    ],
+    "decisions": [
+      "BullMQ WorkerHost handlers are queue-wide until a separately proven branch-slicing rule exists.",
+      "Legacy Bull Process decorators remain outside the BullMQ-first Phase 35 acceptance scope.",
+      "Local processors are delivery candidates across a broker boundary and never proof of runtime delivery.",
+      "Producer-only queues are normal open-world boundaries and never missing-consumer failures."
+    ],
+    "rationale": "The bounded BullMQ surface provides sufficient endpoint-to-worker impact value to justify Phase 35 while preserving explicit open-world and branch-analysis limits."
+  }
+}

@@ -1,0 +1,3423 @@
+{
+  "analysisRun": {
+    "configuration": {
+      "evidenceSnippetLimit": 240,
+      "maxCallDepth": 3,
+      "maxSourceFileBytes": 1048576
+    },
+    "id": "analysis:790d8e253f347defca098375eff27a11",
+    "repositoryRevision": null,
+    "tool": {
+      "name": "api-intel",
+      "typescriptVersion": "5.9.3",
+      "version": "0.1.0"
+    },
+    "tsconfigPath": "tsconfig.json"
+  },
+  "assertions": [
+    {
+      "evidenceIds": [
+        "evidence:2e99a7708eafe6a3f3aa5dfeaa1a40bc",
+        "evidence:bbffd0603c7189449aa0b3053b6c37f5"
+      ],
+      "id": "assertion:015a8a2a44ba98299e555ba869ad4d55",
+      "objectId": "repository_binding:7a0a2d3c4e926dc6d912a21afccd3eff",
+      "predicate": "CLASS_INJECTS_REPOSITORY",
+      "ruleId": "typeorm.repository-injection.v1",
+      "status": "resolved",
+      "subjectId": "class:f8c4b360b6c9611b6a73fe2ed7979909"
+    },
+    {
+      "evidenceIds": [
+        "evidence:cc5026e4d4002d8d7ba3108f9553ab21",
+        "evidence:deb133a65ca865fd3384708052536bbe"
+      ],
+      "id": "assertion:01a522037932b7e8fc028868413c691b",
+      "objectId": "entity_column:02c38c595f1c3dfe5b685d2295da9822",
+      "predicate": "ENTITY_DECLARES_COLUMN",
+      "ruleId": "typeorm.entity-column.v1",
+      "status": "resolved",
+      "subjectId": "entity:44c3ab16d84ad322572a4e57c7e86d56"
+    },
+    {
+      "evidenceIds": [
+        "evidence:bd23a098c53a662792c26f36fe523d01"
+      ],
+      "id": "assertion:05cb20a2dd36c0801403de31e423d709",
+      "objectId": "guard:7de354b849b24807039e84087a097dcf",
+      "predicate": "ENDPOINT_USES_GUARD",
+      "ruleId": "nest.guard.method.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:cff4fbd212a22dbed44825682d4c6bd5"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:2e99a7708eafe6a3f3aa5dfeaa1a40bc",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:a70f69f9899e268cdd9c94cfa5117663"
+      ],
+      "id": "assertion:0fb8bd38c323a77c8c7acfff7456b312",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_WRITES_TABLE",
+      "ruleId": "typeorm.repository.save.v1",
+      "status": "resolved",
+      "subjectId": "method:4defd81fa4d93aef857766d2e5b14d0d"
+    },
+    {
+      "evidenceIds": [
+        "evidence:862fc5e318df3a8def7e2899e569b25c"
+      ],
+      "id": "assertion:1192c94e6cf72a768cda7a75032aa790",
+      "objectId": "response_contract:50f92d88ce822024959c15a2ff61f52d",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:46993f03d28d159af4b142e880104212"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0cf4500f71a695d2128263c80f487582",
+        "evidence:a1f927b6428201eb116649959c604a0d"
+      ],
+      "id": "assertion:19151e1a5ce50acaef52aa7963147e7f",
+      "objectId": "method:7bd9571575a298861e84f8dfb48bb13f",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:f91ee1aba90ca879a19b4b9482a047c4"
+    },
+    {
+      "evidenceIds": [
+        "evidence:872856ebcabaddcaa3bd070c09f3212b"
+      ],
+      "id": "assertion:1c4e7a2405f550efaab1a3c4fad4182f",
+      "objectId": "guard:7de354b849b24807039e84087a097dcf",
+      "predicate": "ENDPOINT_USES_GUARD",
+      "ruleId": "nest.guard.controller.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:c862a4460981aebc3c8574c4c9fdd5c8"
+    },
+    {
+      "evidenceIds": [
+        "evidence:87089daddaca6258b548cfac56a4269b",
+        "evidence:9b0133694fa2707635cf06fdb2f3a136",
+        "evidence:f3452e4621c98bbdbf11116d0ad91a52"
+      ],
+      "id": "assertion:30fe5debfb60d5127c4dad51635bb58f",
+      "objectId": "method:b5a697878faa5813385c3e4fff917ab4",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:54f1cabccb5c8f9ec81fe28d8d4be1c7"
+    },
+    {
+      "evidenceIds": [
+        "evidence:42b0ad5b5d414f3cc4c2fdf098ce0b39"
+      ],
+      "id": "assertion:310daee5fcda6ad118e933b205fbf19d",
+      "objectId": "contract_field:6e509a5f644982deeb1ba733018b5677",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02"
+    },
+    {
+      "evidenceIds": [
+        "evidence:ec81e7d518effba863e0462db2814feb"
+      ],
+      "id": "assertion:31b2f567befb4cb82a57a769912c5579",
+      "objectId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "predicate": "MODULE_PROVIDES_CLASS",
+      "ruleId": "nest.module.provider.v1",
+      "status": "resolved",
+      "subjectId": "module:c3570e25ffde91b505c3b3f95088a40f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:12881054be3a352cb69750a122feda20",
+        "evidence:eedc3f22b0303de03843880569f407e2"
+      ],
+      "id": "assertion:36023e8de52462ffa001fd1a93001fe3",
+      "objectId": "method:96c7733cb3a2542b9f3df0cf48128b6c",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:8e585eac54f75b0a48c9734a52c8cf9e"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:2a55b460a9e8f9ad4e2a55ec09f822cd",
+        "evidence:5c8e4d48a4f6ec3f2f40ff4c34419e84"
+      ],
+      "id": "assertion:37557318a16f6e757e719d506de73fe0",
+      "objectId": "entity:44c3ab16d84ad322572a4e57c7e86d56",
+      "predicate": "REPOSITORY_FOR_ENTITY",
+      "ruleId": "typeorm.repository-entity.v1",
+      "status": "resolved",
+      "subjectId": "repository_binding:cea9b76fd3b8e41f80469d280e3bbb4c"
+    },
+    {
+      "evidenceIds": [
+        "evidence:eafbd0a748304406f7738215bcfa569d"
+      ],
+      "id": "assertion:37a202d4057ccf118180c41914478ea8",
+      "objectId": "response_contract:48c9e55602daff3edc90cbfc86b9f2a6",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:f91ee1aba90ca879a19b4b9482a047c4"
+    },
+    {
+      "evidenceIds": [
+        "evidence:2a55b460a9e8f9ad4e2a55ec09f822cd",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d"
+      ],
+      "id": "assertion:38a06c266d99a1c73c7bae00cf9336a2",
+      "objectId": "repository_binding:cea9b76fd3b8e41f80469d280e3bbb4c",
+      "predicate": "CLASS_INJECTS_REPOSITORY",
+      "ruleId": "typeorm.repository-injection.v1",
+      "status": "resolved",
+      "subjectId": "class:022b596634bb0bab85f4887d02ee4d44"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0012ebaa305be38ca643b95d3841c866",
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d"
+      ],
+      "id": "assertion:3d7f756b816c8879392a0d10dafd7e4d",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_READS_TABLE",
+      "ruleId": "typeorm.repository.find.v1",
+      "status": "resolved",
+      "subjectId": "method:3f9876b5935d141e5b4d2fa218137676"
+    },
+    {
+      "evidenceIds": [
+        "evidence:ac2a29da4fdeef054d003ff262551be0"
+      ],
+      "id": "assertion:3f5c4d0c60f4781d70cebd0ef0e1a8fc",
+      "objectId": "response_contract:e9007443191e899ee5c897e160d7f725",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:413a64ee56cc7a5e576ee868f36bf14e"
+    },
+    {
+      "evidenceIds": [
+        "evidence:ee27c6ac3a928cea28a5288f789f55fa"
+      ],
+      "id": "assertion:3fda655d5affaca928c7a43cbe77a95f",
+      "objectId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "predicate": "MODULE_DECLARES_CONTROLLER",
+      "ruleId": "nest.module.controller.v1",
+      "status": "resolved",
+      "subjectId": "module:c3570e25ffde91b505c3b3f95088a40f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d",
+        "evidence:6ce3a9b9f06f1a017fc3227172697dba"
+      ],
+      "id": "assertion:4396b3538ea50596d2d5ce69f4255d3b",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_READS_TABLE",
+      "ruleId": "typeorm.repository.count.v1",
+      "status": "resolved",
+      "subjectId": "method:7bd9571575a298861e84f8dfb48bb13f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:270fc9ffbbd05f28e2846ef3e4fb69be",
+        "evidence:bbffd0603c7189449aa0b3053b6c37f5"
+      ],
+      "id": "assertion:492410c68bbc3e838a699567a3737d02",
+      "objectId": "entity:44c3ab16d84ad322572a4e57c7e86d56",
+      "predicate": "REPOSITORY_FOR_ENTITY",
+      "ruleId": "typeorm.repository-entity.v1",
+      "status": "resolved",
+      "subjectId": "repository_binding:7a0a2d3c4e926dc6d912a21afccd3eff"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:466de9efa20b269b6e5d83735a28a80b"
+      ],
+      "id": "assertion:4a165e2030c57d57028a81603fa4383b",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "ENTITY_MAPS_TO_TABLE",
+      "ruleId": "typeorm.entity-table.v1",
+      "status": "resolved",
+      "subjectId": "entity:44c3ab16d84ad322572a4e57c7e86d56"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:27507727ed1b5977d70f6c7662275047",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d"
+      ],
+      "id": "assertion:4b995c37ea7854284c3ff40a9faf18ac",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_WRITES_TABLE",
+      "ruleId": "typeorm.repository.insert.v1",
+      "status": "resolved",
+      "subjectId": "method:4ec76f105603e2d283a5dc2a67584d02"
+    },
+    {
+      "evidenceIds": [
+        "evidence:966dc946372519f9b4807a1ef693dfd7",
+        "evidence:f8417d70bfcef741f646cdb782a4672a"
+      ],
+      "id": "assertion:4ba0e17da31ccfcc6ca336f73d4ed10e",
+      "objectId": "request_parameter:83d8494a38c49f5b783936771e38845f",
+      "predicate": "METHOD_DECLARES_REQUEST_PARAMETER",
+      "ruleId": "nest.request-parameter.v1",
+      "status": "resolved",
+      "subjectId": "method:5dca76664a279c44cd0afd3308b64590"
+    },
+    {
+      "evidenceIds": [
+        "evidence:43687228556d1f55a3ae8efaeac69671",
+        "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c"
+      ],
+      "id": "assertion:505ebef4529d76eb4d7e92e4e66ab15b",
+      "objectId": "request_parameter:635a2677c512a21b970f60339b70663b",
+      "predicate": "METHOD_DECLARES_REQUEST_PARAMETER",
+      "ruleId": "nest.request-parameter.v1",
+      "status": "resolved",
+      "subjectId": "method:46993f03d28d159af4b142e880104212"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0440bc0c6a899707aebe3a599faa3941",
+        "evidence:9cd91f83a76236e60bc82856f70efdf5"
+      ],
+      "id": "assertion:5493c98f62e990d29ee1311cecdedb16",
+      "objectId": "method:2455f0d419d96d9eba6d5178b43bea85",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:413a64ee56cc7a5e576ee868f36bf14e"
+    },
+    {
+      "evidenceIds": [
+        "evidence:1e56a4f4d97c61842957767a0647920f",
+        "evidence:4f41c6fef26e89ffe9f3e17546120e4e"
+      ],
+      "id": "assertion:5612ec335c7f1720e490543d5d982a1c",
+      "objectId": "entity_column:358bd8beac2db182d9f2186c74209a93",
+      "predicate": "ENTITY_DECLARES_COLUMN",
+      "ruleId": "typeorm.entity-column.v1",
+      "status": "resolved",
+      "subjectId": "entity:4b94fa8ed70ec459d70a2195f1220f9b"
+    },
+    {
+      "evidenceIds": [
+        "evidence:606c4f49b28c895d1cb84eeac2cfad28"
+      ],
+      "id": "assertion:57c5912c246608755a1c504296f3d500",
+      "objectId": "class:ca97fcefaa8687f3a9688accbc58a503",
+      "predicate": "MODULE_PROVIDES_CLASS",
+      "ruleId": "nest.module.provider.v1",
+      "status": "resolved",
+      "subjectId": "module:c3570e25ffde91b505c3b3f95088a40f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:8e8eb9abdf8a43b2df320d1fcd50a4ff"
+      ],
+      "id": "assertion:583f4c179728bf4dc60dae2743281f65",
+      "objectId": "class:9ec591a79d075259cbae93b4ac4272b7",
+      "predicate": "MODULE_DECLARES_CONTROLLER",
+      "ruleId": "nest.module.controller.v1",
+      "status": "resolved",
+      "subjectId": "module:67950428c406fbd61ad67fe87966d51f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:2e99a7708eafe6a3f3aa5dfeaa1a40bc",
+        "evidence:34e217a93421056913d7c2fd3b6888fb",
+        "evidence:466de9efa20b269b6e5d83735a28a80b"
+      ],
+      "id": "assertion:5a36740c5a598f00175c789873cb53a5",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_READS_TABLE",
+      "ruleId": "typeorm.repository.findOne.v1",
+      "status": "resolved",
+      "subjectId": "method:4defd81fa4d93aef857766d2e5b14d0d"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0394cca83e56179e3a0e62ec35491107",
+        "evidence:91e250349ad9ef361ceee2b47186b714"
+      ],
+      "id": "assertion:5df1d74ffa8d32bc88e1538dd7dcec82",
+      "objectId": "table:c0dd2f848d040e289d708f53a22e9edc",
+      "predicate": "ENTITY_MAPS_TO_TABLE",
+      "ruleId": "typeorm.entity-table.v1",
+      "status": "resolved",
+      "subjectId": "entity:4b94fa8ed70ec459d70a2195f1220f9b"
+    },
+    {
+      "evidenceIds": [
+        "evidence:c8dd1b8ea439f2da5fc3a1e405e04554"
+      ],
+      "id": "assertion:6392f1743ed24466822f958ee6717cc7",
+      "objectId": "contract_field:125232bb588ad96905f47ea4f6e41199",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:2ef399a9d66b6ede71950096c5169c18"
+    },
+    {
+      "evidenceIds": [
+        "evidence:2c45e8a8674f2efbb897b403ac4967eb",
+        "evidence:c786234555a9e227ce8f5815344f972e",
+        "evidence:cd3202b13d27b8a00ef91b116a16095d"
+      ],
+      "id": "assertion:68c5ba3a33f431d93faf17c43021bffe",
+      "objectId": "method:8e585eac54f75b0a48c9734a52c8cf9e",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:b8b9510e0215660f38812a5912651b80"
+    },
+    {
+      "evidenceIds": [
+        "evidence:74793b05a04ef934b8dadfb705005523",
+        "evidence:c584f91b02b445508130e1ee894ba14b"
+      ],
+      "id": "assertion:6906faa8f7e41ea3e66b712bbb16da05",
+      "objectId": "method:484fe67b8e1910e92a9cb50b3772bc7a",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:4ec76f105603e2d283a5dc2a67584d02"
+    },
+    {
+      "evidenceIds": [
+        "evidence:ec7edd84ffdb2cc30a36e0c3640e4559"
+      ],
+      "id": "assertion:6a8cb91ab46d8fbbd48932d6b6d2c531",
+      "objectId": "response_contract:e914fc34af82f5b7ad93796fe4dddc09",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:5dca76664a279c44cd0afd3308b64590"
+    },
+    {
+      "evidenceIds": [
+        "evidence:a7db281a8f42652099f36aebeef7d6ea"
+      ],
+      "id": "assertion:6bba4f90ef16eb74fb486695ee9c1f35",
+      "objectId": "contract_field:22667e5fe2cffd7ed7ac6e912dc5e599",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02"
+    },
+    {
+      "evidenceIds": [
+        "evidence:4c9f22030ef5ae3063fd4ec7d8ee8980",
+        "evidence:9cd91f83a76236e60bc82856f70efdf5"
+      ],
+      "id": "assertion:6c5a88c032949d502feee5c46c75dc08",
+      "objectId": "method:84e36cc32ba85fddcb154e415b7af3b6",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:b5a697878faa5813385c3e4fff917ab4"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:54a8d281db2f22303949329207609d82",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d"
+      ],
+      "id": "assertion:6d8a6485cc992a54dc687ed0c2cd2f52",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_READS_TABLE",
+      "ruleId": "typeorm.repository.findBy.v1",
+      "status": "resolved",
+      "subjectId": "method:2455f0d419d96d9eba6d5178b43bea85"
+    },
+    {
+      "evidenceIds": [
+        "evidence:6d97426fb15b4a55d0bf318cd40332ac"
+      ],
+      "id": "assertion:717b04c39c488c0f2497565fe34d4535",
+      "objectId": "class:26add1d2731e3898b410cae2d6d1502d",
+      "predicate": "CLASS_INJECTS_CLASS",
+      "ruleId": "nest.di.class-constructor.v1",
+      "status": "resolved",
+      "subjectId": "class:9ec591a79d075259cbae93b4ac4272b7"
+    },
+    {
+      "evidenceIds": [
+        "evidence:4e3df4605d276bee8ec3a04d9aaf3b7d"
+      ],
+      "id": "assertion:721f785e87bb26ed86ba13199facf3df",
+      "objectId": "contract_field:8c4d732616c08f93875f6e336b919a0b",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:2ef399a9d66b6ede71950096c5169c18"
+    },
+    {
+      "evidenceIds": [
+        "evidence:9b0133694fa2707635cf06fdb2f3a136",
+        "evidence:c06ac4114c27e3946bebc66aae32e548",
+        "evidence:de547253db010c32959e3edb54cbaf69"
+      ],
+      "id": "assertion:7f0e656941e9558036efb3765819d671",
+      "objectId": "method:46993f03d28d159af4b142e880104212",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:6d2b1d961077a56c7a39feea90e65e27"
+    },
+    {
+      "evidenceIds": [
+        "evidence:60527fa574d1069357152a7bc59a4a4e"
+      ],
+      "id": "assertion:80442acad3f13a688ea5520ddbbb0db3",
+      "objectId": "class:26add1d2731e3898b410cae2d6d1502d",
+      "predicate": "MODULE_PROVIDES_CLASS",
+      "ruleId": "nest.module.provider.v1",
+      "status": "resolved",
+      "subjectId": "module:67950428c406fbd61ad67fe87966d51f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:4bb3fe71c9fc3708616d50fdca6c3ff6"
+      ],
+      "id": "assertion:847768d6a911d8b6d3e3ea7720d35ed9",
+      "objectId": "contract_field:7bc9c6e52960e3f1364e97ccb2052a9d",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:2ef399a9d66b6ede71950096c5169c18"
+    },
+    {
+      "evidenceIds": [
+        "evidence:757cf6cb4b555239f6a9f89fd4c6aab0"
+      ],
+      "id": "assertion:888becddc0f28e90c38666173ac641c4",
+      "objectId": "class:ca97fcefaa8687f3a9688accbc58a503",
+      "predicate": "CLASS_INJECTS_CLASS",
+      "ruleId": "nest.di.class-constructor.v1",
+      "status": "resolved",
+      "subjectId": "class:022b596634bb0bab85f4887d02ee4d44"
+    },
+    {
+      "evidenceIds": [
+        "evidence:7cb1720d223e871fe39451dcc0c360d2",
+        "evidence:9cd91f83a76236e60bc82856f70efdf5"
+      ],
+      "id": "assertion:8cbac7394f459d00de98409307a35a5e",
+      "objectId": "method:4ec76f105603e2d283a5dc2a67584d02",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:46993f03d28d159af4b142e880104212"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d",
+        "evidence:8aef2d8e3a9d7504a3c946e25b9cdf20"
+      ],
+      "id": "assertion:8d72fe5acf4a4f98797674a86ddc8f9c",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_WRITES_TABLE",
+      "ruleId": "typeorm.repository.delete.v1",
+      "status": "resolved",
+      "subjectId": "method:db516ee24626bfa42246033553eae595"
+    },
+    {
+      "evidenceIds": [
+        "evidence:8bba2db5dc06f88b92149faa8ee3c744"
+      ],
+      "id": "assertion:94157e1dcad4eb455ad78b73e42b9f08",
+      "objectId": "contract_field:61e2c3d608a586794ca95f7d903cd7a9",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:2ef399a9d66b6ede71950096c5169c18"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d",
+        "evidence:670f0aea025a292f6ad2b8961382b5c5"
+      ],
+      "id": "assertion:97037b3eb7d14cbe9a1f7a3f855dcd62",
+      "objectId": "table:21cdc110591d6c638bf60457d751a0da",
+      "predicate": "METHOD_READS_TABLE",
+      "ruleId": "typeorm.repository.find.v1",
+      "status": "resolved",
+      "subjectId": "method:84e36cc32ba85fddcb154e415b7af3b6"
+    },
+    {
+      "evidenceIds": [
+        "evidence:25c4498c635c8d0b79ba5f9e85c42f82",
+        "evidence:d66d8ff6a3e48ca1b266bb6855b49ccf"
+      ],
+      "id": "assertion:98043feead724df47ea15a29aa71d815",
+      "objectId": "entity_column:e73ea179401eddffd2ff20dd7049d193",
+      "predicate": "ENTITY_DECLARES_COLUMN",
+      "ruleId": "typeorm.entity-column.v1",
+      "status": "resolved",
+      "subjectId": "entity:44c3ab16d84ad322572a4e57c7e86d56"
+    },
+    {
+      "evidenceIds": [
+        "evidence:9b0133694fa2707635cf06fdb2f3a136",
+        "evidence:b45072e2a1a0c460bbfd60abbcfae56b",
+        "evidence:b8015a85bb7aa819dd8bf4a282ea6b0d"
+      ],
+      "id": "assertion:98a826a955040df2ce445b104abdc400",
+      "objectId": "method:5dca76664a279c44cd0afd3308b64590",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:cff4fbd212a22dbed44825682d4c6bd5"
+    },
+    {
+      "evidenceIds": [
+        "evidence:1f2647a084b7dbd782608ab1cb213ef2",
+        "evidence:9b0133694fa2707635cf06fdb2f3a136",
+        "evidence:a6ba1e540e17a471172be85a521c8d05"
+      ],
+      "id": "assertion:9dc2032c1029d772b06a2c58d6819a8e",
+      "objectId": "method:4defd81fa4d93aef857766d2e5b14d0d",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:a203c94c0b81720d8dce299bc01acdaa"
+    },
+    {
+      "evidenceIds": [
+        "evidence:05dd90106ae509c697d0a87b688a2f72",
+        "evidence:43687228556d1f55a3ae8efaeac69671",
+        "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c",
+        "evidence:7cb1720d223e871fe39451dcc0c360d2",
+        "evidence:81ef8d49e4bc9b86c1699a54231d7487",
+        "evidence:9cd91f83a76236e60bc82856f70efdf5",
+        "evidence:ca5a6d6e0ca20f4ff054c12cd95cafe5"
+      ],
+      "id": "assertion:a0e7c147790f96b6acd55fa2f44572a7",
+      "objectId": "request_field_origin:248c92dd3fd169f6ebef0b7eb6d8c4f4",
+      "predicate": "REQUEST_PARAMETER_HAS_FIELD_ORIGIN",
+      "ruleId": "request.provenance.field-origin.v1",
+      "status": "resolved",
+      "subjectId": "request_parameter:635a2677c512a21b970f60339b70663b"
+    },
+    {
+      "evidenceIds": [
+        "evidence:336f0a678c1bc311fc25a63afc32b881"
+      ],
+      "id": "assertion:a29157103ced0a1ed4fc37096c8143d1",
+      "objectId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "predicate": "CLASS_INJECTS_CLASS",
+      "ruleId": "nest.di.class-constructor.v1",
+      "status": "resolved",
+      "subjectId": "class:f8c4b360b6c9611b6a73fe2ed7979909"
+    },
+    {
+      "evidenceIds": [
+        "evidence:21f0e467614d21423e11fa8928e19b5c",
+        "evidence:a85db1c08fb8fbc00817dbfadeff4197"
+      ],
+      "id": "assertion:a4c7b7438efec11bd4c15dd1911026ec",
+      "objectId": "entity_column:dc427dc7fc0551aadb4188e8d7f0b982",
+      "predicate": "ENTITY_DECLARES_COLUMN",
+      "ruleId": "typeorm.entity-column.v1",
+      "status": "resolved",
+      "subjectId": "entity:44c3ab16d84ad322572a4e57c7e86d56"
+    },
+    {
+      "evidenceIds": [
+        "evidence:df5026b90fa30210532f6d846766789f"
+      ],
+      "id": "assertion:bc161e99baa5d05a7e81f4223d603c20",
+      "objectId": "class:93457ce3e7a427cf09e43d3f1138f8ed",
+      "predicate": "MODULE_PROVIDES_CLASS",
+      "ruleId": "nest.module.provider.v1",
+      "status": "resolved",
+      "subjectId": "module:c3570e25ffde91b505c3b3f95088a40f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:737bd7d0e34efd03e7fa6913f488a38a"
+      ],
+      "id": "assertion:c390d3e26e8eccd3452e36b9d529ccaa",
+      "objectId": "guard:7a465675c7572053496eec5de72f47c4",
+      "predicate": "ENDPOINT_USES_GUARD",
+      "ruleId": "nest.guard.method.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:c862a4460981aebc3c8574c4c9fdd5c8"
+    },
+    {
+      "evidenceIds": [
+        "evidence:a7062d67b2009426ad9caf6eda25243a"
+      ],
+      "id": "assertion:c396b81e00a6e8a4f6054bc94111e2f3",
+      "objectId": "response_contract:31c4df5816de7fd08e43f9e3638775b7",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:4defd81fa4d93aef857766d2e5b14d0d"
+    },
+    {
+      "evidenceIds": [
+        "evidence:3e25d0a8482bb4dd9a6326cc7ced6eea"
+      ],
+      "id": "assertion:c4f8212fa400714d8d8e1e21940e910c",
+      "objectId": "module:c3570e25ffde91b505c3b3f95088a40f",
+      "predicate": "MODULE_IMPORTS_MODULE",
+      "ruleId": "nest.module.import.v1",
+      "status": "resolved",
+      "subjectId": "module:67950428c406fbd61ad67fe87966d51f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:05dd90106ae509c697d0a87b688a2f72",
+        "evidence:0ca0fe51b59714cac8b100b689f759c5",
+        "evidence:25c4498c635c8d0b79ba5f9e85c42f82",
+        "evidence:27507727ed1b5977d70f6c7662275047",
+        "evidence:43687228556d1f55a3ae8efaeac69671",
+        "evidence:466de9efa20b269b6e5d83735a28a80b",
+        "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c",
+        "evidence:5bf7bda073eb0639e3a5d5797632b8f2",
+        "evidence:5cb8edf53f7e0eb7aa1d036237121b1d",
+        "evidence:7cb1720d223e871fe39451dcc0c360d2",
+        "evidence:81ef8d49e4bc9b86c1699a54231d7487",
+        "evidence:9cd91f83a76236e60bc82856f70efdf5",
+        "evidence:ca5a6d6e0ca20f4ff054c12cd95cafe5",
+        "evidence:d66d8ff6a3e48ca1b266bb6855b49ccf"
+      ],
+      "id": "assertion:ca8fc9e01eeecdbe5464468f5ad67e30",
+      "objectId": "entity_column:e73ea179401eddffd2ff20dd7049d193",
+      "predicate": "REQUEST_FIELD_MAY_FLOW_TO_COLUMN",
+      "ruleId": "request.provenance.inter-method-object-write.v1",
+      "status": "resolved",
+      "subjectId": "request_field_origin:248c92dd3fd169f6ebef0b7eb6d8c4f4"
+    },
+    {
+      "evidenceIds": [
+        "evidence:53ad88977744956c1a4c30b6bcb6d048",
+        "evidence:9376ff2e7bb92e60112dba917a264294"
+      ],
+      "id": "assertion:cc9864b07127b5488a6ba93e5b548b16",
+      "objectId": "entity_column:58d152a1c65090ffc802c2859e21e4e7",
+      "predicate": "ENTITY_DECLARES_COLUMN",
+      "ruleId": "typeorm.entity-column.v1",
+      "status": "resolved",
+      "subjectId": "entity:4b94fa8ed70ec459d70a2195f1220f9b"
+    },
+    {
+      "evidenceIds": [
+        "evidence:c9bb7a6a15b43f2b77fd4d832461ac9b",
+        "evidence:daf6923c24ba8c7909e42c3f708fae90"
+      ],
+      "id": "assertion:d061044248dce5c9174584b2b9d74226",
+      "objectId": "request_parameter:87d93d3e2018a7cda41e641ee94eca21",
+      "predicate": "METHOD_DECLARES_REQUEST_PARAMETER",
+      "ruleId": "nest.request-parameter.v1",
+      "status": "resolved",
+      "subjectId": "method:4defd81fa4d93aef857766d2e5b14d0d"
+    },
+    {
+      "evidenceIds": [
+        "evidence:000b0efd456162d2e6a1b98c4f0d4e26",
+        "evidence:03d8a152f12cf3be98a3287a2fd17fc7",
+        "evidence:96ae24a12d7558edb3736c598eb6d79b"
+      ],
+      "id": "assertion:d51d8d887dfd3a2a55b93da3312071db",
+      "objectId": "method:f91ee1aba90ca879a19b4b9482a047c4",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:c862a4460981aebc3c8574c4c9fdd5c8"
+    },
+    {
+      "evidenceIds": [
+        "evidence:4b91d316c5b623de05b91ccf11042d39"
+      ],
+      "id": "assertion:d56b1df20ae2061176a09bd95db9b443",
+      "objectId": "class:722c9fd8768ccddbc038563a3f84c29c",
+      "predicate": "MODULE_DECLARES_CONTROLLER",
+      "ruleId": "nest.module.controller.v1",
+      "status": "resolved",
+      "subjectId": "module:c3570e25ffde91b505c3b3f95088a40f"
+    },
+    {
+      "evidenceIds": [
+        "evidence:1042cbfecfb666a289c248af34fd49ba",
+        "evidence:180d46c5d1bfd3672e3d76a742e5c574",
+        "evidence:9b0133694fa2707635cf06fdb2f3a136",
+        "evidence:f2103548f176b8efdbfa376110692af7"
+      ],
+      "id": "assertion:eb80de33b3e164d8e786ac3389035118",
+      "objectId": "method:413a64ee56cc7a5e576ee868f36bf14e",
+      "predicate": "ENDPOINT_IMPLEMENTED_BY",
+      "ruleId": "nest.route.standard.v1",
+      "status": "resolved",
+      "subjectId": "endpoint:90004f4407887b46653d1fb9bea64d90"
+    },
+    {
+      "evidenceIds": [
+        "evidence:3111feb6f8bb287b7627af423f41ce1b"
+      ],
+      "id": "assertion:ecfc94990264b2f9b9eae4cd084b2b42",
+      "objectId": "contract_field:7926bcacd21936ab0ce66f1a6697149c",
+      "predicate": "CONTRACT_TYPE_DECLARES_FIELD",
+      "ruleId": "typescript.contract-field.v1",
+      "status": "resolved",
+      "subjectId": "contract_type:2ef399a9d66b6ede71950096c5169c18"
+    },
+    {
+      "evidenceIds": [
+        "evidence:53cfd8eaa18e5114c134e5c1bb7b327d"
+      ],
+      "id": "assertion:ed39de9c0ea1ae2b9351aa74060f7ff3",
+      "objectId": "response_contract:5cb4d5682706010e887df7327387d55c",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:b5a697878faa5813385c3e4fff917ab4"
+    },
+    {
+      "evidenceIds": [
+        "evidence:c3ea90813a48aedee9ff4995f91e8491"
+      ],
+      "id": "assertion:f7ece8bef9b0f0cf952c46caabc39459",
+      "objectId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "predicate": "CLASS_INJECTS_CLASS",
+      "ruleId": "nest.di.class-constructor.v1",
+      "status": "resolved",
+      "subjectId": "class:722c9fd8768ccddbc038563a3f84c29c"
+    },
+    {
+      "evidenceIds": [
+        "evidence:12e71a346b718cce10fe69747c28d51e",
+        "evidence:5baa982849c0baa75705ec80944197cd"
+      ],
+      "id": "assertion:f91b510e1491676731843f92602cbe3f",
+      "objectId": "request_parameter:de06f7d45253bc1c474ae31d1f5a7860",
+      "predicate": "METHOD_DECLARES_REQUEST_PARAMETER",
+      "ruleId": "nest.request-parameter.v1",
+      "status": "resolved",
+      "subjectId": "method:4defd81fa4d93aef857766d2e5b14d0d"
+    },
+    {
+      "evidenceIds": [
+        "evidence:53cac2da1c51a1523f1c27f05fc55c80",
+        "evidence:80ccd7a7b528d3ca7918406ebe5b7d09"
+      ],
+      "id": "assertion:fcdc7ee5ebdb9545a0775d26da3ab0e1",
+      "objectId": "entity_column:8ab2205a538aede429a5c77b0f02c92e",
+      "predicate": "ENTITY_DECLARES_COLUMN",
+      "ruleId": "typeorm.entity-column.v1",
+      "status": "resolved",
+      "subjectId": "entity:44c3ab16d84ad322572a4e57c7e86d56"
+    },
+    {
+      "evidenceIds": [
+        "evidence:9cd91f83a76236e60bc82856f70efdf5",
+        "evidence:d14042e42359eb5ab224789ab1a62a9b"
+      ],
+      "id": "assertion:fe489c629f61fcb2e709be971154e832",
+      "objectId": "method:db516ee24626bfa42246033553eae595",
+      "predicate": "METHOD_CALLS_METHOD",
+      "ruleId": "nest.call.injected-member.v1",
+      "status": "resolved",
+      "subjectId": "method:5dca76664a279c44cd0afd3308b64590"
+    },
+    {
+      "evidenceIds": [
+        "evidence:0dde7249ca1ff137d119690f18013bf8"
+      ],
+      "id": "assertion:febed2e29462df2139410aaf7dff0e88",
+      "objectId": "response_contract:b4a631fafef8510adb563b7d4628dae4",
+      "predicate": "METHOD_DECLARES_RESPONSE",
+      "ruleId": "nest.response-contract.v1",
+      "status": "resolved",
+      "subjectId": "method:8e585eac54f75b0a48c9734a52c8cf9e"
+    }
+  ],
+  "classes": [
+    {
+      "declarationEvidenceId": "evidence:8bb54150a999c8abe6b84d317dd5a421",
+      "displayName": "NotesService",
+      "id": "class:022b596634bb0bab85f4887d02ee4d44",
+      "qualifiedName": "NotesService",
+      "roles": [
+        "provider"
+      ],
+      "sourceFileId": "source:f95e2865696fb50767a780d25a8d3b3f"
+    },
+    {
+      "declarationEvidenceId": "evidence:36793a57238a63e0a0c340afce45e2ac",
+      "displayName": "AppModule",
+      "id": "class:19bdd86b22ef12a12afba44bf215c233",
+      "qualifiedName": "AppModule",
+      "roles": [
+        "module"
+      ],
+      "sourceFileId": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7"
+    },
+    {
+      "declarationEvidenceId": "evidence:2441ac56101fe403f57a12cedb135b0e",
+      "displayName": "AppService",
+      "id": "class:26add1d2731e3898b410cae2d6d1502d",
+      "qualifiedName": "AppService",
+      "roles": [
+        "provider"
+      ],
+      "sourceFileId": "source:679ca2397b008a0ca77140b6ff4a5c98"
+    },
+    {
+      "declarationEvidenceId": "evidence:0ca0fe51b59714cac8b100b689f759c5",
+      "displayName": "Note",
+      "id": "class:2ef399a9d66b6ede71950096c5169c18",
+      "qualifiedName": "Note",
+      "roles": [
+        "entity"
+      ],
+      "sourceFileId": "source:88245abe53b336cb8e24f7d4be0d9c78"
+    },
+    {
+      "declarationEvidenceId": "evidence:d9173f42f22cedf0fca1632b9a139fb7",
+      "displayName": "AdminNotesController",
+      "id": "class:722c9fd8768ccddbc038563a3f84c29c",
+      "qualifiedName": "AdminNotesController",
+      "roles": [
+        "controller"
+      ],
+      "sourceFileId": "source:7bfbd52a73b47da81e768f190928b25a"
+    },
+    {
+      "declarationEvidenceId": "evidence:e725dc79f7f5ebfe4069f234e27233ad",
+      "displayName": "AuthGuard",
+      "id": "class:7cfe4eb12d7f80f0cfeafdda0385fda0",
+      "qualifiedName": "AuthGuard",
+      "roles": [
+        "guard",
+        "provider"
+      ],
+      "sourceFileId": "source:d0d12f2cd94b1e7d9624cf3c7f385c92"
+    },
+    {
+      "declarationEvidenceId": "evidence:9dfbc985b791ad8276c70c27b7ef5954",
+      "displayName": "LegacyNotifierService",
+      "id": "class:93457ce3e7a427cf09e43d3f1138f8ed",
+      "qualifiedName": "LegacyNotifierService",
+      "roles": [
+        "provider"
+      ],
+      "sourceFileId": "source:cbecc96f5ff9eef16fb3c13b89df00da"
+    },
+    {
+      "declarationEvidenceId": "evidence:bfd2ac3c88cff5fdbfcff5b2959b3654",
+      "displayName": "AppController",
+      "id": "class:9ec591a79d075259cbae93b4ac4272b7",
+      "qualifiedName": "AppController",
+      "roles": [
+        "controller"
+      ],
+      "sourceFileId": "source:578397d08197f9d1c55d9dd732421b2a"
+    },
+    {
+      "declarationEvidenceId": "evidence:0394cca83e56179e3a0e62ec35491107",
+      "displayName": "AuditRecord",
+      "id": "class:c2c401e70d12f3cbcaffb444e50b0998",
+      "qualifiedName": "AuditRecord",
+      "roles": [
+        "entity"
+      ],
+      "sourceFileId": "source:2092431bd6197ab9c83c659a5283676e"
+    },
+    {
+      "declarationEvidenceId": "evidence:c7867a0f3ec421032964b3c649ebb5b5",
+      "displayName": "NotesFormatterService",
+      "id": "class:ca97fcefaa8687f3a9688accbc58a503",
+      "qualifiedName": "NotesFormatterService",
+      "roles": [
+        "provider"
+      ],
+      "sourceFileId": "source:aac6657bd54eb10e63508f4850848445"
+    },
+    {
+      "declarationEvidenceId": "evidence:429a98a461a89dce11b4d3237ec241be",
+      "displayName": "AuditGuard",
+      "id": "class:d8bec0fb1065214ba47bc1855b2ff453",
+      "qualifiedName": "AuditGuard",
+      "roles": [
+        "guard",
+        "provider"
+      ],
+      "sourceFileId": "source:40e5fe62e9ed4a209bd7e2f978ff49da"
+    },
+    {
+      "declarationEvidenceId": "evidence:22745d79db1a414a78589f4dd6f6c349",
+      "displayName": "NotesModule",
+      "id": "class:ea1d555261d6265bdd8b185367f74b47",
+      "qualifiedName": "NotesModule",
+      "roles": [
+        "module"
+      ],
+      "sourceFileId": "source:7d3b0e1c613bb104d0ad77913a0849f8"
+    },
+    {
+      "declarationEvidenceId": "evidence:5aca6bb8388539e5bc11bcc242ea0c09",
+      "displayName": "NotesController",
+      "id": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "qualifiedName": "NotesController",
+      "roles": [
+        "controller"
+      ],
+      "sourceFileId": "source:2195ce1b13e9d39e8776dab51617be5c"
+    }
+  ],
+  "columnInfluences": [
+    {
+      "assertionId": "assertion:ca8fc9e01eeecdbe5464468f5ad67e30",
+      "callPath": [
+        {
+          "callEvidenceId": "evidence:7cb1720d223e871fe39451dcc0c360d2",
+          "calleeMethodId": "method:4ec76f105603e2d283a5dc2a67584d02",
+          "callerMethodId": "method:46993f03d28d159af4b142e880104212"
+        }
+      ],
+      "columnId": "entity_column:e73ea179401eddffd2ff20dd7049d193",
+      "id": "column_influence:2b27c39517b7004969c1791789dd5a62",
+      "methodId": "method:4ec76f105603e2d283a5dc2a67584d02",
+      "operationEvidenceId": "evidence:27507727ed1b5977d70f6c7662275047",
+      "originId": "request_field_origin:248c92dd3fd169f6ebef0b7eb6d8c4f4",
+      "propagationEvidenceIds": [
+        "evidence:05dd90106ae509c697d0a87b688a2f72",
+        "evidence:43687228556d1f55a3ae8efaeac69671",
+        "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c",
+        "evidence:7cb1720d223e871fe39451dcc0c360d2",
+        "evidence:81ef8d49e4bc9b86c1699a54231d7487",
+        "evidence:9cd91f83a76236e60bc82856f70efdf5",
+        "evidence:ca5a6d6e0ca20f4ff054c12cd95cafe5"
+      ],
+      "sinkEvidenceId": "evidence:5bf7bda073eb0639e3a5d5797632b8f2",
+      "sinkKind": "repository_insert",
+      "sinkPropertyName": "title",
+      "state": "direct"
+    }
+  ],
+  "contractFields": [
+    {
+      "contractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "declarationEvidenceId": "evidence:c8dd1b8ea439f2da5fc3a1e405e04554",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "id": "contract_field:125232bb588ad96905f47ea4f6e41199",
+      "inherited": false,
+      "name": "title",
+      "optional": false,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "string"
+    },
+    {
+      "contractTypeId": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02",
+      "declarationEvidenceId": "evidence:a7db281a8f42652099f36aebeef7d6ea",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02",
+      "id": "contract_field:22667e5fe2cffd7ed7ac6e912dc5e599",
+      "inherited": false,
+      "name": "content",
+      "optional": true,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "string | undefined"
+    },
+    {
+      "contractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "declarationEvidenceId": "evidence:8bba2db5dc06f88b92149faa8ee3c744",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "id": "contract_field:61e2c3d608a586794ca95f7d903cd7a9",
+      "inherited": false,
+      "name": "id",
+      "optional": false,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "number"
+    },
+    {
+      "contractTypeId": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02",
+      "declarationEvidenceId": "evidence:42b0ad5b5d414f3cc4c2fdf098ce0b39",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02",
+      "id": "contract_field:6e509a5f644982deeb1ba733018b5677",
+      "inherited": false,
+      "name": "title",
+      "optional": false,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "string"
+    },
+    {
+      "contractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "declarationEvidenceId": "evidence:3111feb6f8bb287b7627af423f41ce1b",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "id": "contract_field:7926bcacd21936ab0ce66f1a6697149c",
+      "inherited": false,
+      "name": "createdAt",
+      "optional": false,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "Date"
+    },
+    {
+      "contractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "declarationEvidenceId": "evidence:4bb3fe71c9fc3708616d50fdca6c3ff6",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "id": "contract_field:7bc9c6e52960e3f1364e97ccb2052a9d",
+      "inherited": false,
+      "name": "content",
+      "optional": false,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "string"
+    },
+    {
+      "contractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "declarationEvidenceId": "evidence:4e3df4605d276bee8ec3a04d9aaf3b7d",
+      "declaredConstraints": [],
+      "declaringContractTypeId": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "id": "contract_field:8c4d732616c08f93875f6e336b919a0b",
+      "inherited": false,
+      "name": "isArchived",
+      "optional": false,
+      "readonly": false,
+      "shapeSource": "declarations",
+      "typeText": "boolean"
+    }
+  ],
+  "contractTypes": [
+    {
+      "declarationEvidenceId": "evidence:0ca0fe51b59714cac8b100b689f759c5",
+      "declarationKind": "class",
+      "displayName": "Note",
+      "id": "contract_type:2ef399a9d66b6ede71950096c5169c18",
+      "qualifiedName": "Note",
+      "shapeSource": "declarations",
+      "sourceFileId": "source:88245abe53b336cb8e24f7d4be0d9c78"
+    },
+    {
+      "declarationEvidenceId": "evidence:88e535659e29183dccc5e7f3659a352e",
+      "declarationKind": "class",
+      "displayName": "CreateNoteDto",
+      "id": "contract_type:5f37c95244ffe5e9bb94d8409a62ba02",
+      "qualifiedName": "CreateNoteDto",
+      "shapeSource": "declarations",
+      "sourceFileId": "source:d38073561f6ea96563f0331521a7512f"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "NEST_MODULE_METADATA_UNRESOLVED",
+      "evidenceIds": [
+        "evidence:0bfd432e50ff4d165c4ddfb333ed2f90"
+      ],
+      "id": "diagnostic:7afb29ae1d93a10df3252895e3174767",
+      "message": "Module import TypeOrmModule.forFeature([Note]) is dynamic or not a proven repository @Module class.",
+      "severity": "warning",
+      "subjectId": "module:c3570e25ffde91b505c3b3f95088a40f"
+    },
+    {
+      "code": "TYPEORM_OPERATION_UNSUPPORTED",
+      "evidenceIds": [
+        "evidence:85a991e787b7cf07d2e0309f57eaa925"
+      ],
+      "id": "diagnostic:7e351cbda96e937bd219ac1d7786fecb",
+      "message": "TypeORM repository operation preload is outside the supported read/write catalogue.",
+      "severity": "warning",
+      "subjectId": "method:f6d62b52c1ee0b778267498e6cf7f4a3"
+    },
+    {
+      "code": "DI_TOKEN_UNSUPPORTED",
+      "evidenceIds": [
+        "evidence:5fced0682e17f657712542f0a43ac86a",
+        "evidence:b61043a635fe96a703c8a4a77608bdcb",
+        "evidence:f852784ac2715514497c79eff267d38e"
+      ],
+      "id": "diagnostic:b484f3d39657ab9d9c2daa3413c1e68b",
+      "message": "Injection token for LegacyNotifierService.sink is outside class-only constructor injection.",
+      "severity": "warning",
+      "subjectId": "class:93457ce3e7a427cf09e43d3f1138f8ed"
+    },
+    {
+      "code": "AUTH_GLOBAL_POLICY_UNKNOWN",
+      "evidenceIds": [],
+      "id": "diagnostic:bd97ef457587f96fafccf3c22f0ff880",
+      "message": "Static module/bootstrap analysis is incomplete; additional global guard declarations may exist.",
+      "severity": "info"
+    },
+    {
+      "code": "NEST_ROUTE_DYNAMIC",
+      "evidenceIds": [
+        "evidence:3ccd87122a043a9999ebb0e2e100ae8e",
+        "evidence:fad771e06b6fc6d848f1d86c138674f6"
+      ],
+      "id": "diagnostic:d3160343fd76ef5239533b5e4beb9c5a",
+      "message": "Unsupported computed route path on NotesController.computedStatus.",
+      "severity": "warning",
+      "subjectId": "method:4b6b757548716aa9d9881c1afdbd7db0"
+    },
+    {
+      "code": "TYPEORM_SAVE_COLUMNS_UNKNOWN",
+      "evidenceIds": [
+        "evidence:a70f69f9899e268cdd9c94cfa5117663"
+      ],
+      "id": "diagnostic:d6b6c6efa15abbc39b464caa1d04a8f1",
+      "message": "Repository.save proves a table write, but exact written columns are not proven.",
+      "severity": "info",
+      "subjectId": "method:4defd81fa4d93aef857766d2e5b14d0d"
+    },
+    {
+      "code": "NEST_MODULE_METADATA_UNRESOLVED",
+      "evidenceIds": [
+        "evidence:20db68b8ff2dc143a975e119b7bb377d"
+      ],
+      "id": "diagnostic:e9a988a1bed5cf4f4cf41adcf575e6fe",
+      "message": "Module import TypeOrmModule.forRoot({\r\n      type: 'better-sqlite3' as any,\r\n      database: 'db.sqlite',\r\n      entities: [Note, AuditRecord],\n      synchronize: true, // Only for development/testing\r\n    }) is dynamic or not a proven repository @Module class.",
+      "severity": "warning",
+      "subjectId": "module:67950428c406fbd61ad67fe87966d51f"
+    }
+  ],
+  "endpoints": [
+    {
+      "httpMethod": "GET",
+      "id": "endpoint:54f1cabccb5c8f9ec81fe28d8d4be1c7",
+      "path": "/notes"
+    },
+    {
+      "httpMethod": "POST",
+      "id": "endpoint:6d2b1d961077a56c7a39feea90e65e27",
+      "path": "/notes"
+    },
+    {
+      "httpMethod": "GET",
+      "id": "endpoint:90004f4407887b46653d1fb9bea64d90",
+      "path": "/notes/archived"
+    },
+    {
+      "httpMethod": "PUT",
+      "id": "endpoint:a203c94c0b81720d8dce299bc01acdaa",
+      "path": "/notes/legacy/:id"
+    },
+    {
+      "httpMethod": "GET",
+      "id": "endpoint:b8b9510e0215660f38812a5912651b80",
+      "path": "/"
+    },
+    {
+      "httpMethod": "GET",
+      "id": "endpoint:c862a4460981aebc3c8574c4c9fdd5c8",
+      "path": "/admin/notes/count"
+    },
+    {
+      "httpMethod": "DELETE",
+      "id": "endpoint:cff4fbd212a22dbed44825682d4c6bd5",
+      "path": "/notes/:id"
+    }
+  ],
+  "entities": [
+    {
+      "classId": "class:2ef399a9d66b6ede71950096c5169c18",
+      "displayName": "Note",
+      "id": "entity:44c3ab16d84ad322572a4e57c7e86d56"
+    },
+    {
+      "classId": "class:c2c401e70d12f3cbcaffb444e50b0998",
+      "displayName": "AuditRecord",
+      "id": "entity:4b94fa8ed70ec459d70a2195f1220f9b"
+    }
+  ],
+  "entityColumns": [
+    {
+      "columnKind": "regular",
+      "databaseName": "content",
+      "databaseNameSource": "property_name_fallback",
+      "declarationEvidenceId": "evidence:cc5026e4d4002d8d7ba3108f9553ab21",
+      "declaringClassId": "class:2ef399a9d66b6ede71950096c5169c18",
+      "decoratorEvidenceId": "evidence:deb133a65ca865fd3384708052536bbe",
+      "entityId": "entity:44c3ab16d84ad322572a4e57c7e86d56",
+      "id": "entity_column:02c38c595f1c3dfe5b685d2295da9822",
+      "inherited": false,
+      "insert": true,
+      "propertyName": "content",
+      "transformer": "absent",
+      "update": true
+    },
+    {
+      "columnKind": "regular",
+      "databaseName": "action",
+      "databaseNameSource": "property_name_fallback",
+      "declarationEvidenceId": "evidence:1e56a4f4d97c61842957767a0647920f",
+      "declaringClassId": "class:c2c401e70d12f3cbcaffb444e50b0998",
+      "decoratorEvidenceId": "evidence:4f41c6fef26e89ffe9f3e17546120e4e",
+      "entityId": "entity:4b94fa8ed70ec459d70a2195f1220f9b",
+      "id": "entity_column:358bd8beac2db182d9f2186c74209a93",
+      "inherited": false,
+      "insert": true,
+      "propertyName": "action",
+      "transformer": "absent",
+      "update": true
+    },
+    {
+      "columnKind": "primary_generated",
+      "databaseName": "id",
+      "databaseNameSource": "property_name_fallback",
+      "declarationEvidenceId": "evidence:9376ff2e7bb92e60112dba917a264294",
+      "declaringClassId": "class:c2c401e70d12f3cbcaffb444e50b0998",
+      "decoratorEvidenceId": "evidence:53ad88977744956c1a4c30b6bcb6d048",
+      "entityId": "entity:4b94fa8ed70ec459d70a2195f1220f9b",
+      "id": "entity_column:58d152a1c65090ffc802c2859e21e4e7",
+      "inherited": false,
+      "insert": true,
+      "propertyName": "id",
+      "transformer": "absent",
+      "update": true
+    },
+    {
+      "columnKind": "primary_generated",
+      "databaseName": "id",
+      "databaseNameSource": "property_name_fallback",
+      "declarationEvidenceId": "evidence:53cac2da1c51a1523f1c27f05fc55c80",
+      "declaringClassId": "class:2ef399a9d66b6ede71950096c5169c18",
+      "decoratorEvidenceId": "evidence:80ccd7a7b528d3ca7918406ebe5b7d09",
+      "entityId": "entity:44c3ab16d84ad322572a4e57c7e86d56",
+      "id": "entity_column:8ab2205a538aede429a5c77b0f02c92e",
+      "inherited": false,
+      "insert": true,
+      "propertyName": "id",
+      "transformer": "absent",
+      "update": true
+    },
+    {
+      "columnKind": "regular",
+      "databaseName": "isArchived",
+      "databaseNameSource": "property_name_fallback",
+      "declarationEvidenceId": "evidence:a85db1c08fb8fbc00817dbfadeff4197",
+      "declaringClassId": "class:2ef399a9d66b6ede71950096c5169c18",
+      "decoratorEvidenceId": "evidence:21f0e467614d21423e11fa8928e19b5c",
+      "entityId": "entity:44c3ab16d84ad322572a4e57c7e86d56",
+      "id": "entity_column:dc427dc7fc0551aadb4188e8d7f0b982",
+      "inherited": false,
+      "insert": true,
+      "propertyName": "isArchived",
+      "transformer": "absent",
+      "update": true
+    },
+    {
+      "columnKind": "regular",
+      "databaseName": "title",
+      "databaseNameSource": "property_name_fallback",
+      "declarationEvidenceId": "evidence:d66d8ff6a3e48ca1b266bb6855b49ccf",
+      "declaringClassId": "class:2ef399a9d66b6ede71950096c5169c18",
+      "decoratorEvidenceId": "evidence:25c4498c635c8d0b79ba5f9e85c42f82",
+      "entityId": "entity:44c3ab16d84ad322572a4e57c7e86d56",
+      "id": "entity_column:e73ea179401eddffd2ff20dd7049d193",
+      "inherited": false,
+      "insert": true,
+      "propertyName": "title",
+      "transformer": "absent",
+      "update": true
+    }
+  ],
+  "evidence": [
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 4,
+      "endLine": 15,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:000b0efd456162d2e6a1b98c4f0d4e26",
+      "role": "declaration",
+      "snippet": "async count() {\n    return this.notesService.count();\n  }",
+      "startColumn": 3,
+      "startLine": 13
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 39,
+      "endLine": 45,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:0012ebaa305be38ca643b95d3841c866",
+      "role": "call_site",
+      "snippet": "this.notesRepository.find()",
+      "startColumn": 12,
+      "startLine": 45
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 39,
+      "endLine": 42,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:019bcffe785a9f91b76da831cdff6f68",
+      "role": "resolution_basis",
+      "snippet": "+id",
+      "startColumn": 36,
+      "startLine": 42
+    },
+    {
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "endColumn": 2,
+      "endLine": 10,
+      "fileId": "source:2092431bd6197ab9c83c659a5283676e",
+      "id": "evidence:0394cca83e56179e3a0e62ec35491107",
+      "role": "declaration",
+      "snippet": "export class AuditRecord {\n  @PrimaryGeneratedColumn()\n  id: number;\n\n  @Column()\n  action: string;\n}",
+      "startColumn": 1,
+      "startLine": 4
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 16,
+      "endLine": 11,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:03d8a152f12cf3be98a3287a2fd17fc7",
+      "role": "decorator",
+      "snippet": "@Get('count')",
+      "startColumn": 3,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 55,
+      "endLine": 17,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:03dc44c9ebff818560ad2111de33d831",
+      "role": "declaration",
+      "snippet": "private readonly notesRepository: Repository<Note>",
+      "startColumn": 5,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 44,
+      "endLine": 35,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:0440bc0c6a899707aebe3a599faa3941",
+      "role": "call_site",
+      "snippet": "this.notesService.findArchived()",
+      "startColumn": 12,
+      "startLine": 35
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 50,
+      "endLine": 23,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:05dd90106ae509c697d0a87b688a2f72",
+      "role": "resolution_basis",
+      "snippet": "createNoteDto",
+      "startColumn": 37,
+      "startLine": 23
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 45,
+      "endLine": 14,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:0bfd432e50ff4d165c4ddfb333ed2f90",
+      "role": "resolution_basis",
+      "snippet": "TypeOrmModule.forFeature([Note])",
+      "startColumn": 13,
+      "startLine": 14
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 2,
+      "endLine": 19,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:0ca0fe51b59714cac8b100b689f759c5",
+      "role": "declaration",
+      "snippet": "export class Note {\n  @PrimaryGeneratedColumn()\n  id: number;\n\n  @Column()\n  title: string;\n\n  @Column({ nullable: true })\n  content: string;\n\n  @Column({ default: false })\n  isArchived: boolean;\n\n  @CreateDateColumn()\n  createdAt: Date;\n}",
+      "startColumn": 1,
+      "startLine": 4
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 37,
+      "endLine": 14,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:0cf4500f71a695d2128263c80f487582",
+      "role": "call_site",
+      "snippet": "this.notesService.count()",
+      "startColumn": 12,
+      "startLine": 14
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 21,
+      "endLine": 9,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:0dde7249ca1ff137d119690f18013bf8",
+      "role": "declaration",
+      "snippet": "string",
+      "startColumn": 15,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 28,
+      "endLine": 33,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:1042cbfecfb666a289c248af34fd49ba",
+      "role": "decorator",
+      "snippet": "@Get(ARCHIVED_NOTES_PATH)",
+      "startColumn": 3,
+      "startLine": 33
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 38,
+      "endLine": 10,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:12881054be3a352cb69750a122feda20",
+      "role": "call_site",
+      "snippet": "this.appService.getHello()",
+      "startColumn": 12,
+      "startLine": 10
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 39,
+      "endLine": 48,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:12e71a346b718cce10fe69747c28d51e",
+      "role": "declaration",
+      "snippet": "@Param('id') id: string",
+      "startColumn": 16,
+      "startLine": 48
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 36,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:180d46c5d1bfd3672e3d76a742e5c574",
+      "role": "declaration",
+      "snippet": "async findArchived() {\n    return this.notesService.findArchived();\n  }",
+      "startColumn": 3,
+      "startLine": 34
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 26,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:1b2f8687d807586609164d96c52253ee",
+      "role": "declaration",
+      "snippet": "async findAll(): Promise<Note[]> {\n    return this.notesRepository.find();\n  }",
+      "startColumn": 3,
+      "startLine": 24
+    },
+    {
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "endColumn": 18,
+      "endLine": 9,
+      "fileId": "source:2092431bd6197ab9c83c659a5283676e",
+      "id": "evidence:1e56a4f4d97c61842957767a0647920f",
+      "role": "declaration",
+      "snippet": "action: string;",
+      "startColumn": 3,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 21,
+      "endLine": 47,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:1f2647a084b7dbd782608ab1cb213ef2",
+      "role": "decorator",
+      "snippet": "@Put('legacy/:id')",
+      "startColumn": 3,
+      "startLine": 47
+    },
+    {
+      "contentHash": "sha256:f6da9ab6ef0d2514f174a7142fe1ecffb107fc5624b887db4110ea4280c0304e",
+      "endColumn": 7,
+      "endLine": 16,
+      "fileId": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7",
+      "id": "evidence:20db68b8ff2dc143a975e119b7bb377d",
+      "role": "resolution_basis",
+      "snippet": "TypeOrmModule.forRoot({\r\n      type: 'better-sqlite3' as any,\r\n      database: 'db.sqlite',\r\n      entities: [Note, AuditRecord],\n      synchronize: true, // Only for development/testing\r\n    })",
+      "startColumn": 5,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 30,
+      "endLine": 14,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:21f0e467614d21423e11fa8928e19b5c",
+      "role": "decorator",
+      "snippet": "@Column({ default: false })",
+      "startColumn": 3,
+      "startLine": 14
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 28,
+      "endLine": 26,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:22745d79db1a414a78589f4dd6f6c349",
+      "role": "declaration",
+      "snippet": "export class NotesModule {}",
+      "startColumn": 1,
+      "startLine": 26
+    },
+    {
+      "contentHash": "sha256:5d4242d50092a353e5ab1f06663a89dbc714c7d9d70072ea03c83c5b14750f05",
+      "endColumn": 2,
+      "endLine": 8,
+      "fileId": "source:679ca2397b008a0ca77140b6ff4a5c98",
+      "id": "evidence:2441ac56101fe403f57a12cedb135b0e",
+      "role": "declaration",
+      "snippet": "export class AppService {\r\n  getHello(): string {\r\n    return 'Hello World!';\r\n  }\r\n}",
+      "startColumn": 1,
+      "startLine": 4
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 67,
+      "endLine": 17,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:25acd70be6d42f2ab136c4a2093705c1",
+      "role": "resolution_basis",
+      "snippet": "this.notesFormatter.normalize(noteData)",
+      "startColumn": 28,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 12,
+      "endLine": 8,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:25c4498c635c8d0b79ba5f9e85c42f82",
+      "role": "decorator",
+      "snippet": "@Column()",
+      "startColumn": 3,
+      "startLine": 8
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 27,
+      "endLine": 16,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:270fc9ffbbd05f28e2846ef3e4fb69be",
+      "role": "type_reference",
+      "snippet": "Note",
+      "startColumn": 23,
+      "startLine": 16
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 7,
+      "endLine": 21,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:27507727ed1b5977d70f6c7662275047",
+      "role": "call_site",
+      "snippet": "this.notesRepository.insert({\n      title: noteData.title,\n      content: normalizedNote.content,\n    })",
+      "startColumn": 12,
+      "startLine": 18
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 28,
+      "endLine": 11,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:2a55b460a9e8f9ad4e2a55ec09f822cd",
+      "role": "decorator",
+      "snippet": "@InjectRepository(Note)",
+      "startColumn": 5,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 9,
+      "endLine": 8,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:2c45e8a8674f2efbb897b403ac4967eb",
+      "role": "decorator",
+      "snippet": "@Get()",
+      "startColumn": 3,
+      "startLine": 8
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 55,
+      "endLine": 17,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:2e99a7708eafe6a3f3aa5dfeaa1a40bc",
+      "role": "resolution_basis",
+      "snippet": "@InjectRepository(Note)\n    private readonly notesRepository: Repository<Note>",
+      "startColumn": 5,
+      "startLine": 16
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 19,
+      "endLine": 18,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:3111feb6f8bb287b7627af423f41ce1b",
+      "role": "declaration",
+      "snippet": "@CreateDateColumn()\n  createdAt: Date;",
+      "startColumn": 3,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 34,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:316de29e45c0674b74d46cc1ed600775",
+      "role": "declaration",
+      "snippet": "async count(): Promise<number> {\n    return this.notesRepository.count();\n  }",
+      "startColumn": 3,
+      "startLine": 32
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 48,
+      "endLine": 15,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:336f0a678c1bc311fc25a63afc32b881",
+      "role": "type_reference",
+      "snippet": "NotesService",
+      "startColumn": 36,
+      "startLine": 15
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 60,
+      "endLine": 60,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:34e217a93421056913d7c2fd3b6888fb",
+      "role": "call_site",
+      "snippet": "this.notesRepository.findOne({ where: { id: n_id } })",
+      "startColumn": 7,
+      "startLine": 60
+    },
+    {
+      "contentHash": "sha256:f6da9ab6ef0d2514f174a7142fe1ecffb107fc5624b887db4110ea4280c0304e",
+      "endColumn": 27,
+      "endLine": 22,
+      "fileId": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7",
+      "id": "evidence:36793a57238a63e0a0c340afce45e2ac",
+      "role": "declaration",
+      "snippet": "export class AppModule { }",
+      "startColumn": 1,
+      "startLine": 22
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 62,
+      "endLine": 10,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:3ccd87122a043a9999ebb0e2e100ae8e",
+      "role": "resolution_basis",
+      "snippet": "COMPUTED_STATUS_PATH = ['computed', 'status'].join('/')",
+      "startColumn": 7,
+      "startLine": 10
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 30,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:3da383717ba95367c320a71250906ba8",
+      "role": "declaration",
+      "snippet": "async findArchived(): Promise<Note[]> {\n    return this.notesRepository.findBy({ isArchived: true });\n  }",
+      "startColumn": 3,
+      "startLine": 28
+    },
+    {
+      "contentHash": "sha256:f6da9ab6ef0d2514f174a7142fe1ecffb107fc5624b887db4110ea4280c0304e",
+      "endColumn": 16,
+      "endLine": 17,
+      "fileId": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7",
+      "id": "evidence:3e25d0a8482bb4dd9a6326cc7ced6eea",
+      "role": "resolution_basis",
+      "snippet": "NotesModule",
+      "startColumn": 5,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 107,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:3fb8cb25953c41994ce099e12830a304",
+      "role": "declaration",
+      "snippet": "computedStatus() {\n    return { status: 'ok' };\n  }",
+      "startColumn": 3,
+      "startLine": 105
+    },
+    {
+      "contentHash": "sha256:930345e05693f4a9f1d8c69441b21313cec66ca6aa5f47e0db52c0122cd0c61d",
+      "endColumn": 2,
+      "endLine": 8,
+      "fileId": "source:40e5fe62e9ed4a209bd7e2f978ff49da",
+      "id": "evidence:429a98a461a89dce11b4d3237ec241be",
+      "role": "declaration",
+      "snippet": "export class AuditGuard implements CanActivate {\n  canActivate(_context: ExecutionContext): boolean {\n    return true;\n  }\n}",
+      "startColumn": 1,
+      "startLine": 4
+    },
+    {
+      "contentHash": "sha256:ae1f444a68a6a60523074540aaa64b05ab30953edeeb0106eeeefbafbfefc23d",
+      "endColumn": 18,
+      "endLine": 2,
+      "fileId": "source:d38073561f6ea96563f0331521a7512f",
+      "id": "evidence:42b0ad5b5d414f3cc4c2fdf098ce0b39",
+      "role": "declaration",
+      "snippet": "title!: string;",
+      "startColumn": 3,
+      "startLine": 2
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 23,
+      "endLine": 22,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:43687228556d1f55a3ae8efaeac69671",
+      "role": "decorator",
+      "snippet": "@Body()",
+      "startColumn": 16,
+      "startLine": 22
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 10,
+      "endLine": 3,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:466de9efa20b269b6e5d83735a28a80b",
+      "role": "decorator",
+      "snippet": "@Entity()",
+      "startColumn": 1,
+      "startLine": 3
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 67,
+      "endLine": 17,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:47ab547da77c27a14307e5e54db78f98",
+      "role": "resolution_basis",
+      "snippet": "normalizedNote = this.notesFormatter.normalize(noteData)",
+      "startColumn": 11,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 54,
+      "endLine": 15,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:4b91d316c5b623de05b91ccf11042d39",
+      "role": "resolution_basis",
+      "snippet": "AdminNotesController",
+      "startColumn": 34,
+      "startLine": 15
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 19,
+      "endLine": 12,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:4bb3fe71c9fc3708616d50fdca6c3ff6",
+      "role": "declaration",
+      "snippet": "@Column({ nullable: true })\n  content: string;",
+      "startColumn": 3,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 39,
+      "endLine": 29,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:4c9f22030ef5ae3063fd4ec7d8ee8980",
+      "role": "call_site",
+      "snippet": "this.notesService.findAll()",
+      "startColumn": 12,
+      "startLine": 29
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 46,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:4d4bc57337d08818f47515d1097c6035",
+      "role": "declaration",
+      "snippet": "async findAllBackup(): Promise<Note[]> {\n    return this.notesRepository.find();\n  }",
+      "startColumn": 3,
+      "startLine": 44
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 23,
+      "endLine": 15,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:4e3df4605d276bee8ec3a04d9aaf3b7d",
+      "role": "declaration",
+      "snippet": "@Column({ default: false })\n  isArchived: boolean;",
+      "startColumn": 3,
+      "startLine": 14
+    },
+    {
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "endColumn": 12,
+      "endLine": 8,
+      "fileId": "source:2092431bd6197ab9c83c659a5283676e",
+      "id": "evidence:4f41c6fef26e89ffe9f3e17546120e4e",
+      "role": "decorator",
+      "snippet": "@Column()",
+      "startColumn": 3,
+      "startLine": 8
+    },
+    {
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "endColumn": 28,
+      "endLine": 5,
+      "fileId": "source:2092431bd6197ab9c83c659a5283676e",
+      "id": "evidence:53ad88977744956c1a4c30b6bcb6d048",
+      "role": "decorator",
+      "snippet": "@PrimaryGeneratedColumn()",
+      "startColumn": 3,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 14,
+      "endLine": 6,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:53cac2da1c51a1523f1c27f05fc55c80",
+      "role": "declaration",
+      "snippet": "id: number;",
+      "startColumn": 3,
+      "startLine": 6
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 30,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:53cfd8eaa18e5114c134e5c1bb7b327d",
+      "role": "declaration",
+      "snippet": "@Get()\n  async findAll() {\n    return this.notesService.findAll();\n  }",
+      "startColumn": 3,
+      "startLine": 27
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 51,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:5409900d362c9222ce739fbbba59635c",
+      "role": "declaration",
+      "snippet": "async unsupportedPreload(noteData: Partial<Note>): Promise<Note | undefined> {\n    return this.notesRepository.preload(noteData);\n  }",
+      "startColumn": 3,
+      "startLine": 49
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 61,
+      "endLine": 29,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:54a8d281db2f22303949329207609d82",
+      "role": "call_site",
+      "snippet": "this.notesRepository.findBy({ isArchived: true })",
+      "startColumn": 12,
+      "startLine": 29
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 52,
+      "endLine": 22,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c",
+      "role": "declaration",
+      "snippet": "@Body() createNoteDto: CreateNoteDto",
+      "startColumn": 16,
+      "startLine": 22
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 2,
+      "endLine": 108,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:5aca6bb8388539e5bc11bcc242ea0c09",
+      "role": "declaration",
+      "snippet": "export class NotesController {\n  constructor(\n    private readonly notesService: NotesService,\n    @InjectRepository(Note)\n    private readonly notesRepository: Repository<Note>, // Injected for the legacy endpoint\n  ) { }\n\n  // 1. Clean W…",
+      "startColumn": 1,
+      "startLine": 13
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 28,
+      "endLine": 48,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:5baa982849c0baa75705ec80944197cd",
+      "role": "decorator",
+      "snippet": "@Param('id')",
+      "startColumn": 16,
+      "startLine": 48
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 28,
+      "endLine": 19,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:5bf7bda073eb0639e3a5d5797632b8f2",
+      "role": "resolution_basis",
+      "snippet": "title: noteData.title",
+      "startColumn": 7,
+      "startLine": 19
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 27,
+      "endLine": 11,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:5c8e4d48a4f6ec3f2f40ff4c34419e84",
+      "role": "type_reference",
+      "snippet": "Note",
+      "startColumn": 23,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 55,
+      "endLine": 12,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:5cb8edf53f7e0eb7aa1d036237121b1d",
+      "role": "resolution_basis",
+      "snippet": "@InjectRepository(Note)\n    private readonly notesRepository: Repository<Note>",
+      "startColumn": 5,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:8e19437df3ad1693653de985b0248a0736f967b1ce4f61cfe750d88be0841f28",
+      "endColumn": 38,
+      "endLine": 13,
+      "fileId": "source:cbecc96f5ff9eef16fb3c13b89df00da",
+      "id": "evidence:5fced0682e17f657712542f0a43ac86a",
+      "role": "type_reference",
+      "snippet": "LegacySink",
+      "startColumn": 28,
+      "startLine": 13
+    },
+    {
+      "contentHash": "sha256:f6da9ab6ef0d2514f174a7142fe1ecffb107fc5624b887db4110ea4280c0304e",
+      "endColumn": 25,
+      "endLine": 20,
+      "fileId": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7",
+      "id": "evidence:60527fa574d1069357152a7bc59a4a4e",
+      "role": "resolution_basis",
+      "snippet": "AppService",
+      "startColumn": 15,
+      "startLine": 20
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 26,
+      "endLine": 18,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:606c4f49b28c895d1cb84eeac2cfad28",
+      "role": "resolution_basis",
+      "snippet": "NotesFormatterService",
+      "startColumn": 5,
+      "startLine": 18
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 23,
+      "endLine": 40,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:62678bb96c374c0d864c893bb697c336",
+      "role": "resolution_basis",
+      "snippet": "AuthGuard",
+      "startColumn": 14,
+      "startLine": 40
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 39,
+      "endLine": 25,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:670f0aea025a292f6ad2b8961382b5c5",
+      "role": "call_site",
+      "snippet": "this.notesRepository.find()",
+      "startColumn": 12,
+      "startLine": 25
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 40,
+      "endLine": 33,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:6ce3a9b9f06f1a017fc3227172697dba",
+      "role": "call_site",
+      "snippet": "this.notesRepository.count()",
+      "startColumn": 12,
+      "startLine": 33
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 55,
+      "endLine": 12,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:6d5d933256f0757db6add9284d68ce57",
+      "role": "declaration",
+      "snippet": "private readonly notesRepository: Repository<Note>",
+      "startColumn": 5,
+      "startLine": 12
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 54,
+      "endLine": 6,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:6d97426fb15b4a55d0bf318cd40332ac",
+      "role": "type_reference",
+      "snippet": "AppService",
+      "startColumn": 44,
+      "startLine": 6
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 25,
+      "endLine": 12,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:737bd7d0e34efd03e7fa6913f488a38a",
+      "role": "decorator",
+      "snippet": "@UseGuards(AuditGuard)",
+      "startColumn": 3,
+      "startLine": 12
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 67,
+      "endLine": 17,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:74793b05a04ef934b8dadfb705005523",
+      "role": "call_site",
+      "snippet": "this.notesFormatter.normalize(noteData)",
+      "startColumn": 28,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 59,
+      "endLine": 13,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:757cf6cb4b555239f6a9f89fd4c6aab0",
+      "role": "type_reference",
+      "snippet": "NotesFormatterService",
+      "startColumn": 38,
+      "startLine": 13
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 51,
+      "endLine": 23,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:7cb1720d223e871fe39451dcc0c360d2",
+      "role": "call_site",
+      "snippet": "this.notesService.create(createNoteDto)",
+      "startColumn": 12,
+      "startLine": 23
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 28,
+      "endLine": 5,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:80ccd7a7b528d3ca7918406ebe5b7d09",
+      "role": "decorator",
+      "snippet": "@PrimaryGeneratedColumn()",
+      "startColumn": 3,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 28,
+      "endLine": 19,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:81ef8d49e4bc9b86c1699a54231d7487",
+      "role": "resolution_basis",
+      "snippet": "noteData.title",
+      "startColumn": 14,
+      "startLine": 19
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 30,
+      "endLine": 20,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:83a2c604fc1f42ea708f9fec489e1a34",
+      "role": "resolution_basis",
+      "snippet": "normalizedNote",
+      "startColumn": 16,
+      "startLine": 20
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 50,
+      "endLine": 50,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:85a991e787b7cf07d2e0309f57eaa925",
+      "role": "call_site",
+      "snippet": "this.notesRepository.preload(noteData)",
+      "startColumn": 12,
+      "startLine": 50
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 71,
+      "endLine": 22,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:862fc5e318df3a8def7e2899e569b25c",
+      "role": "declaration",
+      "snippet": "Promise<unknown>",
+      "startColumn": 55,
+      "startLine": 22
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 30,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:87089daddaca6258b548cfac56a4269b",
+      "role": "declaration",
+      "snippet": "async findAll() {\n    return this.notesService.findAll();\n  }",
+      "startColumn": 3,
+      "startLine": 28
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 22,
+      "endLine": 7,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:872856ebcabaddcaa3bd070c09f3212b",
+      "role": "decorator",
+      "snippet": "@UseGuards(AuthGuard)",
+      "startColumn": 1,
+      "startLine": 7
+    },
+    {
+      "contentHash": "sha256:ae1f444a68a6a60523074540aaa64b05ab30953edeeb0106eeeefbafbfefc23d",
+      "endColumn": 2,
+      "endLine": 4,
+      "fileId": "source:d38073561f6ea96563f0331521a7512f",
+      "id": "evidence:88e535659e29183dccc5e7f3659a352e",
+      "role": "declaration",
+      "snippet": "export class CreateNoteDto {\n  title!: string;\n  content?: string;\n}",
+      "startColumn": 1,
+      "startLine": 1
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 57,
+      "endLine": 37,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:8aef2d8e3a9d7504a3c946e25b9cdf20",
+      "role": "call_site",
+      "snippet": "this.notesRepository.delete(id)",
+      "startColumn": 26,
+      "startLine": 37
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 41,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:8af11648a1ed540bca62cd00b3ae1269",
+      "role": "declaration",
+      "snippet": "async remove(id: number): Promise<void> {\n    const result = await this.notesRepository.delete(id);\n    if (result.affected === 0) {\n      throw new NotFoundException(`Note with ID ${id} not found`);\n    }\n  }",
+      "startColumn": 3,
+      "startLine": 36
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 2,
+      "endLine": 52,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:8bb54150a999c8abe6b84d317dd5a421",
+      "role": "declaration",
+      "snippet": "export class NotesService {\n  constructor(\n    @InjectRepository(Note)\n    private readonly notesRepository: Repository<Note>,\n    private readonly notesFormatter: NotesFormatterService,\n  ) {}\n\n  async create(noteData: CreateNoteDto): Pro…",
+      "startColumn": 1,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 14,
+      "endLine": 6,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:8bba2db5dc06f88b92149faa8ee3c744",
+      "role": "declaration",
+      "snippet": "@PrimaryGeneratedColumn()\n  id: number;",
+      "startColumn": 3,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:f6da9ab6ef0d2514f174a7142fe1ecffb107fc5624b887db4110ea4280c0304e",
+      "endColumn": 30,
+      "endLine": 19,
+      "fileId": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7",
+      "id": "evidence:8e8eb9abdf8a43b2df320d1fcd50a4ff",
+      "role": "resolution_basis",
+      "snippet": "AppController",
+      "startColumn": 17,
+      "startLine": 19
+    },
+    {
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "endColumn": 21,
+      "endLine": 3,
+      "fileId": "source:2092431bd6197ab9c83c659a5283676e",
+      "id": "evidence:91e250349ad9ef361ceee2b47186b714",
+      "role": "decorator",
+      "snippet": "@Entity('audit_log')",
+      "startColumn": 1,
+      "startLine": 3
+    },
+    {
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "endColumn": 14,
+      "endLine": 6,
+      "fileId": "source:2092431bd6197ab9c83c659a5283676e",
+      "id": "evidence:9376ff2e7bb92e60112dba917a264294",
+      "role": "declaration",
+      "snippet": "id: number;",
+      "startColumn": 3,
+      "startLine": 6
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 39,
+      "endLine": 41,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:966dc946372519f9b4807a1ef693dfd7",
+      "role": "declaration",
+      "snippet": "@Param('id') id: string",
+      "startColumn": 16,
+      "startLine": 41
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 27,
+      "endLine": 6,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:96ae24a12d7558edb3736c598eb6d79b",
+      "role": "decorator",
+      "snippet": "@Controller('admin/notes')",
+      "startColumn": 1,
+      "startLine": 6
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 21,
+      "endLine": 12,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:9b0133694fa2707635cf06fdb2f3a136",
+      "role": "decorator",
+      "snippet": "@Controller('notes')",
+      "startColumn": 1,
+      "startLine": 12
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 48,
+      "endLine": 15,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:9cd91f83a76236e60bc82856f70efdf5",
+      "role": "resolution_basis",
+      "snippet": "private readonly notesService: NotesService",
+      "startColumn": 5,
+      "startLine": 15
+    },
+    {
+      "contentHash": "sha256:8e19437df3ad1693653de985b0248a0736f967b1ce4f61cfe750d88be0841f28",
+      "endColumn": 2,
+      "endLine": 19,
+      "fileId": "source:cbecc96f5ff9eef16fb3c13b89df00da",
+      "id": "evidence:9dfbc985b791ad8276c70c27b7ef5954",
+      "role": "declaration",
+      "snippet": "export class LegacyNotifierService {\n  constructor(\n    @Inject(LEGACY_SINK_TOKEN)\n    private readonly sink: LegacySink,\n  ) { }\n\n  notify(message: string): void {\n    this.sink.write(message);\n  }\n}",
+      "startColumn": 1,
+      "startLine": 10
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 58,
+      "endLine": 9,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:a1f927b6428201eb116649959c604a0d",
+      "role": "resolution_basis",
+      "snippet": "private readonly notesService: NotesService",
+      "startColumn": 15,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 101,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:a6ba1e540e17a471172be85a521c8d05",
+      "role": "declaration",
+      "snippet": "updateLegacy(@Param('id') id: string, @Body() body: any): Promise<any> {\n    // Legacy unstructured code - inline validation, bad naming, messy promises\n    return new Promise((resolve, reject) => {\n      if (!body) {\n        return reject…",
+      "startColumn": 3,
+      "startLine": 48
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 73,
+      "endLine": 48,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:a7062d67b2009426ad9caf6eda25243a",
+      "role": "declaration",
+      "snippet": "Promise<any>",
+      "startColumn": 61,
+      "startLine": 48
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 43,
+      "endLine": 84,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:a70f69f9899e268cdd9c94cfa5117663",
+      "role": "call_site",
+      "snippet": "this.notesRepository.save(res)",
+      "startColumn": 13,
+      "startLine": 84
+    },
+    {
+      "contentHash": "sha256:ae1f444a68a6a60523074540aaa64b05ab30953edeeb0106eeeefbafbfefc23d",
+      "endColumn": 20,
+      "endLine": 3,
+      "fileId": "source:d38073561f6ea96563f0331521a7512f",
+      "id": "evidence:a7db281a8f42652099f36aebeef7d6ea",
+      "role": "declaration",
+      "snippet": "content?: string;",
+      "startColumn": 3,
+      "startLine": 3
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 23,
+      "endLine": 15,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:a85db1c08fb8fbc00817dbfadeff4197",
+      "role": "declaration",
+      "snippet": "isArchived: boolean;",
+      "startColumn": 3,
+      "startLine": 15
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 36,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:ac2a29da4fdeef054d003ff262551be0",
+      "role": "declaration",
+      "snippet": "@Get(ARCHIVED_NOTES_PATH)\n  async findArchived() {\n    return this.notesService.findArchived();\n  }",
+      "startColumn": 3,
+      "startLine": 33
+    },
+    {
+      "contentHash": "sha256:5d4242d50092a353e5ab1f06663a89dbc714c7d9d70072ea03c83c5b14750f05",
+      "endColumn": 4,
+      "endLine": 7,
+      "fileId": "source:679ca2397b008a0ca77140b6ff4a5c98",
+      "id": "evidence:ae106bd45fdfc40bfc0cb88a9a9396c6",
+      "role": "declaration",
+      "snippet": "getHello(): string {\r\n    return 'Hello World!';\r\n  }",
+      "startColumn": 3,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 44,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:b45072e2a1a0c460bbfd60abbcfae56b",
+      "role": "declaration",
+      "snippet": "async remove(@Param('id') id: string) {\n    await this.notesService.remove(+id);\n    return { success: true, message: `Note ${id} deleted successfully` };\n  }",
+      "startColumn": 3,
+      "startLine": 41
+    },
+    {
+      "contentHash": "sha256:8e19437df3ad1693653de985b0248a0736f967b1ce4f61cfe750d88be0841f28",
+      "endColumn": 47,
+      "endLine": 3,
+      "fileId": "source:cbecc96f5ff9eef16fb3c13b89df00da",
+      "id": "evidence:b61043a635fe96a703c8a4a77608bdcb",
+      "role": "resolution_basis",
+      "snippet": "LEGACY_SINK_TOKEN = 'LEGACY_SINK'",
+      "startColumn": 14,
+      "startLine": 3
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 17,
+      "endLine": 39,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:b8015a85bb7aa819dd8bf4a282ea6b0d",
+      "role": "decorator",
+      "snippet": "@Delete(':id')",
+      "startColumn": 3,
+      "startLine": 39
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 21,
+      "endLine": 7,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:bb9f0627704ee3855f5a32d329e69f1c",
+      "role": "resolution_basis",
+      "snippet": "AuthGuard",
+      "startColumn": 12,
+      "startLine": 7
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 28,
+      "endLine": 16,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:bbffd0603c7189449aa0b3053b6c37f5",
+      "role": "decorator",
+      "snippet": "@InjectRepository(Note)",
+      "startColumn": 5,
+      "startLine": 16
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 24,
+      "endLine": 40,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:bd23a098c53a662792c26f36fe523d01",
+      "role": "decorator",
+      "snippet": "@UseGuards(AuthGuard)",
+      "startColumn": 3,
+      "startLine": 40
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 4,
+      "endLine": 22,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:be196f5a97000a7066aa1a67cd44d198",
+      "role": "declaration",
+      "snippet": "async create(noteData: CreateNoteDto): Promise<InsertResult> {\n    const normalizedNote = this.notesFormatter.normalize(noteData);\n    return this.notesRepository.insert({\n      title: noteData.title,\n      content: normalizedNote.content,…",
+      "startColumn": 3,
+      "startLine": 16
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 2,
+      "endLine": 12,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:bfd2ac3c88cff5fdbfcff5b2959b3654",
+      "role": "declaration",
+      "snippet": "export class AppController {\r\n  constructor(private readonly appService: AppService) {}\r\n\r\n  @Get()\r\n  getHello(): string {\r\n    return this.appService.getHello();\r\n  }\r\n}",
+      "startColumn": 1,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 24,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:c06ac4114c27e3946bebc66aae32e548",
+      "role": "declaration",
+      "snippet": "async create(@Body() createNoteDto: CreateNoteDto): Promise<unknown> {\n    return this.notesService.create(createNoteDto);\n  }",
+      "startColumn": 3,
+      "startLine": 22
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 39,
+      "endLine": 42,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:c1ad4ed1f9af92ecfdbe518f24a93131",
+      "role": "resolution_basis",
+      "snippet": "id",
+      "startColumn": 37,
+      "startLine": 42
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 58,
+      "endLine": 9,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:c3ea90813a48aedee9ff4995f91e8491",
+      "role": "type_reference",
+      "snippet": "NotesService",
+      "startColumn": 46,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 59,
+      "endLine": 13,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:c584f91b02b445508130e1ee894ba14b",
+      "role": "resolution_basis",
+      "snippet": "private readonly notesFormatter: NotesFormatterService",
+      "startColumn": 5,
+      "startLine": 13
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 14,
+      "endLine": 4,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:c786234555a9e227ce8f5815344f972e",
+      "role": "decorator",
+      "snippet": "@Controller()",
+      "startColumn": 1,
+      "startLine": 4
+    },
+    {
+      "contentHash": "sha256:44d8f3bee64c1792d14c750821df48ef6b63e6fec69d2ed7801432b1d6bd24d6",
+      "endColumn": 2,
+      "endLine": 12,
+      "fileId": "source:aac6657bd54eb10e63508f4850848445",
+      "id": "evidence:c7867a0f3ec421032964b3c649ebb5b5",
+      "role": "declaration",
+      "snippet": "export class NotesFormatterService {\n  normalize(noteData: Partial<Note>): Partial<Note> {\n    return {\n      ...noteData,\n      title: noteData.title?.trim(),\n    };\n  }\n}",
+      "startColumn": 1,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 17,
+      "endLine": 9,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:c8dd1b8ea439f2da5fc3a1e405e04554",
+      "role": "declaration",
+      "snippet": "@Column()\n  title: string;",
+      "startColumn": 3,
+      "startLine": 8
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 48,
+      "endLine": 48,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:c9bb7a6a15b43f2b77fd4d832461ac9b",
+      "role": "decorator",
+      "snippet": "@Body()",
+      "startColumn": 41,
+      "startLine": 48
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 22,
+      "endLine": 19,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:ca5a6d6e0ca20f4ff054c12cd95cafe5",
+      "role": "resolution_basis",
+      "snippet": "noteData",
+      "startColumn": 14,
+      "startLine": 19
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 19,
+      "endLine": 12,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:cc5026e4d4002d8d7ba3108f9553ab21",
+      "role": "declaration",
+      "snippet": "content: string;",
+      "startColumn": 3,
+      "startLine": 12
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 4,
+      "endLine": 11,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:cd3202b13d27b8a00ef91b116a16095d",
+      "role": "declaration",
+      "snippet": "getHello(): string {\r\n    return this.appService.getHello();\r\n  }",
+      "startColumn": 3,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 40,
+      "endLine": 42,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:d14042e42359eb5ab224789ab1a62a9b",
+      "role": "call_site",
+      "snippet": "this.notesService.remove(+id)",
+      "startColumn": 11,
+      "startLine": 42
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 17,
+      "endLine": 9,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:d66d8ff6a3e48ca1b266bb6855b49ccf",
+      "role": "declaration",
+      "snippet": "title: string;",
+      "startColumn": 3,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 2,
+      "endLine": 16,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:d9173f42f22cedf0fca1632b9a139fb7",
+      "role": "declaration",
+      "snippet": "export class AdminNotesController {\n  constructor(private readonly notesService: NotesService) {}\n\n  @Get('count')\n  @UseGuards(AuditGuard)\n  async count() {\n    return this.notesService.count();\n  }\n}",
+      "startColumn": 1,
+      "startLine": 8
+    },
+    {
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "endColumn": 66,
+      "endLine": 17,
+      "fileId": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "id": "evidence:daab1e419326b41e697dbab62991a7c3",
+      "role": "resolution_basis",
+      "snippet": "noteData",
+      "startColumn": 58,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 58,
+      "endLine": 48,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:daf6923c24ba8c7909e42c3f708fae90",
+      "role": "declaration",
+      "snippet": "@Body() body: any",
+      "startColumn": 41,
+      "startLine": 48
+    },
+    {
+      "contentHash": "sha256:44d8f3bee64c1792d14c750821df48ef6b63e6fec69d2ed7801432b1d6bd24d6",
+      "endColumn": 4,
+      "endLine": 11,
+      "fileId": "source:aac6657bd54eb10e63508f4850848445",
+      "id": "evidence:dd6cff136c62a655fabf1d21163b45d0",
+      "role": "declaration",
+      "snippet": "normalize(noteData: Partial<Note>): Partial<Note> {\n    return {\n      ...noteData,\n      title: noteData.title?.trim(),\n    };\n  }",
+      "startColumn": 3,
+      "startLine": 6
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 10,
+      "endLine": 21,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:de547253db010c32959e3edb54cbaf69",
+      "role": "decorator",
+      "snippet": "@Post()",
+      "startColumn": 3,
+      "startLine": 21
+    },
+    {
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "endColumn": 30,
+      "endLine": 11,
+      "fileId": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "id": "evidence:deb133a65ca865fd3384708052536bbe",
+      "role": "decorator",
+      "snippet": "@Column({ nullable: true })",
+      "startColumn": 3,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 26,
+      "endLine": 19,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:df5026b90fa30210532f6d846766789f",
+      "role": "resolution_basis",
+      "snippet": "LegacyNotifierService",
+      "startColumn": 5,
+      "startLine": 19
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 24,
+      "endLine": 12,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:e5e66cc5043b5f7d6decb2e28b3f27a8",
+      "role": "resolution_basis",
+      "snippet": "AuditGuard",
+      "startColumn": 14,
+      "startLine": 12
+    },
+    {
+      "contentHash": "sha256:d83ef05dddd1e99bb4a3a896854d3338801126b783e1f19a668739fb9fd2266c",
+      "endColumn": 2,
+      "endLine": 18,
+      "fileId": "source:d0d12f2cd94b1e7d9624cf3c7f385c92",
+      "id": "evidence:e725dc79f7f5ebfe4069f234e27233ad",
+      "role": "declaration",
+      "snippet": "export class AuthGuard implements CanActivate {\n  canActivate(\n    context: ExecutionContext,\n  ): boolean | Promise<boolean> | Observable<boolean> {\n    const request = context.switchToHttp().getRequest();\n    const apiKey = request.heade…",
+      "startColumn": 1,
+      "startLine": 5
+    },
+    {
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "endColumn": 4,
+      "endLine": 15,
+      "fileId": "source:7bfbd52a73b47da81e768f190928b25a",
+      "id": "evidence:eafbd0a748304406f7738215bcfa569d",
+      "role": "declaration",
+      "snippet": "@Get('count')\n  @UseGuards(AuditGuard)\n  async count() {\n    return this.notesService.count();\n  }",
+      "startColumn": 3,
+      "startLine": 11
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 4,
+      "endLine": 44,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:ec7edd84ffdb2cc30a36e0c3640e4559",
+      "role": "declaration",
+      "snippet": "@Delete(':id')\n  @UseGuards(AuthGuard)\n  async remove(@Param('id') id: string) {\n    await this.notesService.remove(+id);\n    return { success: true, message: `Note ${id} deleted successfully` };\n  }",
+      "startColumn": 3,
+      "startLine": 39
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 17,
+      "endLine": 17,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:ec81e7d518effba863e0462db2814feb",
+      "role": "resolution_basis",
+      "snippet": "NotesService",
+      "startColumn": 5,
+      "startLine": 17
+    },
+    {
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "endColumn": 32,
+      "endLine": 15,
+      "fileId": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "id": "evidence:ee27c6ac3a928cea28a5288f789f55fa",
+      "role": "resolution_basis",
+      "snippet": "NotesController",
+      "startColumn": 17,
+      "startLine": 15
+    },
+    {
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "endColumn": 54,
+      "endLine": 6,
+      "fileId": "source:578397d08197f9d1c55d9dd732421b2a",
+      "id": "evidence:eedc3f22b0303de03843880569f407e2",
+      "role": "resolution_basis",
+      "snippet": "private readonly appService: AppService",
+      "startColumn": 15,
+      "startLine": 6
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 39,
+      "endLine": 9,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:f2103548f176b8efdbfa376110692af7",
+      "role": "resolution_basis",
+      "snippet": "ARCHIVED_NOTES_PATH = 'archived'",
+      "startColumn": 7,
+      "startLine": 9
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 9,
+      "endLine": 27,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:f3452e4621c98bbdbf11116d0ad91a52",
+      "role": "decorator",
+      "snippet": "@Get()",
+      "startColumn": 3,
+      "startLine": 27
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 28,
+      "endLine": 41,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:f8417d70bfcef741f646cdb782a4672a",
+      "role": "decorator",
+      "snippet": "@Param('id')",
+      "startColumn": 16,
+      "startLine": 41
+    },
+    {
+      "contentHash": "sha256:8e19437df3ad1693653de985b0248a0736f967b1ce4f61cfe750d88be0841f28",
+      "endColumn": 31,
+      "endLine": 12,
+      "fileId": "source:cbecc96f5ff9eef16fb3c13b89df00da",
+      "id": "evidence:f852784ac2715514497c79eff267d38e",
+      "role": "decorator",
+      "snippet": "@Inject(LEGACY_SINK_TOKEN)",
+      "startColumn": 5,
+      "startLine": 12
+    },
+    {
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "endColumn": 29,
+      "endLine": 104,
+      "fileId": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "id": "evidence:fad771e06b6fc6d848f1d86c138674f6",
+      "role": "decorator",
+      "snippet": "@Get(COMPUTED_STATUS_PATH)",
+      "startColumn": 3,
+      "startLine": 104
+    }
+  ],
+  "globalGuardAnalysis": {
+    "completeness": "incomplete",
+    "state": "unknown"
+  },
+  "globalGuardRegistrations": [],
+  "guards": [
+    {
+      "classId": "class:d8bec0fb1065214ba47bc1855b2ff453",
+      "displayName": "AuditGuard",
+      "id": "guard:7a465675c7572053496eec5de72f47c4"
+    },
+    {
+      "classId": "class:7cfe4eb12d7f80f0cfeafdda0385fda0",
+      "displayName": "AuthGuard",
+      "id": "guard:7de354b849b24807039e84087a097dcf"
+    }
+  ],
+  "methods": [
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:3da383717ba95367c320a71250906ba8",
+      "displayName": "findArchived",
+      "id": "method:2455f0d419d96d9eba6d5178b43bea85",
+      "qualifiedName": "NotesService.findArchived",
+      "signature": "(): Promise<Note[]>"
+    },
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:4d4bc57337d08818f47515d1097c6035",
+      "displayName": "findAllBackup",
+      "id": "method:3f9876b5935d141e5b4d2fa218137676",
+      "qualifiedName": "NotesService.findAllBackup",
+      "signature": "(): Promise<Note[]>"
+    },
+    {
+      "classId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "declarationEvidenceId": "evidence:180d46c5d1bfd3672e3d76a742e5c574",
+      "displayName": "findArchived",
+      "id": "method:413a64ee56cc7a5e576ee868f36bf14e",
+      "qualifiedName": "NotesController.findArchived",
+      "signature": "(): Promise<Note[]>"
+    },
+    {
+      "classId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "declarationEvidenceId": "evidence:c06ac4114c27e3946bebc66aae32e548",
+      "displayName": "create",
+      "id": "method:46993f03d28d159af4b142e880104212",
+      "qualifiedName": "NotesController.create",
+      "signature": "(createNoteDto: CreateNoteDto): Promise<unknown>"
+    },
+    {
+      "classId": "class:ca97fcefaa8687f3a9688accbc58a503",
+      "declarationEvidenceId": "evidence:dd6cff136c62a655fabf1d21163b45d0",
+      "displayName": "normalize",
+      "id": "method:484fe67b8e1910e92a9cb50b3772bc7a",
+      "qualifiedName": "NotesFormatterService.normalize",
+      "signature": "(noteData: Partial<Note>): Partial<Note>"
+    },
+    {
+      "classId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "declarationEvidenceId": "evidence:3fb8cb25953c41994ce099e12830a304",
+      "displayName": "computedStatus",
+      "id": "method:4b6b757548716aa9d9881c1afdbd7db0",
+      "qualifiedName": "NotesController.computedStatus",
+      "signature": "(): { status: string; }"
+    },
+    {
+      "classId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "declarationEvidenceId": "evidence:a6ba1e540e17a471172be85a521c8d05",
+      "displayName": "updateLegacy",
+      "id": "method:4defd81fa4d93aef857766d2e5b14d0d",
+      "qualifiedName": "NotesController.updateLegacy",
+      "signature": "(id: string, body: any): Promise<any>"
+    },
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:be196f5a97000a7066aa1a67cd44d198",
+      "displayName": "create",
+      "id": "method:4ec76f105603e2d283a5dc2a67584d02",
+      "qualifiedName": "NotesService.create",
+      "signature": "(noteData: CreateNoteDto): Promise<InsertResult>"
+    },
+    {
+      "classId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "declarationEvidenceId": "evidence:b45072e2a1a0c460bbfd60abbcfae56b",
+      "displayName": "remove",
+      "id": "method:5dca76664a279c44cd0afd3308b64590",
+      "qualifiedName": "NotesController.remove",
+      "signature": "(id: string): Promise<{ success: boolean; message: string; }>"
+    },
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:316de29e45c0674b74d46cc1ed600775",
+      "displayName": "count",
+      "id": "method:7bd9571575a298861e84f8dfb48bb13f",
+      "qualifiedName": "NotesService.count",
+      "signature": "(): Promise<number>"
+    },
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:1b2f8687d807586609164d96c52253ee",
+      "displayName": "findAll",
+      "id": "method:84e36cc32ba85fddcb154e415b7af3b6",
+      "qualifiedName": "NotesService.findAll",
+      "signature": "(): Promise<Note[]>"
+    },
+    {
+      "classId": "class:9ec591a79d075259cbae93b4ac4272b7",
+      "declarationEvidenceId": "evidence:cd3202b13d27b8a00ef91b116a16095d",
+      "displayName": "getHello",
+      "id": "method:8e585eac54f75b0a48c9734a52c8cf9e",
+      "qualifiedName": "AppController.getHello",
+      "signature": "(): string"
+    },
+    {
+      "classId": "class:26add1d2731e3898b410cae2d6d1502d",
+      "declarationEvidenceId": "evidence:ae106bd45fdfc40bfc0cb88a9a9396c6",
+      "displayName": "getHello",
+      "id": "method:96c7733cb3a2542b9f3df0cf48128b6c",
+      "qualifiedName": "AppService.getHello",
+      "signature": "(): string"
+    },
+    {
+      "classId": "class:f8c4b360b6c9611b6a73fe2ed7979909",
+      "declarationEvidenceId": "evidence:87089daddaca6258b548cfac56a4269b",
+      "displayName": "findAll",
+      "id": "method:b5a697878faa5813385c3e4fff917ab4",
+      "qualifiedName": "NotesController.findAll",
+      "signature": "(): Promise<Note[]>"
+    },
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:8af11648a1ed540bca62cd00b3ae1269",
+      "displayName": "remove",
+      "id": "method:db516ee24626bfa42246033553eae595",
+      "qualifiedName": "NotesService.remove",
+      "signature": "(id: number): Promise<void>"
+    },
+    {
+      "classId": "class:022b596634bb0bab85f4887d02ee4d44",
+      "declarationEvidenceId": "evidence:5409900d362c9222ce739fbbba59635c",
+      "displayName": "unsupportedPreload",
+      "id": "method:f6d62b52c1ee0b778267498e6cf7f4a3",
+      "qualifiedName": "NotesService.unsupportedPreload",
+      "signature": "(noteData: Partial<Note>): Promise<Note | undefined>"
+    },
+    {
+      "classId": "class:722c9fd8768ccddbc038563a3f84c29c",
+      "declarationEvidenceId": "evidence:000b0efd456162d2e6a1b98c4f0d4e26",
+      "displayName": "count",
+      "id": "method:f91ee1aba90ca879a19b4b9482a047c4",
+      "qualifiedName": "AdminNotesController.count",
+      "signature": "(): Promise<number>"
+    }
+  ],
+  "modules": [
+    {
+      "classId": "class:19bdd86b22ef12a12afba44bf215c233",
+      "declarationEvidenceId": "evidence:36793a57238a63e0a0c340afce45e2ac",
+      "id": "module:67950428c406fbd61ad67fe87966d51f",
+      "isGlobal": false,
+      "metadataCompleteness": "incomplete"
+    },
+    {
+      "classId": "class:ea1d555261d6265bdd8b185367f74b47",
+      "declarationEvidenceId": "evidence:22745d79db1a414a78589f4dd6f6c349",
+      "id": "module:c3570e25ffde91b505c3b3f95088a40f",
+      "isGlobal": false,
+      "metadataCompleteness": "incomplete"
+    }
+  ],
+  "repositoryBindings": [
+    {
+      "declarationEvidenceId": "evidence:03dc44c9ebff818560ad2111de33d831",
+      "id": "repository_binding:7a0a2d3c4e926dc6d912a21afccd3eff",
+      "memberName": "notesRepository",
+      "ownerClassId": "class:f8c4b360b6c9611b6a73fe2ed7979909"
+    },
+    {
+      "declarationEvidenceId": "evidence:6d5d933256f0757db6add9284d68ce57",
+      "id": "repository_binding:cea9b76fd3b8e41f80469d280e3bbb4c",
+      "memberName": "notesRepository",
+      "ownerClassId": "class:022b596634bb0bab85f4887d02ee4d44"
+    }
+  ],
+  "requestFieldOrigins": [
+    {
+      "contractFieldIds": [
+        "contract_field:6e509a5f644982deeb1ba733018b5677"
+      ],
+      "id": "request_field_origin:248c92dd3fd169f6ebef0b7eb6d8c4f4",
+      "originEvidenceId": "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c",
+      "propertyPath": [
+        "title"
+      ],
+      "requestParameterId": "request_parameter:635a2677c512a21b970f60339b70663b",
+      "resolution": "resolved"
+    }
+  ],
+  "requestParameters": [
+    {
+      "declarationEvidenceId": "evidence:58f8fe230e977aa69bbbe6cb8c4a9b6c",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [
+          "contract_type:5f37c95244ffe5e9bb94d8409a62ba02"
+        ],
+        "kind": "contract",
+        "source": "declared",
+        "typeText": "CreateNoteDto"
+      },
+      "decoratorEvidenceId": "evidence:43687228556d1f55a3ae8efaeac69671",
+      "id": "request_parameter:635a2677c512a21b970f60339b70663b",
+      "methodId": "method:46993f03d28d159af4b142e880104212",
+      "optional": false,
+      "parameterIndex": 0,
+      "parameterName": "createNoteDto",
+      "selector": null,
+      "selectorState": "whole",
+      "sourceKind": "body"
+    },
+    {
+      "declarationEvidenceId": "evidence:966dc946372519f9b4807a1ef693dfd7",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "primitive",
+        "source": "declared",
+        "typeText": "string"
+      },
+      "decoratorEvidenceId": "evidence:f8417d70bfcef741f646cdb782a4672a",
+      "id": "request_parameter:83d8494a38c49f5b783936771e38845f",
+      "methodId": "method:5dca76664a279c44cd0afd3308b64590",
+      "optional": false,
+      "parameterIndex": 0,
+      "parameterName": "id",
+      "selector": "id",
+      "selectorState": "literal",
+      "sourceKind": "param"
+    },
+    {
+      "declarationEvidenceId": "evidence:daf6923c24ba8c7909e42c3f708fae90",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "any",
+        "source": "declared",
+        "typeText": "any"
+      },
+      "decoratorEvidenceId": "evidence:c9bb7a6a15b43f2b77fd4d832461ac9b",
+      "id": "request_parameter:87d93d3e2018a7cda41e641ee94eca21",
+      "methodId": "method:4defd81fa4d93aef857766d2e5b14d0d",
+      "optional": false,
+      "parameterIndex": 1,
+      "parameterName": "body",
+      "selector": null,
+      "selectorState": "whole",
+      "sourceKind": "body"
+    },
+    {
+      "declarationEvidenceId": "evidence:12e71a346b718cce10fe69747c28d51e",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "primitive",
+        "source": "declared",
+        "typeText": "string"
+      },
+      "decoratorEvidenceId": "evidence:5baa982849c0baa75705ec80944197cd",
+      "id": "request_parameter:de06f7d45253bc1c474ae31d1f5a7860",
+      "methodId": "method:4defd81fa4d93aef857766d2e5b14d0d",
+      "optional": false,
+      "parameterIndex": 0,
+      "parameterName": "id",
+      "selector": "id",
+      "selectorState": "literal",
+      "sourceKind": "param"
+    }
+  ],
+  "responseContracts": [
+    {
+      "declarationEvidenceId": "evidence:a7062d67b2009426ad9caf6eda25243a",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "any",
+        "source": "declared",
+        "typeText": "any"
+      },
+      "handling": "return_value",
+      "id": "response_contract:31c4df5816de7fd08e43f9e3638775b7",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:4defd81fa4d93aef857766d2e5b14d0d",
+      "outerTypeText": "Promise<any>",
+      "promiseUnwrapped": true
+    },
+    {
+      "declarationEvidenceId": "evidence:eafbd0a748304406f7738215bcfa569d",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "primitive",
+        "source": "checker_derived",
+        "typeText": "number"
+      },
+      "handling": "return_value",
+      "id": "response_contract:48c9e55602daff3edc90cbfc86b9f2a6",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:f91ee1aba90ca879a19b4b9482a047c4",
+      "outerTypeText": "Promise<number>",
+      "promiseUnwrapped": true
+    },
+    {
+      "declarationEvidenceId": "evidence:862fc5e318df3a8def7e2899e569b25c",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "unknown",
+        "source": "declared",
+        "typeText": "unknown"
+      },
+      "handling": "return_value",
+      "id": "response_contract:50f92d88ce822024959c15a2ff61f52d",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:46993f03d28d159af4b142e880104212",
+      "outerTypeText": "Promise<unknown>",
+      "promiseUnwrapped": true
+    },
+    {
+      "declarationEvidenceId": "evidence:53cfd8eaa18e5114c134e5c1bb7b327d",
+      "declaredType": {
+        "alternatives": [
+          "Note"
+        ],
+        "contractTypeIds": [
+          "contract_type:2ef399a9d66b6ede71950096c5169c18"
+        ],
+        "kind": "array",
+        "source": "checker_derived",
+        "typeText": "Note[]"
+      },
+      "handling": "return_value",
+      "id": "response_contract:5cb4d5682706010e887df7327387d55c",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:b5a697878faa5813385c3e4fff917ab4",
+      "outerTypeText": "Promise<Note[]>",
+      "promiseUnwrapped": true
+    },
+    {
+      "declarationEvidenceId": "evidence:0dde7249ca1ff137d119690f18013bf8",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "primitive",
+        "source": "declared",
+        "typeText": "string"
+      },
+      "handling": "return_value",
+      "id": "response_contract:b4a631fafef8510adb563b7d4628dae4",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:8e585eac54f75b0a48c9734a52c8cf9e",
+      "outerTypeText": "string",
+      "promiseUnwrapped": false
+    },
+    {
+      "declarationEvidenceId": "evidence:ac2a29da4fdeef054d003ff262551be0",
+      "declaredType": {
+        "alternatives": [
+          "Note"
+        ],
+        "contractTypeIds": [
+          "contract_type:2ef399a9d66b6ede71950096c5169c18"
+        ],
+        "kind": "array",
+        "source": "checker_derived",
+        "typeText": "Note[]"
+      },
+      "handling": "return_value",
+      "id": "response_contract:e9007443191e899ee5c897e160d7f725",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:413a64ee56cc7a5e576ee868f36bf14e",
+      "outerTypeText": "Promise<Note[]>",
+      "promiseUnwrapped": true
+    },
+    {
+      "declarationEvidenceId": "evidence:ec7edd84ffdb2cc30a36e0c3640e4559",
+      "declaredType": {
+        "alternatives": [],
+        "contractTypeIds": [],
+        "kind": "unknown",
+        "source": "checker_derived",
+        "typeText": "{ success: boolean; message: string; }"
+      },
+      "handling": "return_value",
+      "id": "response_contract:e914fc34af82f5b7ad93796fe4dddc09",
+      "manualResponseEvidenceId": null,
+      "methodId": "method:5dca76664a279c44cd0afd3308b64590",
+      "outerTypeText": "Promise<{ success: boolean; message: string; }>",
+      "promiseUnwrapped": true
+    }
+  ],
+  "resultState": "completed_with_gaps",
+  "schemaVersion": "2.0.0",
+  "sourceFiles": [
+    {
+      "byteLength": 707,
+      "contentHash": "sha256:f6da9ab6ef0d2514f174a7142fe1ecffb107fc5624b887db4110ea4280c0304e",
+      "id": "source:16f5e04ad3ac3b33d0a7fdcb4ae250d7",
+      "path": "src/app.module.ts"
+    },
+    {
+      "byteLength": 190,
+      "contentHash": "sha256:062fd9b284cd14d541202700d0c59595b6069e265b56aef7148a9f2e8a6d46ee",
+      "id": "source:2092431bd6197ab9c83c659a5283676e",
+      "path": "src/notes/entities/audit-record.entity.ts"
+    },
+    {
+      "byteLength": 3336,
+      "contentHash": "sha256:487ed527e35db28b223c8a8876bd8f26163c60eb2a435ea5184b45cfd9d70729",
+      "id": "source:2195ce1b13e9d39e8776dab51617be5c",
+      "path": "src/notes/notes.controller.ts"
+    },
+    {
+      "byteLength": 754,
+      "contentHash": "sha256:191eb3068fadbce18c31e6ffa02ed6ed0cfd133573f23ef361d9ea413539f7e1",
+      "id": "source:349823d739c03494e36b1d4f5ecb0dc6",
+      "path": "test/app.e2e-spec.ts"
+    },
+    {
+      "byteLength": 216,
+      "contentHash": "sha256:930345e05693f4a9f1d8c69441b21313cec66ca6aa5f47e0db52c0122cd0c61d",
+      "id": "source:40e5fe62e9ed4a209bd7e2f978ff49da",
+      "path": "src/auth/audit.guard.ts"
+    },
+    {
+      "byteLength": 236,
+      "contentHash": "sha256:e903b48387dd626caef216089c16a96692848a859edc4e6d9a9c9f739c604114",
+      "id": "source:5491de81b16aff613b10ce03d3375832",
+      "path": "src/main.ts"
+    },
+    {
+      "byteLength": 286,
+      "contentHash": "sha256:3469c5aa62e1ba5b183d9bb9d40193e91aa761fc5734d332650b0bd49c346266",
+      "id": "source:578397d08197f9d1c55d9dd732421b2a",
+      "path": "src/app.controller.ts"
+    },
+    {
+      "byteLength": 150,
+      "contentHash": "sha256:5d4242d50092a353e5ab1f06663a89dbc714c7d9d70072ea03c83c5b14750f05",
+      "id": "source:679ca2397b008a0ca77140b6ff4a5c98",
+      "path": "src/app.service.ts"
+    },
+    {
+      "byteLength": 459,
+      "contentHash": "sha256:2e722c8efca35664036d690335c0a3219a5974b838fd6b275fdf4e0efcd45d9b",
+      "id": "source:7bfbd52a73b47da81e768f190928b25a",
+      "path": "src/notes/admin-notes.controller.ts"
+    },
+    {
+      "byteLength": 806,
+      "contentHash": "sha256:f7b9f4a20f326754a3561ce977def550bb011e5667397bd119e065e1cfcd558d",
+      "id": "source:7d3b0e1c613bb104d0ad77913a0849f8",
+      "path": "src/notes/notes.module.ts"
+    },
+    {
+      "byteLength": 335,
+      "contentHash": "sha256:68c8f7dc40873ea57798b850affaac1150d57d0a6e2993df51706e5d07fb5699",
+      "id": "source:88245abe53b336cb8e24f7d4be0d9c78",
+      "path": "src/notes/entities/note.entity.ts"
+    },
+    {
+      "byteLength": 280,
+      "contentHash": "sha256:44d8f3bee64c1792d14c750821df48ef6b63e6fec69d2ed7801432b1d6bd24d6",
+      "id": "source:aac6657bd54eb10e63508f4850848445",
+      "path": "src/notes/notes-formatter.service.ts"
+    },
+    {
+      "byteLength": 383,
+      "contentHash": "sha256:8e19437df3ad1693653de985b0248a0736f967b1ce4f61cfe750d88be0841f28",
+      "id": "source:cbecc96f5ff9eef16fb3c13b89df00da",
+      "path": "src/notes/legacy-notifier.service.ts"
+    },
+    {
+      "byteLength": 540,
+      "contentHash": "sha256:d83ef05dddd1e99bb4a3a896854d3338801126b783e1f19a668739fb9fd2266c",
+      "id": "source:d0d12f2cd94b1e7d9624cf3c7f385c92",
+      "path": "src/auth/auth.guard.ts"
+    },
+    {
+      "byteLength": 69,
+      "contentHash": "sha256:ae1f444a68a6a60523074540aaa64b05ab30953edeeb0106eeeefbafbfefc23d",
+      "id": "source:d38073561f6ea96563f0331521a7512f",
+      "path": "src/notes/dto/create-note.dto.ts"
+    },
+    {
+      "byteLength": 639,
+      "contentHash": "sha256:43750c632fc7f5997ddd690d4c3989443ab29ebd8866ee1fec6f3885834f8054",
+      "id": "source:f314dd9739a47882e1b3ccff2ae03c08",
+      "path": "src/app.controller.spec.ts"
+    },
+    {
+      "byteLength": 1659,
+      "contentHash": "sha256:e27c5fef1b13400bcc46f7518c1c0ba88417e409027f4387e036e731bb88b3f4",
+      "id": "source:f95e2865696fb50767a780d25a8d3b3f",
+      "path": "src/notes/notes.service.ts"
+    }
+  ],
+  "tables": [
+    {
+      "id": "table:21cdc110591d6c638bf60457d751a0da",
+      "name": "note",
+      "nameSource": "default_lowercase_class_name"
+    },
+    {
+      "id": "table:c0dd2f848d040e289d708f53a22e9edc",
+      "name": "audit_log",
+      "nameSource": "explicit"
+    }
+  ]
+}

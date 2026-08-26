@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Intel offline graph spike</title>
+    <style>
+      html,
+      body,
+      #graph {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      #summary {
+        position: absolute;
+        z-index: 1;
+        margin: 0.75rem;
+        padding: 0.5rem;
+        background: white;
+        border: 1px solid #777;
+        font:
+          14px system-ui,
+          sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="summary" role="status">Select a graph item.</p>
+    <main id="graph" aria-label="Endpoint analysis graph"></main>
+    <script>
+      /*__CYTOSCAPE_LIBRARY__*/
+    </script>
+    <script>
+      const elements = [
+        { data: { id: 'endpoint:GET:/notes', label: 'GET /notes', kind: 'endpoint' } },
+        { data: { id: 'method:controller', label: 'NotesController.list', kind: 'method' } },
+        { data: { id: 'method:service', label: 'NotesService.list', kind: 'method' } },
+        { data: { id: 'table:note', label: 'note (READ)', kind: 'table' } },
+        {
+          data: {
+            id: 'edge:1',
+            source: 'endpoint:GET:/notes',
+            target: 'method:controller',
+            label: 'implemented by',
+          },
+        },
+        {
+          data: {
+            id: 'edge:2',
+            source: 'method:controller',
+            target: 'method:service',
+            label: 'calls',
+          },
+        },
+        {
+          data: {
+            id: 'edge:3',
+            source: 'method:service',
+            target: 'table:note',
+            label: 'reads',
+          },
+        },
+      ];
+
+      const graph = cytoscape({
+        container: document.getElementById('graph'),
+        elements,
+        layout: { name: 'breadthfirst', directed: true, padding: 40 },
+        style: [
+          {
+            selector: 'node',
+            style: {
+              label: 'data(label)',
+              'background-color': '#486581',
+              color: '#102a43',
+              'text-background-color': '#f0f4f8',
+              'text-background-opacity': 1,
+              'text-background-padding': 3,
+            },
+          },
+          {
+            selector: 'edge',
+            style: {
+              label: 'data(label)',
+              'line-color': '#9fb3c8',
+              'target-arrow-color': '#9fb3c8',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+            },
+          },
+        ],
+      });
+
+      graph.on('tap', 'node', (event) => {
+        document.getElementById('summary').textContent = event.target.data('label');
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Example Notes API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api": {
+      "get": {
+        "summary": "Health check"
+      }
+    },
+    "/api/notes": {
+      "post": {
+        "summary": "Create a note"
+      }
+    },
+    "/api/notes/{id}": {
+      "delete": {
+        "summary": "Delete a note"
+      }
+    },
+    "/api/not-an-endpoint": {
+      "get": {
+        "summary": "Deliberately unmatched"
+      }
+    }
+  }
+}

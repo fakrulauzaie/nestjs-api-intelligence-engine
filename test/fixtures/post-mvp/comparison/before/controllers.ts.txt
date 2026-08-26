@@ -1,0 +1,45 @@
+import { Controller, Delete, Get, Post } from '@nestjs/common';
+
+export class NotesService {
+  list(): string[] {
+    return ['before'];
+  }
+
+  findOne(id: string): string {
+    return id;
+  }
+
+  create(title: string): string {
+    return title;
+  }
+}
+
+@Controller('notes')
+export class NotesController {
+  constructor(private readonly notes: NotesService) {}
+
+  // CASE:comparison-modified-handler
+  @Get()
+  list(): string[] {
+    return this.notes.list();
+  }
+
+  // CASE:comparison-removed-endpoint
+  @Get(':id')
+  findOne(id: string): string {
+    return this.notes.findOne(id);
+  }
+
+  // CASE:comparison-unchanged-endpoint
+  @Post()
+  create(title: string): string {
+    return this.notes.create(title);
+  }
+
+  // CASE:comparison-removed-delete
+  @Delete(':id')
+  remove(id: string): string {
+    return id;
+  }
+}
+

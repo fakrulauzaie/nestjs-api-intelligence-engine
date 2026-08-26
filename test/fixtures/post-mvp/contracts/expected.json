@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "phase12-expectation-1",
+  "feature": "contracts",
+  "status": "pending",
+  "sourceFiles": ["contracts.ts.txt"],
+  "cases": [
+    {
+      "id": "contract-request-sources",
+      "classification": "positive",
+      "expectation": "The create handler declares Param tenantId, Body CreateNoteDto, Query dryRun, and Promise<NoteViewDto>.",
+      "mustNotEmit": ["Effective runtime validation"]
+    },
+    {
+      "id": "contract-body-selector",
+      "classification": "positive",
+      "expectation": "The literal Body selector records the title field as the request origin.",
+      "mustNotEmit": ["Whole body origin"]
+    },
+    {
+      "id": "contract-dto-fields",
+      "classification": "positive",
+      "expectation": "CreateNoteDto includes inherited clientRequestId plus title and summary; validator decorators are declared constraints only.",
+      "mustNotEmit": ["Request is validated", "Request is transformed"]
+    },
+    {
+      "id": "contract-entity-columns",
+      "classification": "positive",
+      "expectation": "Note.title maps to note_title with transformer presence; internalCode maps to internal_code with update false.",
+      "mustNotEmit": ["Transformer execution", "Default naming-strategy inference"]
+    },
+    {
+      "id": "contract-local-lookalike",
+      "classification": "negative",
+      "expectation": "LocalBody is not a Nest request-source decorator.",
+      "mustNotEmit": ["Body request binding"]
+    },
+    {
+      "id": "contract-ambiguous-body",
+      "classification": "ambiguous",
+      "expectation": "The body union retains ImportNoteDto and LegacyNoteDto alternatives without selecting one.",
+      "mustNotEmit": ["Single resolved DTO type"]
+    },
+    {
+      "id": "contract-mapped-type",
+      "classification": "unsupported",
+      "expectation": "Mapped-type fields may expose a checker shape, but the runtime mapping/declaration source remains explicitly derived or unknown.",
+      "mustNotEmit": ["Executed PartialType metadata"]
+    },
+    {
+      "id": "contract-manual-response",
+      "classification": "unsupported",
+      "expectation": "Manual @Res handling prevents a proven serialized response contract.",
+      "mustNotEmit": ["Serialized object response schema"]
+    },
+    {
+      "id": "contract-any-response",
+      "classification": "unsupported",
+      "expectation": "An any return type is recorded as unknown rather than expanded from its body.",
+      "mustNotEmit": ["Inferred stable response DTO"]
+    }
+  ]
+}

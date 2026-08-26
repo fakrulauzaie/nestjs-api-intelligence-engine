@@ -1,0 +1,55 @@
+# Dependencies & Package Managers
+node_modules/
+.pnpm-store/
+package-lock.json
+
+# Build & Compilation Outputs
+dist/
+*.tsbuildinfo
+
+# Test, Coverage & Cache
+coverage/
+.vitest/
+vitest.config.ts.timestamp-*
+
+# API Intel Generated Outputs & Temporary Directories
+.api-intel/
+.tmp/
+.demo/
+spikes/**/.output/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment & Local Configuration
+.env
+.env.local
+.env.*.local
+
+# IDE & Editor Metadata
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+desktop.ini
+
+# Reference Fixtures (keeps local dependencies & test databases isolated)
+example-nestjs-app/node_modules/
+example-nestjs-app/dist/
+example-nestjs-app/coverage/
+example-nestjs-app/db.sqlite

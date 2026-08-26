@@ -1,0 +1,22 @@
+{
+  "supportedMethods": {
+    "GatewayService.direct": 6,
+    "GatewayService.instance": 2,
+    "GatewayService.dynamic": 3,
+    "GatewayService.spreadConfig": 1,
+    "GatewayService.unused": 1,
+    "DownstreamService.send": 1
+  },
+  "mustNotEmit": [
+    "https://shadowed.example/path",
+    "https://lookalike.example/path",
+    "https://unresolved.example/path",
+    "https://computed.example/path"
+  ],
+  "diagnostics": [
+    "OUTBOUND_HTTP_CONFIG_UNSUPPORTED",
+    "OUTBOUND_HTTP_METHOD_DYNAMIC",
+    "OUTBOUND_HTTP_RECEIVER_UNSUPPORTED",
+    "OUTBOUND_HTTP_TARGET_DYNAMIC"
+  ]
+}

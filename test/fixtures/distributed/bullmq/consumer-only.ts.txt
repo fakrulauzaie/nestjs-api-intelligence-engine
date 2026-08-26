@@ -1,0 +1,40 @@
+import { Module } from '@nestjs/common';
+import { BullModule, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Job } from 'bullmq';
+import { Entity, PrimaryColumn, Repository } from 'typeorm';
+
+@Entity('webhook_delivery')
+class WebhookDeliveryEntity {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+@Processor('inbound-webhooks')
+class WebhookProcessor extends WorkerHost {
+  constructor(
+    @InjectRepository(WebhookDeliveryEntity)
+    private readonly deliveries: Repository<WebhookDeliveryEntity>,
+  ) {
+    super();
+  }
+
+  // D0_CASE:bullmq-consumer-only-webhooks
+  async process(job: Job<unknown, unknown, string>, _token?: string): Promise<void> {
+    await this.deliveries.save({ id: String(job.name) });
+  }
+}
+
+@Module({
+  imports: [
+    BullModule.forRoot({}),
+    BullModule.registerQueue({ name: 'inbound-webhooks' }),
+  ],
+  providers: [WebhookProcessor],
+})
+class WebhookWorkerModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 BullMQ fixture must never execute: consumer-only');
+})();
+void __D0_EXECUTION_SENTINEL__;

@@ -1,0 +1,71 @@
+{
+  "artifactKind": "sanitized-semantic-excerpt-not-complete-canonical-document",
+  "source": {
+    "repository": "nestjs/nest sample/05-sql-typeorm",
+    "revision": "841df8792fbedd1fbba12c9fe999aee307a155c7"
+  },
+  "resultState": "completed_with_gaps",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/users",
+      "handler": "UsersController.findAll"
+    },
+    {
+      "method": "POST",
+      "path": "/users",
+      "handler": "UsersController.create"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/:id",
+      "handler": "UsersController.remove"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:id",
+      "handler": "UsersController.findOne"
+    }
+  ],
+  "selectedTraceFacts": [
+    {
+      "subject": "UsersController.findOne",
+      "predicate": "METHOD_CALLS_METHOD",
+      "object": "UsersService.findOne",
+      "status": "resolved",
+      "evidence": ["src/users/users.controller.ts:16:15", "src/users/users.controller.ts:30:12"]
+    },
+    {
+      "subject": "UsersService.findOne",
+      "predicate": "METHOD_READS_TABLE",
+      "object": "user",
+      "status": "resolved",
+      "evidence": [
+        "src/users/user.entity.ts:3:1",
+        "src/users/user.entity.ts:4:1",
+        "src/users/users.service.ts:10:5",
+        "src/users/users.service.ts:27:12"
+      ]
+    },
+    {
+      "subject": "UsersController.create",
+      "predicate": "METHOD_CALLS_METHOD",
+      "object": "UsersService.create",
+      "status": "resolved",
+      "evidence": ["src/users/users.controller.ts:16:15", "src/users/users.controller.ts:20:12"]
+    },
+    {
+      "subject": "UsersService.create",
+      "predicate": "METHOD_WRITES_TABLE",
+      "object": "user",
+      "status": "resolved",
+      "evidence": [
+        "src/users/user.entity.ts:3:1",
+        "src/users/user.entity.ts:4:1",
+        "src/users/users.service.ts:10:5",
+        "src/users/users.service.ts:19:12"
+      ]
+    }
+  ],
+  "diagnostics": ["AUTH_GLOBAL_POLICY_UNKNOWN", "TYPEORM_SAVE_COLUMNS_UNKNOWN"]
+}

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "phase-0-ground-truth-v1",
+  "name": "guarded write trace",
+  "endpoint": { "method": "DELETE", "path": "/notes/:id", "handler": "NotesController.remove" },
+  "guards": [
+    {
+      "name": "AuthGuard",
+      "scope": "method",
+      "status": "resolved",
+      "evidence": { "role": "decorator", "file": "src/notes/notes.controller.ts", "startLine": 40, "endLine": 40 }
+    }
+  ],
+  "steps": [
+    {
+      "from": "endpoint:DELETE /notes/:id",
+      "relation": "ENDPOINT_IMPLEMENTED_BY",
+      "to": "NotesController.remove",
+      "status": "resolved",
+      "evidence": [
+        { "role": "decorator", "file": "src/notes/notes.controller.ts", "startLine": 39, "endLine": 39 },
+        { "role": "declaration", "file": "src/notes/notes.controller.ts", "startLine": 41, "endLine": 44 }
+      ]
+    },
+    {
+      "from": "NotesController.remove",
+      "relation": "METHOD_CALLS_METHOD",
+      "to": "NotesService.remove",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.controller.ts", "startLine": 42, "endLine": 42 },
+        { "role": "resolution_basis", "file": "src/notes/notes.controller.ts", "startLine": 14, "endLine": 18 },
+        { "role": "declaration", "file": "src/notes/notes.service.ts", "startLine": 36, "endLine": 41 }
+      ]
+    },
+    {
+      "from": "NotesService.remove",
+      "relation": "METHOD_WRITES_TABLE",
+      "to": "note",
+      "operation": "delete",
+      "status": "resolved",
+      "evidence": [
+        { "role": "call_site", "file": "src/notes/notes.service.ts", "startLine": 37, "endLine": 37 },
+        { "role": "resolution_basis", "file": "src/notes/notes.service.ts", "startLine": 10, "endLine": 14 },
+        { "role": "decorator", "file": "src/notes/entities/note.entity.ts", "startLine": 3, "endLine": 3 }
+      ]
+    }
+  ],
+  "terminals": [{ "direction": "WRITE", "table": "note" }],
+  "limitations": ["AUTH_GLOBAL_POLICY_UNKNOWN"]
+}

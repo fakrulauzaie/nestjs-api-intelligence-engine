@@ -1,0 +1,17 @@
+{
+  "name": "api-intel-phase12-spikes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "analyzer": "node analyzer-benchmark.mjs",
+    "parser": "node parser-benchmark.mjs",
+    "offline-graph": "node build-offline-graph.mjs"
+  },
+  "dependencies": {
+    "cytoscape": "3.34.0",
+    "libpg-query": "18.1.2",
+    "node-sql-parser": "5.4.0",
+    "pgsql-parser": "18.1.1"
+  }
+}

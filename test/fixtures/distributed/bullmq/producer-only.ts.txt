@@ -1,0 +1,42 @@
+import { Controller, Injectable, Module, Post } from '@nestjs/common';
+import { BullModule, InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+
+interface AuditPayload {
+  readonly entryId: string;
+}
+
+@Injectable()
+class AuditService {
+  constructor(
+    @InjectQueue('remote-audit')
+    private readonly auditQueue: Queue<AuditPayload, void, string>,
+  ) {}
+
+  // D0_CASE:bullmq-producer-only-remote-audit
+  async log(entryId: string): Promise<void> {
+    await this.auditQueue.add('log-entry', { entryId });
+  }
+}
+
+@Controller('audit')
+class AuditController {
+  constructor(private readonly audit: AuditService) {}
+
+  @Post()
+  async create(): Promise<void> {
+    await this.audit.log('audit-1');
+  }
+}
+
+@Module({
+  imports: [BullModule.forRoot({}), BullModule.registerQueue({ name: 'remote-audit' })],
+  controllers: [AuditController],
+  providers: [AuditService],
+})
+class AuditModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 BullMQ fixture must never execute: producer-only');
+})();
+void __D0_EXECUTION_SENTINEL__;

@@ -1,0 +1,64 @@
+import { Controller, Injectable, Module, Post } from '@nestjs/common';
+import { BullModule, InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bullmq';
+import { Entity, PrimaryColumn, Repository } from 'typeorm';
+
+@Entity('report_job')
+class ReportJobEntity {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+interface GeneratePdfPayload {
+  readonly reportId: string;
+}
+
+@Injectable()
+class ReportsService {
+  constructor(
+    @InjectQueue('reports')
+    private readonly reportsQueue: Queue<GeneratePdfPayload, void, string>,
+  ) {}
+
+  // D0_CASE:bullmq-colocated-reports
+  async enqueue(reportId: string): Promise<void> {
+    await this.reportsQueue.add('generate-pdf', { reportId });
+  }
+}
+
+@Controller('reports')
+class ReportsController {
+  constructor(private readonly reports: ReportsService) {}
+
+  @Post()
+  async create(): Promise<void> {
+    await this.reports.enqueue('report-1');
+  }
+}
+
+@Processor('reports')
+class ReportsProcessor extends WorkerHost {
+  constructor(
+    @InjectRepository(ReportJobEntity)
+    private readonly reports: Repository<ReportJobEntity>,
+  ) {
+    super();
+  }
+
+  async process(job: Job<unknown, unknown, string>, _token?: string): Promise<void> {
+    await this.reports.save({ id: String(job.name) });
+  }
+}
+
+@Module({
+  imports: [BullModule.forRoot({}), BullModule.registerQueue({ name: 'reports' })],
+  controllers: [ReportsController],
+  providers: [ReportsService, ReportsProcessor],
+})
+class ReportsModule {}
+
+const __D0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('D0 BullMQ fixture must never execute: colocated');
+})();
+void __D0_EXECUTION_SENTINEL__;

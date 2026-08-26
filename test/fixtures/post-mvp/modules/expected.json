@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "phase12-expectation-1",
+  "feature": "modules",
+  "status": "pending",
+  "sourceFiles": ["modules.ts.txt", "bootstrap.ts.txt"],
+  "cases": [
+    {
+      "id": "module-static-metadata",
+      "classification": "positive",
+      "expectation": "AppModule imports AuthModule, AuditModule, and NotesModule; provides NotesService; and declares NotesController.",
+      "mustNotEmit": ["Provider edge derived from a display-name-only match"]
+    },
+    {
+      "id": "module-use-class-global-guard",
+      "classification": "positive",
+      "expectation": "AuthGuard is a proven application-global guard through the @nestjs/core APP_GUARD token and useClass.",
+      "mustNotEmit": ["Authentication guarantee"]
+    },
+    {
+      "id": "module-use-existing-global-guard",
+      "classification": "positive",
+      "expectation": "AuditGuard is a proven application-global guard through useExisting and its provider declaration.",
+      "mustNotEmit": ["Module-local-only guard scope"]
+    },
+    {
+      "id": "module-forward-ref",
+      "classification": "positive",
+      "expectation": "The direct forwardRef callback resolves AppModule without executing the callback.",
+      "mustNotEmit": ["Runtime callback evaluation"]
+    },
+    {
+      "id": "bootstrap-global-guards",
+      "classification": "positive",
+      "expectation": "The uniquely bound Nest application registers AuthGuard then AuditGuard globally.",
+      "mustNotEmit": ["Reversed registration order"]
+    },
+    {
+      "id": "module-lookalike-token",
+      "classification": "negative",
+      "expectation": "A local string containing APP_GUARD does not register a global guard.",
+      "mustNotEmit": ["Application-global AuditGuard"]
+    },
+    {
+      "id": "module-ambiguous-guard-class",
+      "classification": "ambiguous",
+      "expectation": "A conditional useClass target preserves both candidates or an explicit ambiguous registration.",
+      "mustNotEmit": ["Arbitrary AuthGuard selection", "Arbitrary AuditGuard selection"]
+    },
+    {
+      "id": "module-dynamic-metadata",
+      "classification": "unsupported",
+      "expectation": "Function-produced providers and APP_GUARD useFactory make global completeness unknown.",
+      "mustNotEmit": ["Resolved factory guard"]
+    },
+    {
+      "id": "module-dynamic-import",
+      "classification": "unsupported",
+      "expectation": "DynamicModule.forRoot is inventoried as an unsupported import without execution.",
+      "mustNotEmit": ["Resolved DynamicProviderModule import edge"]
+    },
+    {
+      "id": "bootstrap-escaped-app",
+      "classification": "unsupported",
+      "expectation": "An application instance escaping to an unknown callback prevents proof of complete bootstrap guard registration.",
+      "mustNotEmit": ["none_proven global guard state"]
+    }
+  ]
+}

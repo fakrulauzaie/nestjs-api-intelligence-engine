@@ -1,0 +1,119 @@
+import { Body, Controller, Param, Post, Put } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Column, Entity, Repository } from 'typeorm';
+
+export class CreateNoteDto {
+  title!: string;
+  summary?: string;
+}
+
+export class LegacyNoteDto {
+  title!: string;
+  legacyCode!: number;
+}
+
+@Entity('note')
+export class Note {
+  @Column({ name: 'note_title' })
+  title!: string;
+
+  @Column()
+  slug!: string;
+
+  @Column()
+  reviewed!: boolean;
+}
+
+function externalMap(value: string): string {
+  return value;
+}
+
+export class NotesService {
+  constructor(
+    @InjectRepository(Note)
+    private readonly notes: Repository<Note>,
+  ) {}
+
+  // CASE:provenance-inter-method
+  create(dto: CreateNoteDto): Promise<unknown> {
+    return this.notes.insert({ title: dto.title });
+  }
+}
+
+@Controller('notes')
+export class ProvenanceController {
+  constructor(
+    @InjectRepository(Note)
+    private readonly notes: Repository<Note>,
+    private readonly service: NotesService,
+  ) {}
+
+  // CASE:provenance-direct
+  @Post('direct')
+  direct(@Body() dto: CreateNoteDto): Promise<unknown> {
+    return this.notes.insert({ title: dto.title });
+  }
+
+  // CASE:provenance-derived
+  @Put(':id/slug')
+  derived(@Param('id') id: string, @Body() dto: CreateNoteDto): Promise<unknown> {
+    return this.notes.update(id, { slug: dto.title.trim().toLowerCase() });
+  }
+
+  // CASE:provenance-destructured
+  @Post('destructured')
+  destructured(@Body() dto: CreateNoteDto): Promise<unknown> {
+    const { title } = dto;
+    return this.notes.insert({ title });
+  }
+
+  // CASE:provenance-criterion-not-write
+  @Put(':id/review')
+  review(@Param('id') id: string): Promise<unknown> {
+    return this.notes.update(id, { reviewed: true });
+  }
+
+  // CASE:provenance-static-field
+  @Post('static')
+  staticField(@Body() dto: CreateNoteDto): Promise<unknown> {
+    void dto;
+    return this.notes.insert({ title: 'system' });
+  }
+
+  // CASE:provenance-ambiguous-origin
+  @Post('ambiguous')
+  ambiguous(@Body() dto: CreateNoteDto | LegacyNoteDto): Promise<unknown> {
+    return this.notes.insert({ title: dto.title });
+  }
+
+  // CASE:provenance-spread
+  @Post('spread')
+  spread(@Body() dto: CreateNoteDto): Promise<unknown> {
+    return this.notes.insert({ ...dto });
+  }
+
+  // CASE:provenance-computed-key
+  @Post('computed')
+  computed(@Body() dto: CreateNoteDto, key: string): Promise<unknown> {
+    return this.notes.insert({ [key]: dto.title });
+  }
+
+  // CASE:provenance-external-mapper
+  @Post('mapped')
+  mapped(@Body() dto: CreateNoteDto): Promise<unknown> {
+    return this.notes.insert({ title: externalMap(dto.title) });
+  }
+
+  // CASE:provenance-save-unknown-columns
+  @Post('save')
+  save(@Body() dto: CreateNoteDto): Promise<Note> {
+    return this.notes.save({ title: dto.title });
+  }
+
+  // CASE:provenance-inter-method
+  @Post()
+  create(@Body() dto: CreateNoteDto): Promise<unknown> {
+    return this.service.create(dto);
+  }
+}
+
