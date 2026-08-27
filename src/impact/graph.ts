@@ -37,6 +37,10 @@ const INCOMPLETE_TRACE_CODES = new Set<DiagnosticCode>([
   'EVENT_HANDLER_REGISTRATION_UNKNOWN',
   'JOB_QUEUE_HANDLER_REGISTRATION_UNKNOWN',
   'JOB_QUEUE_FILTER_UNPROVEN',
+  'MICROSERVICE_TRANSPORT_UNKNOWN',
+  'MICROSERVICE_ACTIVATION_UNKNOWN',
+  'MICROSERVICE_HANDLER_REGISTRATION_UNKNOWN',
+  'MICROSERVICE_REQUEST_HANDLER_AMBIGUOUS',
 ]);
 
 export interface ImpactGraph {
@@ -59,10 +63,20 @@ export function buildImpactGraph(
   projection: AnalysisSemanticProjection,
 ): ImpactGraph {
   const incoming = new Map<string, AssertionRecord[]>();
+  const interactionById = new Map(
+    analysis.schemaVersion === '3.0.0'
+      ? analysis.interactions.map((interaction) => [interaction.id, interaction] as const)
+      : [],
+  );
   for (const assertion of analysis.assertions) {
+    const interaction = interactionById.get(assertion.subjectId);
     if (
       assertion.objectId === null ||
-      (assertion.status !== 'resolved' && assertion.status !== 'ambiguous')
+      (assertion.status !== 'resolved' && assertion.status !== 'ambiguous') ||
+      (assertion.predicate === 'INTERACTION_MATCHES_LOCAL_HANDLER' &&
+        assertion.status === 'ambiguous' &&
+        interaction?.kind === 'microservice_message' &&
+        interaction.target.mode === 'request_response')
     ) {
       continue;
     }

@@ -70,8 +70,8 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
       }));
 
       expect(analysis.interactionAnalysis).toMatchObject({
-        supportedKinds: ['in_process_event', 'job_queue', 'outbound_http'],
-        enabledKinds: ['in_process_event', 'job_queue', 'outbound_http'],
+        supportedKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
+        enabledKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
         state: 'incomplete',
       });
       expect(analysis.applications).toHaveLength(expected.applications);
@@ -341,7 +341,7 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
 
       const graph = buildGraphReportDocument({ analysis });
       const createdScene = graph.endpoints.find(({ path }) => path === '/events/create')?.scene;
-      expect(graph.schemaVersion).toBe('3.0.0');
+      expect(graph.schemaVersion).toBe('4.0.0');
       expect(createdScene?.nodes.some(({ label }) => label.includes('event order.created'))).toBe(
         true,
       );

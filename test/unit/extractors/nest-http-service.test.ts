@@ -75,8 +75,8 @@ describe('Nest HttpService and symbolic outbound HTTP extraction', () => {
       const forMethod = (suffix: string) => facts.filter(({ method }) => method.endsWith(suffix));
 
       expect(analysis.interactionAnalysis).toMatchObject({
-        supportedKinds: ['in_process_event', 'job_queue', 'outbound_http'],
-        enabledKinds: ['in_process_event', 'job_queue', 'outbound_http'],
+        supportedKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
+        enabledKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
         state: 'incomplete',
       });
       for (const [method, count] of Object.entries(expected.supportedMethods)) {
@@ -246,7 +246,7 @@ describe('Nest HttpService and symbolic outbound HTTP extraction', () => {
       ]);
       const graph = buildGraphReportDocument({ analysis });
       const streamGraph = graph.endpoints.find(({ path }) => path === '/http/stream');
-      expect(graph.schemaVersion).toBe('3.0.0');
+      expect(graph.schemaVersion).toBe('4.0.0');
       expect(streamGraph?.scene.nodes.find(({ kind }) => kind === 'interaction')?.label).toContain(
         '[proven activated; asynchronous]',
       );

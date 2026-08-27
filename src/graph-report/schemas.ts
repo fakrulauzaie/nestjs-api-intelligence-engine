@@ -9,6 +9,11 @@ import {
 import { DIAGNOSTIC_SEVERITIES } from '../model/diagnostics.js';
 import { EVIDENCE_ROLES } from '../model/evidence.js';
 import { HTTP_METHODS } from '../model/entities.js';
+import {
+  HANDLER_REGISTRATION_STATES,
+  INTERACTION_BOUNDARY_STATES,
+  INTERACTION_KINDS,
+} from '../model/interactions.js';
 import { IMPACT_CATEGORIES, IMPACT_GRAPH_SIDES, IMPACT_REASON_CODES } from '../impact/model.js';
 import {
   POLICY_OUTCOMES,
@@ -27,6 +32,7 @@ import {
   GRAPH_REPORT_SCHEMA_VERSION,
   GRAPH_REPORT_SCHEMA_V2_VERSION,
   GRAPH_REPORT_SCHEMA_V3_VERSION,
+  GRAPH_REPORT_SCHEMA_V4_VERSION,
   GRAPH_UNCERTAINTY_STATES,
   type GraphReportDocument,
 } from './model.js';
@@ -120,12 +126,28 @@ const distributedCausalEffectSchema = z
   })
   .strict();
 
+const sceneSchema = z
+  .object({
+    nodes: z.array(nodeSchema),
+    edges: z.array(edgeSchema),
+    evidence: z.array(evidenceSchema),
+    omitted: z
+      .object({
+        nodes: nonNegativeInteger,
+        edges: nonNegativeInteger,
+        evidence: nonNegativeInteger,
+      })
+      .strict(),
+  })
+  .strict();
+
 export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
   .object({
     schemaVersion: z.enum([
       GRAPH_REPORT_SCHEMA_VERSION,
       GRAPH_REPORT_SCHEMA_V2_VERSION,
       GRAPH_REPORT_SCHEMA_V3_VERSION,
+      GRAPH_REPORT_SCHEMA_V4_VERSION,
     ]),
     analysis: z
       .object({
@@ -169,6 +191,9 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
         omittedNodes: nonNegativeInteger,
         omittedEdges: nonNegativeInteger,
         omittedEvidence: nonNegativeInteger,
+        interactionHandlers: nonNegativeInteger.optional(),
+        handlersWithDiagnostics: nonNegativeInteger.optional(),
+        handlersWithWrites: nonNegativeInteger.optional(),
       })
       .strict(),
     endpoints: z.array(
@@ -192,23 +217,35 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
           policyOutcomes: z.array(policyOutcomeSchema),
           impact: z.enum(GRAPH_IMPACT_STATES),
           impactReasons: z.array(impactReasonSchema),
-          scene: z
-            .object({
-              nodes: z.array(nodeSchema),
-              edges: z.array(edgeSchema),
-              evidence: z.array(evidenceSchema),
-              omitted: z
-                .object({
-                  nodes: nonNegativeInteger,
-                  edges: nonNegativeInteger,
-                  evidence: nonNegativeInteger,
-                })
-                .strict(),
-            })
-            .strict(),
+          scene: sceneSchema,
         })
         .strict(),
     ),
+    interactionHandlers: z
+      .array(
+        z
+          .object({
+            handlerId: nonEmpty,
+            kind: z.enum(INTERACTION_KINDS).refine((kind) => kind !== 'outbound_http'),
+            target: nonEmpty,
+            method: nonEmpty,
+            registrationState: z.enum(HANDLER_REGISTRATION_STATES),
+            boundary: z.enum(INTERACTION_BOUNDARY_STATES),
+            causalClass: z.enum([
+              'local_interaction_synchronous',
+              'local_interaction_asynchronous',
+              'distributed_conditional',
+              'unknown',
+            ]),
+            dbReads: z.array(nonEmpty),
+            dbWrites: z.array(nonEmpty),
+            diagnostics: z.array(diagnosticSchema),
+            producerInteractionIds: z.array(nonEmpty),
+            scene: sceneSchema,
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict()
   .superRefine((document, context) => {
@@ -249,12 +286,35 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
       });
     }
     for (const [index, endpoint] of document.endpoints.entries()) {
-      const expectsLocalEffects = document.schemaVersion === GRAPH_REPORT_SCHEMA_V3_VERSION;
+      const expectsLocalEffects =
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V3_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION;
       if (expectsLocalEffects !== (endpoint.localCausalEffects !== undefined)) {
         context.addIssue({
           code: 'custom',
           path: ['endpoints', index, 'localCausalEffects'],
-          message: 'Graph v3 requires local causal effects; graph v1/v2 must omit them.',
+          message: 'Graph v3/v4 require local causal effects; graph v1/v2 must omit them.',
+        });
+      }
+    }
+    const expectsHandlerScenes = document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION;
+    if (expectsHandlerScenes !== (document.interactionHandlers !== undefined)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['interactionHandlers'],
+        message: 'Graph v4 requires handler scenes; graph v1-v3 must omit them.',
+      });
+    }
+    for (const field of [
+      'interactionHandlers',
+      'handlersWithDiagnostics',
+      'handlersWithWrites',
+    ] as const) {
+      if (expectsHandlerScenes !== (document.summary[field] !== undefined)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['summary', field],
+          message: 'Graph v4 requires handler summary fields; graph v1-v3 must omit them.',
         });
       }
     }

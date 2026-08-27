@@ -55,14 +55,19 @@ Automated tests inject launcher fakes and never open a real browser.
 The graph command never scans source, starts NestJS, imports target modules, connects
 to a database, or reads repository state outside its explicit inputs. Its independently
 versioned `GraphReportDocument` schema is `1.0.0` for analysis v1/v2 reports and
-`3.0.0` for current analysis v3 reports. Historical Phase 31-33 graph schema `2.0.0`,
-used when canonical interaction nodes are present, remains readable but is no longer
-emitted. The HTML is a rendering of the validated document, not a second fact graph.
+`4.0.0` for current analysis v3 reports. Historical graph schemas `2.0.0` and `3.0.0`
+remain readable but are no longer emitted. Graph v4 adds one bounded handler-rooted
+scene per canonical interaction handler; it does not change analysis schema v3. The
+HTML is a rendering of the validated document, not a second fact graph.
 
-## Endpoint-centered exploration
+## Endpoint and handler exploration
 
-The report initially opens one endpoint-centered scene. It does not render the entire
-repository graph. The sidebar supports:
+The report initially opens one endpoint-centered scene. A view selector exposes
+handler-rooted scenes for every canonical in-process event, BullMQ, and Nest
+microservice handler, including consumer-only repositories with no HTTP endpoint. It
+does not render the entire repository graph. Selecting a handler node opens that
+handler scene; selecting a producer interaction in a handler scene returns to a
+related endpoint when one is present. The sidebar supports:
 
 - search by HTTP method, normalized path, or handler;
 - exact HTTP-method filtering;
@@ -78,7 +83,7 @@ its retained evidence. Evidence uses a selectable repository-relative
 redacted exactly as they were in canonical analysis.
 
 The endpoint → handler → called method → table, outbound-HTTP, or local-event path is
-built from the existing endpoint trace. Graph v3 separates the initiating method,
+built from the existing endpoint trace. Graph v4 separates the initiating method,
 interaction record, process boundary, external HTTP target, local handler declaration,
 and implementing handler method. HTTP producer labels show activation/timing while the
 external-target node shows the sanitized target and resolution; dynamic targets remain
@@ -93,7 +98,7 @@ Event labels include identity and dispatch timing; wildcard handler labels inclu
 their delimiter and registration state. Only proven
 registered handlers are traversed to causal table nodes. A candidate edge is never
 rendered as delivery (the renderer never uses `delivered`), and endpoint
-`dbReads`/`dbWrites` summaries remain synchronous. Graph v3's facts panel labels that
+`dbReads`/`dbWrites` summaries remain synchronous. Graph v4's facts panel labels that
 section explicitly and lists local causal effects separately.
 
 BullMQ scenes reuse the canonical interaction topology but render a distinct queue
@@ -101,6 +106,19 @@ target and `broker or worker boundary`. A same-queue `WorkerHost` edge remains
 `matches local handler`, never delivery. Proven worker table terminals are listed in
 the facts panel as distributed conditional effects and do not enter synchronous
 `dbReads`/`dbWrites`.
+
+Nest microservice scenes render the communication mode, canonical pattern, client
+token, transport, broker/worker boundary, and local pattern-handler candidates.
+Candidate edges remain `matches local handler`; no edge is labeled delivered.
+Downstream handler terminals remain distributed conditional, and dynamic pattern or
+transport state remains visibly unknown.
+
+Handler scenes are projected from the canonical handler-rooted trace, retain the
+handler record as their root, and use the same node/edge/evidence limits as endpoint
+scenes. Their facts distinguish local versus broker/worker boundaries, list only
+canonical producer candidates, and preserve distributed table terminals as
+`distributed_conditional`. An inbound-only handler is therefore visible without an
+invented endpoint or remote producer.
 
 ## Uncertainty and impact
 
@@ -115,13 +133,13 @@ impact does not turn every edge in an affected endpoint scene into a changed edg
 
 ## Display limits
 
-Defaults are 120 nodes and 180 edges per endpoint. `--max-nodes` accepts 10-500 and
+Defaults are 120 nodes and 180 edges per scene. `--max-nodes` accepts 10-500 and
 `--max-edges` accepts 10-1000. The evidence limit is the selected node limit plus the
 selected edge limit plus 100, ensuring room for at least one retained evidence record
 per displayed evidence-backed graph item under the configured bounds.
 
 Edges are selected deterministically in assertion, effective-guard, then provenance
-order. The endpoint root is always retained. The report publishes omitted node, edge,
+order. The endpoint or handler root is always retained. The report publishes omitted node, edge,
 and evidence counts both in its strict view model and in the UI. An omitted item is not
 presented as absent from analysis.
 
@@ -147,11 +165,11 @@ source-derived values with `textContent`; it does not concatenate them into HTML
 
 ## Accessibility and keyboard use
 
-Filters and endpoint choices are native controls with visible focus. Arrow Up/Down,
-Home, and End move through endpoint buttons. The Cytoscape canvas is supplementary and
+Filters and graph-view choices are native controls with visible focus. Arrow Up/Down,
+Home, and End move through view buttons. The Cytoscape canvas is supplementary and
 hidden from assistive technology; every displayed node and edge is also present in an
 open semantic table with kind, label/connection, certainty, impact, and evidence count.
-Endpoint facts and the evidence inspector remain ordinary selectable text.
+Graph facts and the evidence inspector remain ordinary selectable text.
 
 ## Deliberate boundaries
 

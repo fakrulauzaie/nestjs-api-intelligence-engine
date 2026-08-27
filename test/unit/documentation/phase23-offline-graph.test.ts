@@ -20,13 +20,13 @@ describe('Phase 23 offline-graph documentation', () => {
     expect(guide).toContain('self-contained HTML file');
     expect(guide).toContain("`default-src 'none'` and `connect-src 'none'`");
     expect(guide).toContain('accessible table');
-    expect(guide).toContain('Defaults are 120 nodes and 180 edges per endpoint');
+    expect(guide).toContain('Defaults are 120 nodes and 180 edges per scene');
     expect(guide).toContain('No Git-facing workflow');
     expect(workflow).toContain('ten complete commands');
     expect(workflow).toContain('api-intel graph <analysis.json>');
-    expect(architecture).toContain('validated endpoint-centered graph view');
+    expect(architecture).toContain('validated endpoint/handler graph views');
     expect(model).toContain('schema `1.0.0` remains readable for');
-    expect(model).toMatch(/current analysis\s+v3 reports emit `3\.0\.0`/u);
+    expect(model).toMatch(/current\s+analysis v3 reports emit graph schema `4\.0\.0`/u);
     expect(patterns).toContain('Derived offline graph report');
     expect(benchmark).toContain('Median generation time was 913.70 ms');
     expect(benchmark).toContain('22.01% size increase');

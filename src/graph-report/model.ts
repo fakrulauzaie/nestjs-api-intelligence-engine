@@ -8,6 +8,11 @@ import type { AssertionStatus } from '../model/assertions.js';
 import type { DiagnosticSeverity } from '../model/diagnostics.js';
 import type { EvidenceRole } from '../model/evidence.js';
 import type { HttpMethod } from '../model/entities.js';
+import type {
+  HandlerRegistrationState,
+  InteractionBoundaryState,
+  InteractionKind,
+} from '../model/interactions.js';
 import type { ImpactCategory, ImpactGraphSide, ImpactReasonCode } from '../impact/model.js';
 import type {
   PolicyOutcome,
@@ -24,10 +29,12 @@ import type {
 export const GRAPH_REPORT_SCHEMA_VERSION = '1.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V2_VERSION = '2.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V3_VERSION = '3.0.0' as const;
+export const GRAPH_REPORT_SCHEMA_V4_VERSION = '4.0.0' as const;
 export type GraphReportSchemaVersion =
   | typeof GRAPH_REPORT_SCHEMA_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V2_VERSION
-  | typeof GRAPH_REPORT_SCHEMA_V3_VERSION;
+  | typeof GRAPH_REPORT_SCHEMA_V3_VERSION
+  | typeof GRAPH_REPORT_SCHEMA_V4_VERSION;
 export const DEFAULT_GRAPH_NODE_LIMIT = 120;
 export const DEFAULT_GRAPH_EDGE_LIMIT = 180;
 export const MIN_GRAPH_DISPLAY_LIMIT = 10;
@@ -163,6 +170,25 @@ export interface GraphReportEndpoint {
   readonly scene: GraphReportScene;
 }
 
+export interface GraphReportInteractionHandler {
+  readonly handlerId: string;
+  readonly kind: Exclude<InteractionKind, 'outbound_http'>;
+  readonly target: string;
+  readonly method: string;
+  readonly registrationState: HandlerRegistrationState;
+  readonly boundary: InteractionBoundaryState;
+  readonly causalClass:
+    | 'local_interaction_synchronous'
+    | 'local_interaction_asynchronous'
+    | 'distributed_conditional'
+    | 'unknown';
+  readonly dbReads: readonly string[];
+  readonly dbWrites: readonly string[];
+  readonly diagnostics: readonly GraphReportDiagnostic[];
+  readonly producerInteractionIds: readonly string[];
+  readonly scene: GraphReportScene;
+}
+
 export interface GraphReportDocument {
   readonly schemaVersion: GraphReportSchemaVersion;
   readonly analysis: {
@@ -192,8 +218,12 @@ export interface GraphReportDocument {
     readonly omittedNodes: number;
     readonly omittedEdges: number;
     readonly omittedEvidence: number;
+    readonly interactionHandlers?: number | undefined;
+    readonly handlersWithDiagnostics?: number | undefined;
+    readonly handlersWithWrites?: number | undefined;
   };
   readonly endpoints: readonly GraphReportEndpoint[];
+  readonly interactionHandlers?: readonly GraphReportInteractionHandler[] | undefined;
 }
 
 export function graphUncertaintyFromAssertion(status: AssertionStatus): GraphUncertaintyState {

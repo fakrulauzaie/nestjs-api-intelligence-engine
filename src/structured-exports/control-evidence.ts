@@ -45,11 +45,14 @@ export function buildControlEvidenceDocument(input: {
     analysis,
     ...(policyResults === undefined ? {} : { policyResults }),
   });
-  const hasDistributedQueueRecords =
+  const hasDistributedInteractionRecords =
     analysis.schemaVersion === '3.0.0' &&
     (analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
-      analysis.interactionHandlers.some(({ kind }) => kind === 'job_queue'));
-  const schemaVersion = hasDistributedQueueRecords
+      analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
+      analysis.interactionHandlers.some(
+        ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
+      ));
+  const schemaVersion = hasDistributedInteractionRecords
     ? CONTROL_EVIDENCE_SCHEMA_V3_VERSION
     : analysis.schemaVersion === '3.0.0'
       ? CONTROL_EVIDENCE_SCHEMA_V2_VERSION

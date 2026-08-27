@@ -113,6 +113,81 @@
                   "maxItems": 2
                 }
               ]
+            },
+            "forbid-dynamic-interaction-target": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-interaction-activation": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-local-in-process-event-handler": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -245,6 +320,81 @@
                         }
                       },
                       "required": ["minimumSeverity"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "forbid-dynamic-interaction-target": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-interaction-activation": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-local-in-process-event-handler": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
                       "additionalProperties": false
                     }
                   ],
@@ -469,6 +619,81 @@
                         }
                       },
                       "required": ["minimumSeverity"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "forbid-dynamic-interaction-target": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-interaction-activation": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-local-in-process-event-handler": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
                       "additionalProperties": false
                     }
                   ],

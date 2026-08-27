@@ -13,7 +13,7 @@ flowchart TD
   P --> X5["Nest module + global-guard extractor"]
   P --> X6["Opt-in TypeORM PostgreSQL raw-SQL extractor"]
   P --> X7["Contract + bounded provenance extractors"]
-  P --> X8["HTTP, local-event, and BullMQ interaction extractors"]
+  P --> X8["HTTP, local-event, BullMQ, and Nest microservice interaction extractors"]
   X1 --> M["Typed record merge"]
   X2 --> M
   X3 --> M
@@ -70,7 +70,8 @@ registrations. Unsupported or ambiguous behavior is preserved without inventing 
 resolved edge.
 
 Interaction extractors prove package-backed HTTP clients, configured in-process
-events, and the bounded BullMQ queue/worker surface. They publish initiation and local
+events, the bounded BullMQ queue/worker surface, and bounded Nest microservice
+producers/handlers. They publish initiation and local
 candidate assertions through the same merge/validation boundary. Queue candidates
 remain open-world and distributed-conditional; no extractor contacts a network or
 broker.
@@ -126,7 +127,7 @@ flowchart LR
   PV --> CE
   CE --> CJ["validated control-evidence.json"]
   CJ --> CC["formula-safe CSV"]
-  A --> GV["validated endpoint-centered graph view"]
+  A --> GV["validated endpoint/handler graph views"]
   PV --> GV
   IV --> GV
   GV --> GH["self-contained offline HTML"]
@@ -169,7 +170,7 @@ Changed but unreachable source files are reported rather than silently discarded
 validated impact document is the sole input to impact Markdown.
 
 The policy evaluator consumes the current canonical analysis and, only for diagnostic
-comparison, an optional baseline through the semantic diff boundary. Four fixed,
+comparison, an optional baseline through the semantic diff boundary. Seven fixed,
 versioned rules produce explicit pass/fail/unknown/not-applicable results in a separate
 validated `PolicyResultsDocument`. Strict JSON configuration selects rules and
 severity; it cannot execute code, query arbitrary graph shapes, alter analysis depth
@@ -185,9 +186,10 @@ for that export; CSV is a deterministic, formula-neutralized rendering. Neither
 exporter creates canonical records, scans source, or fills gaps with inferred facts.
 
 The offline graph projection consumes validated analysis plus optional same-snapshot
-policy and impact documents. It reuses endpoint catalogue, trace, effective-guard, and
-request-provenance views; it cannot import extractor internals or create canonical
-relationships. Every endpoint receives one bounded scene with explicit omitted counts.
+policy and impact documents. It reuses endpoint catalogue, endpoint and interaction-
+handler traces, effective-guard, and request-provenance views; it cannot import
+extractor internals or create canonical relationships. Every endpoint and canonical
+interaction handler receives one bounded scene with explicit omitted counts.
 The renderer safely embeds the validated view and pinned Cytoscape browser asset in one
 HTML file, authorizes exact inline bytes with CSP hashes, blocks connections, and
 provides a semantic table fallback. The HTML performs no source scan or client-side
@@ -228,8 +230,8 @@ extractor and the same canonical validation boundary before any reporter consume
 
 ### Analysis v3 interaction boundary
 
-The current scanner supports `outbound_http`, `in_process_event`, and `job_queue`.
-`microservice_message` remains representable but unsupported. The chronology below
+The current scanner supports `outbound_http`, `in_process_event`, `job_queue`, and
+`microservice_message`. The chronology below
 explains how that current boundary evolved; statements scoped to an earlier phase are
 historical, not current capability claims.
 
@@ -292,4 +294,12 @@ same-queue `@Processor()` classes extending `WorkerHost` as local queue-wide
 candidates. Crossing that edge always yields `distributed_conditional` effects across
 a broker/worker boundary. Producer-only and consumer-only topologies are normal;
 delivery, exact job-branch effects, and remote consumers are not inferred.
-`microservice_message` remains reserved without an extractor.
+
+Phase 36 activates `microservice_message`. It inventories direct microservice and
+bounded hybrid roots, static TCP/Redis/RMQ/Kafka transports, checker-proven
+`ClientProxy.send()`/`emit()` producers, canonical scalar/plain-JSON patterns, and
+controller pattern handlers. Exact candidates require matching mode, application,
+pattern, and transport. Event candidates may fan out; duplicate request handlers are
+ambiguous and non-traversable. Every downstream handler effect remains
+`distributed_conditional`; no broker topology, delivery, acknowledgement, or remote
+consumer is inferred.

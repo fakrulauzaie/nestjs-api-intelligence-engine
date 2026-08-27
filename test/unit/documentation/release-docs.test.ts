@@ -74,6 +74,7 @@ describe('MVP release documentation', () => {
     expect(summary.interactionAnalysis?.supportedKinds).toEqual([
       'in_process_event',
       'job_queue',
+      'microservice_message',
       'outbound_http',
     ]);
   });

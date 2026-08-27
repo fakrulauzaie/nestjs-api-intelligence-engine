@@ -45,13 +45,19 @@ describe('Phase 34 integrated bounded-local interaction report', () => {
       const outbound = graph.endpoints.find(({ path }) => path === '/gateway/direct')!;
       const event = graph.endpoints.find(({ path }) => path === '/wildcards/dot-created')!;
 
-      expect(graph.schemaVersion).toBe('3.0.0');
+      expect(graph.schemaVersion).toBe('4.0.0');
       expect(outbound.scene.nodes.some(({ kind }) => kind === 'external_target')).toBe(true);
       expect(outbound.scene.nodes.some(({ kind }) => kind === 'boundary')).toBe(true);
       expect(event.scene.nodes.filter(({ kind }) => kind === 'interaction_handler')).toHaveLength(
         5,
       );
       expect(event.localCausalEffects).toHaveLength(5);
+      expect(graph.interactionHandlers).toHaveLength(9);
+      expect(
+        graph.interactionHandlers?.every(({ scene, handlerId }) =>
+          scene.nodes.some(({ id }) => id === handlerId),
+        ),
+      ).toBe(true);
       expect(event.scene.edges.some(({ label }) => label === 'dispatches')).toBe(true);
       expect(html).toContain("connect-src 'none'");
       expect(html).not.toContain('>delivered<');

@@ -86,8 +86,13 @@ describe('Phase 27 scan project configuration', () => {
           },
         },
         interactionAnalysis: {
-          supportedKinds: ['in_process_event', 'job_queue', 'outbound_http'],
-          enabledKinds: ['in_process_event', 'job_queue', 'outbound_http'],
+          supportedKinds: [
+            'in_process_event',
+            'job_queue',
+            'microservice_message',
+            'outbound_http',
+          ],
+          enabledKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
           state: 'complete',
         },
       });

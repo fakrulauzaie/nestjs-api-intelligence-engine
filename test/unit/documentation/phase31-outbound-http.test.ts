@@ -28,7 +28,7 @@ describe('Phase 31 outbound HTTP documentation', () => {
     expect(architecture).toContain('Phase 31 activates only `outbound_http`');
     expect(model).toContain('`METHOD_INITIATES_INTERACTION` assertion');
     expect(patterns).toContain('`http.outbound.axios.eager.v1`');
-    expect(graph).toContain('Historical Phase 31-33 graph schema `2.0.0`');
+    expect(graph).toContain('Historical graph schemas `2.0.0` and `3.0.0`');
     expect(fixtureContract).toContain('They are never imported or executed');
     expect(plan).toContain('|         31 | Complete (2026-08-25)');
     expect(plan).toContain('|         32 | Complete (2026-08-25)');

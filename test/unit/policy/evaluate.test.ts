@@ -5,12 +5,21 @@ import type {
   AssertionStatus,
   DiagnosticRecord,
 } from '../../../src/model/index.js';
-import { createStableId } from '../../../src/model/ids.js';
+import {
+  createStableId,
+  makeAssertionId,
+  makeInteractionHandlerId,
+  makeInteractionId,
+} from '../../../src/model/ids.js';
+import { interactionTargetKey } from '../../../src/model/interactions.js';
 import { normalizePolicyConfiguration } from '../../../src/policy/config.js';
 import { evaluatePolicies } from '../../../src/policy/evaluate.js';
 import type { PolicyRuleId } from '../../../src/policy/model.js';
 import { createComparisonAnalysisSnapshot } from '../../helpers/comparison-analysis.js';
-import { createMinimalAnalysisDocument } from '../../helpers/minimal-analysis.js';
+import {
+  createMinimalAnalysisDocument,
+  createMinimalAnalysisDocumentV3,
+} from '../../helpers/minimal-analysis.js';
 
 function configuration(ruleId: PolicyRuleId) {
   return normalizePolicyConfiguration({
@@ -253,5 +262,232 @@ describe('Phase 16 built-in policy rules', () => {
       severity: 'error',
       blocking: true,
     });
+  });
+
+  it('evaluates only canonical interaction target and activation evidence', () => {
+    const base = createMinimalAnalysisDocumentV3();
+    const sourceMethodId = base.methods[0]!.id;
+    const evidenceIds = [base.evidence[0]!.id];
+    const staticTarget = {
+      targetKind: 'http' as const,
+      method: 'GET' as const,
+      url: { resolution: 'exact' as const, value: 'https://example.test/health' },
+      queryKeys: [],
+    };
+    const dynamicTarget = {
+      targetKind: 'http' as const,
+      method: 'UNKNOWN' as const,
+      url: { resolution: 'dynamic' as const, value: null },
+      queryKeys: [],
+    };
+    const coldTarget = {
+      targetKind: 'message' as const,
+      mode: 'request_response' as const,
+      patternKind: 'scalar' as const,
+      canonicalPattern: '"lookup"',
+      clientToken: { resolution: 'exact' as const, value: 'LOOKUP_CLIENT' },
+      transport: null,
+    };
+    const interactionId = (
+      kind: 'outbound_http' | 'microservice_message',
+      target: typeof staticTarget | typeof dynamicTarget | typeof coldTarget,
+    ) =>
+      makeInteractionId({
+        kind,
+        sourceMethodId,
+        targetKey: interactionTargetKey(target),
+        applicationId: null,
+        initiationEvidenceId: evidenceIds[0]!,
+      });
+    const staticId = interactionId('outbound_http', staticTarget);
+    const dynamicId = interactionId('outbound_http', dynamicTarget);
+    const coldId = interactionId('microservice_message', coldTarget);
+    const initiation = (objectId: string, ruleId: string) => ({
+      id: makeAssertionId({
+        subjectId: sourceMethodId,
+        predicate: 'METHOD_INITIATES_INTERACTION',
+        objectId,
+        ruleId,
+      }),
+      subjectId: sourceMethodId,
+      predicate: 'METHOD_INITIATES_INTERACTION' as const,
+      objectId,
+      status: 'resolved' as const,
+      ruleId,
+      evidenceIds,
+    });
+    const analysis = {
+      ...base,
+      interactionAnalysis: {
+        ...base.interactionAnalysis,
+        supportedKinds: ['outbound_http', 'microservice_message'],
+        enabledKinds: ['outbound_http', 'microservice_message'],
+        state: 'complete',
+      },
+      interactions: [
+        {
+          id: staticId,
+          sourceMethodId,
+          applicationId: null,
+          direction: 'outbound',
+          kind: 'outbound_http',
+          activation: 'eager',
+          boundary: 'external_or_unobserved',
+          dispatchTiming: 'asynchronous',
+          target: staticTarget,
+          ruleId: 'test.policy.http.v1',
+          evidenceIds,
+        },
+        {
+          id: dynamicId,
+          sourceMethodId,
+          applicationId: null,
+          direction: 'outbound',
+          kind: 'outbound_http',
+          activation: 'unknown',
+          boundary: 'external_or_unobserved',
+          dispatchTiming: 'unknown',
+          target: dynamicTarget,
+          ruleId: 'test.policy.http.dynamic.v1',
+          evidenceIds,
+        },
+        {
+          id: coldId,
+          sourceMethodId,
+          applicationId: null,
+          direction: 'outbound',
+          kind: 'microservice_message',
+          activation: 'constructed_cold',
+          boundary: 'broker_or_worker_boundary',
+          dispatchTiming: 'asynchronous',
+          target: coldTarget,
+          ruleId: 'test.policy.message.v1',
+          evidenceIds,
+        },
+      ],
+      assertions: [
+        ...base.assertions,
+        initiation(staticId, 'test.policy.http.v1'),
+        initiation(dynamicId, 'test.policy.http.dynamic.v1'),
+        initiation(coldId, 'test.policy.message.v1'),
+      ],
+    } satisfies AnalysisDocument;
+
+    expect(outcome('forbid-dynamic-interaction-target', analysis)).toEqual([
+      'unknown',
+      'pass',
+      'fail',
+    ]);
+    expect(outcome('require-proven-interaction-activation', analysis)).toEqual([
+      'fail',
+      'pass',
+      'unknown',
+    ]);
+  });
+
+  it('requires a local handler only for closed-world in-process events', () => {
+    const base = createMinimalAnalysisDocumentV3();
+    const sourceMethodId = base.methods[0]!.id;
+    const evidenceId = base.evidence[0]!.id;
+    const target = (value: string) => ({
+      targetKind: 'event' as const,
+      identityKind: 'string' as const,
+      value,
+    });
+    const eventId = (value: string) =>
+      makeInteractionId({
+        kind: 'in_process_event',
+        sourceMethodId,
+        targetKey: interactionTargetKey(target(value)),
+        applicationId: null,
+        initiationEvidenceId: evidenceId,
+      });
+    const matchedId = eventId('order.created');
+    const missingId = eventId('order.missing');
+    const handlerId = makeInteractionHandlerId({
+      kind: 'in_process_event',
+      methodId: sourceMethodId,
+      targetKey: interactionTargetKey(target('order.created')),
+      applicationId: null,
+      handlerEvidenceId: evidenceId,
+    });
+    const event = (id: string, value: string) => ({
+      id,
+      sourceMethodId,
+      applicationId: null,
+      direction: 'outbound' as const,
+      kind: 'in_process_event' as const,
+      activation: 'eager' as const,
+      boundary: 'in_process' as const,
+      dispatchTiming: 'asynchronous' as const,
+      target: target(value),
+      ruleId: 'test.policy.event.v1',
+      evidenceIds: [evidenceId],
+    });
+    const analysis = {
+      ...base,
+      interactionAnalysis: {
+        ...base.interactionAnalysis,
+        supportedKinds: ['in_process_event'],
+        enabledKinds: ['in_process_event'],
+        state: 'complete',
+      },
+      interactions: [event(matchedId, 'order.created'), event(missingId, 'order.missing')],
+      interactionHandlers: [
+        {
+          id: handlerId,
+          methodId: sourceMethodId,
+          applicationId: null,
+          kind: 'in_process_event' as const,
+          target: target('order.created'),
+          registrationState: 'proven_registered' as const,
+          ruleId: 'test.policy.event-handler.v1',
+          handlerEvidenceId: evidenceId,
+        },
+      ],
+      assertions: [
+        ...base.assertions,
+        ...[matchedId, missingId].map((objectId) => ({
+          id: makeAssertionId({
+            subjectId: sourceMethodId,
+            predicate: 'METHOD_INITIATES_INTERACTION',
+            objectId,
+            ruleId: 'test.policy.event.v1',
+          }),
+          subjectId: sourceMethodId,
+          predicate: 'METHOD_INITIATES_INTERACTION' as const,
+          objectId,
+          status: 'resolved' as const,
+          ruleId: 'test.policy.event.v1',
+          evidenceIds: [evidenceId],
+        })),
+        {
+          id: createStableId('assertion', ['policy-event-match']),
+          subjectId: matchedId,
+          predicate: 'INTERACTION_MATCHES_LOCAL_HANDLER' as const,
+          objectId: handlerId,
+          status: 'resolved' as const,
+          ruleId: 'test.policy.event-match.v1',
+          evidenceIds: [evidenceId],
+        },
+        {
+          id: makeAssertionId({
+            subjectId: handlerId,
+            predicate: 'HANDLER_IMPLEMENTED_BY',
+            objectId: sourceMethodId,
+            ruleId: 'test.policy.event-handler.v1',
+          }),
+          subjectId: handlerId,
+          predicate: 'HANDLER_IMPLEMENTED_BY' as const,
+          objectId: sourceMethodId,
+          status: 'resolved' as const,
+          ruleId: 'test.policy.event-handler.v1',
+          evidenceIds: [evidenceId],
+        },
+      ],
+    } satisfies AnalysisDocument;
+
+    expect(outcome('require-local-in-process-event-handler', analysis)).toEqual(['pass', 'fail']);
+    expect(outcome('require-local-in-process-event-handler', base)).toEqual(['not_applicable']);
   });
 });

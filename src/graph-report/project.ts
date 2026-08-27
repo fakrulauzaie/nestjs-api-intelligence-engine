@@ -8,7 +8,7 @@ import {
   DEFAULT_GRAPH_EDGE_LIMIT,
   DEFAULT_GRAPH_NODE_LIMIT,
   GRAPH_REPORT_SCHEMA_VERSION,
-  GRAPH_REPORT_SCHEMA_V3_VERSION,
+  GRAPH_REPORT_SCHEMA_V4_VERSION,
   MAX_GRAPH_EDGE_LIMIT,
   MAX_GRAPH_NODE_LIMIT,
   MIN_GRAPH_DISPLAY_LIMIT,
@@ -18,16 +18,20 @@ import {
   type GraphReportEdge,
   type GraphReportEndpoint,
   type GraphReportEvidence,
+  type GraphReportInteractionHandler,
   type GraphReportNode,
+  type GraphReportScene,
 } from './model.js';
 import type { InteractionHandlerRecord, InteractionRecord } from '../model/interactions.js';
 import {
   inProcessEventTargetLabel,
   jobQueueTargetLabel,
+  microserviceMessageTargetLabel,
   outboundHttpTargetLabel,
 } from '../reporting/interaction-labels.js';
 import { canonicalizeGraphReportDocument } from './ordering.js';
 import { assertValidGraphReportDocument, graphImpactSide } from './validate.js';
+import { buildInteractionHandlerTrace } from '../tracing/interaction-handler-trace.js';
 
 export class GraphReportInputStateError extends Error {
   constructor(message: string) {
@@ -252,6 +256,21 @@ function canonicalNode(
       evidenceIds: interaction.evidenceIds,
     };
   }
+  if (interaction?.kind === 'microservice_message') {
+    return {
+      id,
+      label: microserviceMessageTargetLabel(interaction.target),
+      kind: 'interaction',
+      uncertainty:
+        interaction.target.patternKind === 'dynamic' ||
+        interaction.target.clientToken.resolution === 'dynamic' ||
+        interaction.target.transport === null
+          ? 'unknown'
+          : 'resolved',
+      impact,
+      evidenceIds: interaction.evidenceIds,
+    };
+  }
   const interactionHandler = indexes.interactionHandlers.get(id);
   if (interactionHandler?.kind === 'in_process_event') {
     return {
@@ -281,6 +300,23 @@ function canonicalNode(
       evidenceIds: [interactionHandler.handlerEvidenceId],
     };
   }
+  if (interactionHandler?.kind === 'microservice_message') {
+    const decorator =
+      interactionHandler.target.mode === 'event' ? '@EventPattern' : '@MessagePattern';
+    return {
+      id,
+      label: `${decorator} ${microserviceMessageTargetLabel(interactionHandler.target)} [${interactionHandler.registrationState}]`,
+      kind: 'interaction_handler',
+      uncertainty:
+        interactionHandler.target.patternKind === 'dynamic' ||
+        interactionHandler.target.transport === null ||
+        interactionHandler.registrationState === 'registration_unknown'
+          ? 'unknown'
+          : 'resolved',
+      impact,
+      evidenceIds: [interactionHandler.handlerEvidenceId],
+    };
+  }
   return {
     id,
     label: id,
@@ -289,6 +325,28 @@ function canonicalNode(
     impact,
     evidenceIds: [],
   };
+}
+
+function interactionHandlerTargetLabel(handler: InteractionHandlerRecord): string {
+  switch (handler.kind) {
+    case 'in_process_event':
+      return inProcessEventTargetLabel(handler.target);
+    case 'job_queue':
+      return jobQueueTargetLabel(handler.target);
+    case 'microservice_message':
+      return microserviceMessageTargetLabel(handler.target);
+  }
+}
+
+function handlerCausalClass(
+  handler: InteractionHandlerRecord,
+): GraphReportInteractionHandler['causalClass'] {
+  if (handler.kind === 'job_queue' || handler.kind === 'microservice_message') {
+    return 'distributed_conditional';
+  }
+  if (handler.ruleId.includes('.async.')) return 'local_interaction_asynchronous';
+  if (handler.ruleId.includes('.sync.')) return 'local_interaction_synchronous';
+  return 'unknown';
 }
 
 function interactionPresentationElements(input: {
@@ -323,17 +381,28 @@ function interactionPresentationElements(input: {
     impact,
     evidenceIds: interaction.evidenceIds,
   });
-  if (interaction.kind !== 'outbound_http' && interaction.kind !== 'job_queue') return;
+  if (
+    interaction.kind !== 'outbound_http' &&
+    interaction.kind !== 'job_queue' &&
+    interaction.kind !== 'microservice_message'
+  )
+    return;
   const targetId = `external-target:${interaction.id}`;
   const targetLabel =
     interaction.kind === 'outbound_http'
       ? `${outboundHttpTargetLabel(interaction.target)} [${interaction.target.url.resolution}]`
-      : jobQueueTargetLabel(interaction.target);
+      : interaction.kind === 'job_queue'
+        ? jobQueueTargetLabel(interaction.target)
+        : microserviceMessageTargetLabel(interaction.target);
   const targetUnknown =
     interaction.kind === 'outbound_http'
       ? interaction.target.url.resolution === 'dynamic' || interaction.target.method === 'UNKNOWN'
-      : interaction.target.queue.resolution === 'dynamic' ||
-        interaction.target.job.resolution === 'dynamic';
+      : interaction.kind === 'job_queue'
+        ? interaction.target.queue.resolution === 'dynamic' ||
+          interaction.target.job.resolution === 'dynamic'
+        : interaction.target.patternKind === 'dynamic' ||
+          interaction.target.clientToken.resolution === 'dynamic' ||
+          interaction.target.transport === null;
   addNode(nodes, {
     id: targetId,
     label: targetLabel,
@@ -459,21 +528,16 @@ function provenanceElements(input: {
 }
 
 function selectScene(input: {
-  readonly endpointId: string;
+  readonly rootId: string;
   readonly nodes: ReadonlyMap<string, GraphReportNode>;
   readonly edges: readonly GraphReportEdge[];
-  readonly diagnostics: GraphReportEndpoint['diagnostics'];
-  readonly policyOutcomes: GraphReportEndpoint['policyOutcomes'];
-  readonly localCausalEffects: NonNullable<GraphReportEndpoint['localCausalEffects']>;
-  readonly distributedConditionalEffects: NonNullable<
-    GraphReportEndpoint['distributedConditionalEffects']
-  >;
+  readonly extraEvidenceIds: readonly string[];
   readonly analysis: AnalysisDocument;
   readonly maxNodes: number;
   readonly maxEdges: number;
   readonly maxEvidence: number;
-}): GraphReportEndpoint['scene'] {
-  const selectedNodeIds = new Set([input.endpointId]);
+}): GraphReportScene {
+  const selectedNodeIds = new Set([input.rootId]);
   const selectedEdges: GraphReportEdge[] = [];
   const edgeCandidates = [...input.edges].sort((left, right) => {
     const rank: Record<GraphReportEdge['kind'], number> = {
@@ -498,10 +562,7 @@ function selectScene(input: {
   const referencedEvidence = sortedUnique([
     ...selectedNodes.flatMap(({ evidenceIds }) => evidenceIds),
     ...selectedEdges.flatMap(({ evidenceIds }) => evidenceIds),
-    ...input.diagnostics.flatMap(({ evidenceIds }) => evidenceIds),
-    ...input.policyOutcomes.flatMap(({ evidenceIds }) => evidenceIds),
-    ...input.localCausalEffects.flatMap(({ evidenceIds }) => evidenceIds),
-    ...input.distributedConditionalEffects.flatMap(({ evidenceIds }) => evidenceIds),
+    ...input.extraEvidenceIds,
   ]);
   const mandatoryEvidence = sortedUnique([
     ...selectedNodes.flatMap(({ evidenceIds }) => evidenceIds.slice(0, 1)),
@@ -703,13 +764,15 @@ export function buildGraphReportDocument(input: {
     }));
     const policyOutcomes = endpointFacts.policyOutcomes;
     const scene = selectScene({
-      endpointId: endpoint.endpointId,
+      rootId: endpoint.endpointId,
       nodes,
       edges,
-      diagnostics,
-      policyOutcomes,
-      localCausalEffects: endpointFacts.localCausalEffects,
-      distributedConditionalEffects: endpointFacts.distributedConditionalEffects,
+      extraEvidenceIds: [
+        ...diagnostics.flatMap(({ evidenceIds }) => evidenceIds),
+        ...policyOutcomes.flatMap(({ evidenceIds }) => evidenceIds),
+        ...endpointFacts.localCausalEffects.flatMap(({ evidenceIds }) => evidenceIds),
+        ...endpointFacts.distributedConditionalEffects.flatMap(({ evidenceIds }) => evidenceIds),
+      ],
       analysis,
       maxNodes,
       maxEdges,
@@ -767,6 +830,105 @@ export function buildGraphReportDocument(input: {
     });
   }
 
+  const interactionHandlers: GraphReportInteractionHandler[] = [];
+  if (analysis.schemaVersion === '3.0.0') {
+    for (const handler of analysis.interactionHandlers) {
+      const trace = buildInteractionHandlerTrace(analysis, handler.id);
+      if (trace.status !== 'resolved') {
+        throw new GraphReportInputStateError(
+          `Canonical interaction handler ${handler.id} did not produce a handler-rooted trace.`,
+        );
+      }
+      const nodes = new Map<string, GraphReportNode>();
+      addNode(nodes, canonicalNode(handler.id, indexes, 'none'));
+      const edges: GraphReportEdge[] = [];
+      for (const step of trace.trace.steps) {
+        const assertion = assertionForStep(step, indexes.assertions);
+        addNode(nodes, canonicalNode(step.fromId, indexes, 'none'));
+        const targetId = step.toId ?? `gap:${assertion.id}`;
+        if (step.toId === null) {
+          addNode(nodes, {
+            id: targetId,
+            label: `${step.status}: ${edgeLabel(assertion.predicate)}`,
+            kind: 'gap',
+            uncertainty: graphUncertaintyFromAssertion(step.status),
+            impact: 'none',
+            evidenceIds: step.evidenceIds,
+          });
+        } else {
+          addNode(nodes, canonicalNode(step.toId, indexes, 'none'));
+        }
+        edges.push({
+          id: assertion.id,
+          source: step.fromId,
+          target: targetId,
+          label: edgeLabel(assertion.predicate),
+          kind: 'assertion',
+          relation: assertion.predicate,
+          uncertainty: graphUncertaintyFromAssertion(step.status),
+          impact: 'none',
+          evidenceIds: step.evidenceIds,
+        });
+        if (assertion.predicate === 'METHOD_INITIATES_INTERACTION' && assertion.objectId !== null) {
+          const interaction = indexes.interactions.get(assertion.objectId);
+          if (interaction !== undefined) {
+            interactionPresentationElements({ interaction, impact: 'none', nodes, edges });
+          }
+        }
+      }
+      const diagnostics = trace.diagnostics.map((diagnostic) => ({
+        code: diagnostic.code,
+        severity: diagnostic.severity,
+        message: diagnostic.message,
+        evidenceIds: diagnostic.evidenceIds,
+      }));
+      const scene = selectScene({
+        rootId: handler.id,
+        nodes,
+        edges,
+        extraEvidenceIds: diagnostics.flatMap(({ evidenceIds }) => evidenceIds),
+        analysis,
+        maxNodes,
+        maxEdges,
+        maxEvidence,
+      });
+      const retainedEvidence = new Set(scene.evidence.map(({ id }) => id));
+      const method = indexes.methods.get(handler.methodId);
+      const producerInteractionIds = analysis.assertions
+        .filter(
+          (assertion) =>
+            assertion.predicate === 'INTERACTION_MATCHES_LOCAL_HANDLER' &&
+            assertion.objectId === handler.id,
+        )
+        .map(({ subjectId }) => subjectId);
+      interactionHandlers.push({
+        handlerId: handler.id,
+        kind: handler.kind,
+        target: interactionHandlerTargetLabel(handler),
+        method: method?.qualifiedName ?? handler.methodId,
+        registrationState: handler.registrationState,
+        boundary: handler.kind === 'in_process_event' ? 'in_process' : 'broker_or_worker_boundary',
+        causalClass: handlerCausalClass(handler),
+        dbReads: sortedUnique(
+          trace.trace.terminals
+            .filter(({ direction }) => direction === 'READ')
+            .map(({ tableName }) => tableName),
+        ),
+        dbWrites: sortedUnique(
+          trace.trace.terminals
+            .filter(({ direction }) => direction === 'WRITE')
+            .map(({ tableName }) => tableName),
+        ),
+        diagnostics: diagnostics.map((diagnostic) => ({
+          ...diagnostic,
+          evidenceIds: diagnostic.evidenceIds.filter((id) => retainedEvidence.has(id)),
+        })),
+        producerInteractionIds,
+        scene,
+      });
+    }
+  }
+
   const limits = {
     maxNodesPerEndpoint: maxNodes,
     maxEdgesPerEndpoint: maxEdges,
@@ -775,7 +937,7 @@ export function buildGraphReportDocument(input: {
   const document = canonicalizeGraphReportDocument({
     schemaVersion:
       analysis.schemaVersion === '3.0.0'
-        ? GRAPH_REPORT_SCHEMA_V3_VERSION
+        ? GRAPH_REPORT_SCHEMA_V4_VERSION
         : GRAPH_REPORT_SCHEMA_VERSION,
     analysis: {
       id: analysis.analysisRun.id,
@@ -802,14 +964,31 @@ export function buildGraphReportDocument(input: {
         .length,
       endpointsWithWrites: endpoints.filter(({ dbWrites }) => dbWrites.length > 0).length,
       impactedEndpoints: endpoints.filter(({ impact: state }) => state !== 'none').length,
-      omittedNodes: endpoints.reduce((total, endpoint) => total + endpoint.scene.omitted.nodes, 0),
-      omittedEdges: endpoints.reduce((total, endpoint) => total + endpoint.scene.omitted.edges, 0),
-      omittedEvidence: endpoints.reduce(
-        (total, endpoint) => total + endpoint.scene.omitted.evidence,
+      omittedNodes: [...endpoints, ...interactionHandlers].reduce(
+        (total, view) => total + view.scene.omitted.nodes,
         0,
       ),
+      omittedEdges: [...endpoints, ...interactionHandlers].reduce(
+        (total, view) => total + view.scene.omitted.edges,
+        0,
+      ),
+      omittedEvidence: [...endpoints, ...interactionHandlers].reduce(
+        (total, view) => total + view.scene.omitted.evidence,
+        0,
+      ),
+      ...(analysis.schemaVersion === '3.0.0'
+        ? {
+            interactionHandlers: interactionHandlers.length,
+            handlersWithDiagnostics: interactionHandlers.filter(
+              ({ diagnostics }) => diagnostics.length > 0,
+            ).length,
+            handlersWithWrites: interactionHandlers.filter(({ dbWrites }) => dbWrites.length > 0)
+              .length,
+          }
+        : {}),
     },
     endpoints,
+    ...(analysis.schemaVersion === '3.0.0' ? { interactionHandlers } : {}),
   });
   return assertValidGraphReportDocument({
     document,

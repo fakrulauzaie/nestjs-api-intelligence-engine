@@ -304,7 +304,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
 
       const graph = buildGraphReportDocument({ analysis });
       const createdGraph = graph.endpoints.find(({ path }) => path === '/wildcards/dot-created')!;
-      expect(graph.schemaVersion).toBe('3.0.0');
+      expect(graph.schemaVersion).toBe('4.0.0');
       expect(createdGraph.dbWrites).toEqual([]);
       expect(createdGraph.localCausalEffects).toHaveLength(5);
       expect(

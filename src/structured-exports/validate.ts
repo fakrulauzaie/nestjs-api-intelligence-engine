@@ -62,11 +62,14 @@ export function assertValidOpenApiEnrichmentResult(
     issues.push('The OpenAPI sidecar contains duplicate source operation slots.');
   }
   if (analysis !== undefined) {
-    const hasDistributedQueueRecords =
+    const hasDistributedInteractionRecords =
       analysis.schemaVersion === '3.0.0' &&
       (analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
-        analysis.interactionHandlers.some(({ kind }) => kind === 'job_queue'));
-    const expectedSchemaVersion = hasDistributedQueueRecords
+        analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
+        analysis.interactionHandlers.some(
+          ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
+        ));
+    const expectedSchemaVersion = hasDistributedInteractionRecords
       ? OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
       : analysis.schemaVersion === '3.0.0'
         ? OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION
@@ -116,11 +119,14 @@ export function assertValidControlEvidenceDocument(input: {
 }): ControlEvidenceDocument {
   const document = controlEvidenceDocumentSchema.parse(input.document);
   const issues: string[] = [];
-  const hasDistributedQueueRecords =
+  const hasDistributedInteractionRecords =
     input.analysis.schemaVersion === '3.0.0' &&
     (input.analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
-      input.analysis.interactionHandlers.some(({ kind }) => kind === 'job_queue'));
-  const expectedSchemaVersion = hasDistributedQueueRecords
+      input.analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
+      input.analysis.interactionHandlers.some(
+        ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
+      ));
+  const expectedSchemaVersion = hasDistributedInteractionRecords
     ? CONTROL_EVIDENCE_SCHEMA_V3_VERSION
     : input.analysis.schemaVersion === '3.0.0'
       ? CONTROL_EVIDENCE_SCHEMA_V2_VERSION

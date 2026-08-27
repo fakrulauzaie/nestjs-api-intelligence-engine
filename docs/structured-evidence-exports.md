@@ -17,8 +17,8 @@ are rejected as structured-input errors. The command writes:
 
 - `openapi.enriched.json`: a copy with one versioned `x-api-intel` object per operation;
 - `openapi-enrichment.json`: strict match/evidence sidecar (`1.0.0` for analysis
-  v1/v2, `2.0.0` for local-interaction-only analysis v3, and `3.0.0` when BullMQ
-  records are present).
+  v1/v2, `2.0.0` for local-interaction-only analysis v3, and `3.0.0` when BullMQ or
+  Nest microservice records are present).
 
 The input document is read-only and remains byte-identical. If its path would collide
 with either generated filename, publication is refused. Unrelated top-level, path,
@@ -96,7 +96,7 @@ snapshot. The command always writes both:
 
 - `control-evidence.json`: independently versioned strict schema (`1.0.0` for
   analysis v1/v2, `2.0.0` for local-interaction-only analysis v3, and `3.0.0` when
-  BullMQ records are present);
+  BullMQ or Nest microservice records are present);
 - `control-evidence.csv`: deterministic UTF-8 CSV with the same endpoint rows.
 
 There is exactly one row per canonical endpoint. Each row repeats snapshot/schema/tool
@@ -112,9 +112,10 @@ columns in a deterministic position; JSON remains the authoritative structured f
 Schema `3.0.0` adds `distributedInteractions` and
 `distributedConditionalEffects` to resolved OpenAPI endpoint extensions and control
 rows. The control CSV adds `distributed_interactions` and
-`distributed_conditional_effects`. BullMQ queue/job labels are sanitized identities;
-worker effects remain explicitly `distributed_conditional`. Analyses without a queue
-interaction or handler retain their prior v1/v2 export version and shape.
+`distributed_conditional_effects`. BullMQ queue/job and Nest microservice
+mode/pattern/client/transport labels are sanitized identities; worker/handler effects
+remain explicitly `distributed_conditional`. Analyses without a distributed queue or
+microservice interaction/handler retain their prior v1/v2 export version and shape.
 
 `write` means at least one synchronous canonical write terminal is present. `non_write`
 means a unique supported synchronous trace has no write terminal or persistence-relevant gap. `unknown`

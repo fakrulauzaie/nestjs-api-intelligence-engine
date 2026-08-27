@@ -1,6 +1,7 @@
 import type {
   InProcessEventTarget,
   JobQueueTarget,
+  MicroserviceMessageTarget,
   OutboundHttpTarget,
 } from '../model/interactions.js';
 
@@ -26,4 +27,12 @@ export function jobQueueTargetLabel(target: JobQueueTarget): string {
   const queue = target.queue.value ?? 'dynamic queue';
   const job = target.job.value ?? 'any/dynamic job';
   return `${target.technology} queue ${queue}; job ${job}`;
+}
+
+export function microserviceMessageTargetLabel(target: MicroserviceMessageTarget): string {
+  const mode = target.mode === 'request_response' ? 'request-response' : 'event';
+  const pattern = target.canonicalPattern ?? 'dynamic pattern';
+  const client = target.clientToken.value ?? 'dynamic client';
+  const transport = target.transport ?? 'unknown transport';
+  return `${mode} ${pattern}; client ${client}; transport ${transport}`;
 }

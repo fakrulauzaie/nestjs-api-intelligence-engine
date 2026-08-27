@@ -8,8 +8,8 @@ an extractor, change analysis schema `3.0.0`, or claim that broker delivery occu
 
 Passed on 2026-08-26. The frozen corpus, semantic/value review, focused mechanical
 audit, documentation checks, and complete project verification all pass. Phase 35 is
-complete and consumes the frozen BullMQ contracts without weakening them. The Nest
-microservice corpus remains frozen for Phase 36.
+complete and consumes the frozen BullMQ contracts without weakening them. Phase 36
+likewise consumes the frozen Nest microservice contracts.
 
 ## Compatibility target
 
@@ -140,4 +140,5 @@ transport routing simulation, or cross-repository delivery claims.
 Milestone I1 and the complete D0 audit passed before Phase 35 began. Phase 35 now
 implements the bounded BullMQ contract described here. D0 still does not authorize
 legacy Bull, raw brokers, delivery claims, or an expansion of the v3 meanings. The
-Phase 36 microservice portion must remain valid before that phase begins.
+Phase 36 consumed the microservice portion and retained its open-world, activation,
+pattern, application, and transport boundaries.

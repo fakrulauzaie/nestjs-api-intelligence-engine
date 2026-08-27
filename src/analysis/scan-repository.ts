@@ -14,6 +14,7 @@ import { extractClassRelationships } from '../extractors/class-relationships.js'
 import { extractNestHttpService } from '../extractors/nest-http-service.js';
 import { extractNestEventEmitter } from '../extractors/nest-event-emitter.js';
 import { extractNestBullMq } from '../extractors/nest-bullmq.js';
+import { extractNestMicroservices } from '../extractors/nest-microservices.js';
 import { extractOutboundHttp } from '../extractors/outbound-http.js';
 import { extractTypeOrmPersistence } from '../extractors/typeorm-persistence.js';
 import { extractTypeOrmRawSql } from '../extractors/typeorm-raw-sql.js';
@@ -64,6 +65,7 @@ export const SUPPORTED_INTERACTION_KINDS = [
   'outbound_http',
   'in_process_event',
   'job_queue',
+  'microservice_message',
 ] as const satisfies readonly InteractionKind[];
 
 export interface ScanRepositoryResult {
@@ -265,6 +267,16 @@ export async function scanRepository(
     maxFanOutPerInteraction: configuration.interactions.maxFanOutPerInteraction,
   });
   options.signal?.throwIfAborted();
+  const nestMicroservices = extractNestMicroservices({
+    sourceIndex,
+    checker: project.checker,
+    repositoryRevision,
+    evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    modules: moduleExtraction.modules,
+    moduleAssertions: moduleExtraction.assertions,
+    maxFanOutPerInteraction: configuration.interactions.maxFanOutPerInteraction,
+  });
+  options.signal?.throwIfAborted();
   const typeOrmPersistence = extractTypeOrmPersistence({
     sourceIndex,
     checker: project.checker,
@@ -325,6 +337,7 @@ export async function scanRepository(
     ...nestHttpService.diagnostics,
     ...nestEventEmitter.diagnostics,
     ...nestBullMq.diagnostics,
+    ...nestMicroservices.diagnostics,
     ...typeOrmPersistence.diagnostics,
     ...requestProvenance.diagnostics,
     ...interMethodProvenance.diagnostics,
@@ -361,7 +374,11 @@ export async function scanRepository(
     nestEventEmitter.assertions.length +
     nestBullMq.interactions.length +
     nestBullMq.handlers.length +
-    nestBullMq.assertions.length;
+    nestBullMq.assertions.length +
+    nestMicroservices.applications.length +
+    nestMicroservices.interactions.length +
+    nestMicroservices.handlers.length +
+    nestMicroservices.assertions.length;
   const resultState = deriveAnalysisResultState({ diagnostics, trustedFactCount });
   const tool = toolMetadata();
   const tsconfigPath = normalizeRepositoryRelativePath(repositoryRoot, project.tsconfigPath);
@@ -391,6 +408,7 @@ export async function scanRepository(
       nestHttpService.classes,
       nestEventEmitter.classes,
       nestBullMq.classes,
+      nestMicroservices.classes,
       typeOrmPersistence.classes,
       typeOrmRawSql.classes,
       moduleExtraction.classes,
@@ -402,6 +420,7 @@ export async function scanRepository(
       nestHttpService.methods,
       nestEventEmitter.methods,
       nestBullMq.methods,
+      nestMicroservices.methods,
       typeOrmPersistence.methods,
       typeOrmRawSql.methods,
     ),
@@ -418,6 +437,7 @@ export async function scanRepository(
       nestHttpService.assertions,
       nestEventEmitter.assertions,
       nestBullMq.assertions,
+      nestMicroservices.assertions,
       typeOrmPersistence.assertions,
       typeOrmRawSql.assertions,
       moduleExtraction.assertions,
@@ -433,6 +453,7 @@ export async function scanRepository(
       nestHttpService.evidence,
       nestEventEmitter.evidence,
       nestBullMq.evidence,
+      nestMicroservices.evidence,
       typeOrmPersistence.evidence,
       typeOrmRawSql.evidence,
       compiler.evidence,
@@ -462,16 +483,21 @@ export async function scanRepository(
       ...requestProvenance.columnInfluences,
       ...interMethodProvenance.columnInfluences,
     ],
-    applications: mergeApplicationRecords(nestEventEmitter.applications),
+    applications: mergeApplicationRecords(
+      nestEventEmitter.applications,
+      nestMicroservices.applications,
+    ),
     interactions: mergeInteractionRecords(
       outboundHttp.interactions,
       nestHttpService.interactions,
       nestEventEmitter.interactions,
       nestBullMq.interactions,
+      nestMicroservices.interactions,
     ),
     interactionHandlers: mergeInteractionHandlerRecords(
       nestEventEmitter.handlers,
       nestBullMq.handlers,
+      nestMicroservices.handlers,
     ),
     interactionAnalysis: {
       schemaKinds: [...INTERACTION_KINDS],
@@ -481,7 +507,8 @@ export async function scanRepository(
         outboundHttp.state === 'incomplete' ||
         nestHttpService.state === 'incomplete' ||
         nestEventEmitter.state === 'incomplete' ||
-        nestBullMq.state === 'incomplete'
+        nestBullMq.state === 'incomplete' ||
+        nestMicroservices.state === 'incomplete'
           ? 'incomplete'
           : 'complete',
     },

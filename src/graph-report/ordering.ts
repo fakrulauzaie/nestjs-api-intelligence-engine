@@ -18,6 +18,47 @@ export function canonicalizeGraphReportDocument(
 ): GraphReportDocument {
   return {
     ...document,
+    ...(document.interactionHandlers === undefined
+      ? {}
+      : {
+          interactionHandlers: [...document.interactionHandlers]
+            .map((handler) => ({
+              ...handler,
+              dbReads: unique(handler.dbReads),
+              dbWrites: unique(handler.dbWrites),
+              producerInteractionIds: unique(handler.producerInteractionIds),
+              diagnostics: [...handler.diagnostics]
+                .map((diagnostic) => ({
+                  ...diagnostic,
+                  evidenceIds: unique(diagnostic.evidenceIds),
+                }))
+                .sort((left, right) =>
+                  compare(`${left.code}:${left.message}`, `${right.code}:${right.message}`),
+                ),
+              scene: {
+                ...handler.scene,
+                nodes: [...handler.scene.nodes]
+                  .map((node) => ({ ...node, evidenceIds: unique(node.evidenceIds) }))
+                  .sort((left, right) =>
+                    compare(`${left.kind}:${left.id}`, `${right.kind}:${right.id}`),
+                  ),
+                edges: [...handler.scene.edges]
+                  .map((edge) => ({ ...edge, evidenceIds: unique(edge.evidenceIds) }))
+                  .sort((left, right) =>
+                    compare(`${left.kind}:${left.id}`, `${right.kind}:${right.id}`),
+                  ),
+                evidence: [...handler.scene.evidence].sort((left, right) =>
+                  compare(left.id, right.id),
+                ),
+              },
+            }))
+            .sort((left, right) =>
+              compare(
+                `${left.kind}:${left.target}:${left.handlerId}`,
+                `${right.kind}:${right.target}:${right.handlerId}`,
+              ),
+            ),
+        }),
     endpoints: [...document.endpoints]
       .map((endpoint) => ({
         ...endpoint,

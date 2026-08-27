@@ -73,8 +73,8 @@ describe('eager outbound HTTP extraction', () => {
         facts.filter(({ method: qualifiedName }) => qualifiedName.endsWith(method));
 
       expect(analysis.interactionAnalysis).toMatchObject({
-        supportedKinds: ['in_process_event', 'job_queue', 'outbound_http'],
-        enabledKinds: ['in_process_event', 'job_queue', 'outbound_http'],
+        supportedKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
+        enabledKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
         state: 'incomplete',
       });
       for (const [method, count] of Object.entries(expected.supportedMethods)) {
@@ -201,7 +201,7 @@ describe('eager outbound HTTP extraction', () => {
       expect(directEndpoint?.outboundHttpInteractions).toHaveLength(6);
       expect(renderEndpointCatalogueMarkdown(catalogue)).toContain('## Outbound HTTP interactions');
       const graph = buildGraphReportDocument({ analysis });
-      expect(graph.schemaVersion).toBe('3.0.0');
+      expect(graph.schemaVersion).toBe('4.0.0');
       const directGraph = graph.endpoints.find(({ path }) => path === '/gateway/direct');
       expect(directGraph?.scene.nodes.filter(({ kind }) => kind === 'interaction')).toHaveLength(6);
       expect(

@@ -3,10 +3,12 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   'use strict';
   var report = JSON.parse(document.getElementById('api-intel-data').textContent);
   var endpoints = report.endpoints;
+  var handlers = report.interactionHandlers || [];
   var selectedId = endpoints.length > 0 ? endpoints[0].endpointId : null;
   var graph = null;
   var controls = {
     search: document.getElementById('filter-search'),
+    view: document.getElementById('filter-view'),
     method: document.getElementById('filter-method'),
     guard: document.getElementById('filter-guard'),
     diagnostic: document.getElementById('filter-diagnostic'),
@@ -77,6 +79,10 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   }
 
   function renderList() {
+    if (controls.view.value === 'handlers') {
+      renderHandlerList();
+      return;
+    }
     var visible = visibleEndpoints();
     resultCount.textContent = visible.length + ' of ' + endpoints.length + ' endpoints';
     list.replaceChildren();
@@ -109,18 +115,56 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     renderEndpoint(visible.find(function (endpoint) { return endpoint.endpointId === selectedId; }) || visible[0]);
   }
 
+  function handlerMatches(handler) {
+    var search = controls.search.value.trim().toLowerCase();
+    var searchable = (handler.kind + ' ' + handler.target + ' ' + handler.method).toLowerCase();
+    return !search || searchable.indexOf(search) !== -1;
+  }
+
+  function renderHandlerList() {
+    var visible = handlers.filter(handlerMatches);
+    resultCount.textContent = visible.length + ' of ' + handlers.length + ' interaction handlers';
+    list.replaceChildren();
+    if (visible.length === 0) {
+      list.appendChild(element('li', 'empty', 'No interaction handlers match this search.'));
+      selectedId = null;
+      renderHandler(null);
+      return;
+    }
+    if (!visible.some(function (handler) { return handler.handlerId === selectedId; })) {
+      selectedId = visible[0].handlerId;
+    }
+    visible.forEach(function (handler) {
+      var item = document.createElement('li');
+      var button = element('button', 'endpoint-button');
+      button.type = 'button';
+      button.dataset.handlerId = handler.handlerId;
+      button.setAttribute('aria-pressed', handler.handlerId === selectedId ? 'true' : 'false');
+      button.appendChild(badge(handler.kind.replaceAll('_', ' '), 'method'));
+      button.appendChild(badge(handler.registrationState, handler.registrationState === 'proven_registered' ? 'resolved' : 'unknown'));
+      button.appendChild(element('span', 'endpoint-route', handler.target));
+      button.addEventListener('click', function () {
+        selectedId = handler.handlerId;
+        renderList();
+      });
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+    renderHandler(visible.find(function (handler) { return handler.handlerId === selectedId; }) || visible[0]);
+  }
+
   function appendChip(container, text) {
     container.appendChild(element('span', 'chip', text));
   }
 
-  function evidenceMap(endpoint) {
-    return new Map(endpoint.scene.evidence.map(function (evidence) { return [evidence.id, evidence]; }));
+  function evidenceMap(record) {
+    return new Map(record.scene.evidence.map(function (evidence) { return [evidence.id, evidence]; }));
   }
 
-  function showEvidence(endpoint, heading, evidenceIds) {
+  function showEvidence(record, heading, evidenceIds) {
     inspector.replaceChildren();
     inspector.appendChild(element('h3', '', heading));
-    var byId = evidenceMap(endpoint);
+    var byId = evidenceMap(record);
     var records = evidenceIds.map(function (id) { return byId.get(id); }).filter(Boolean);
     if (records.length === 0) {
       inspector.appendChild(element('p', 'inspector-empty', 'No retained evidence for this item. Check the endpoint facts and omitted-count notice for explicit limits.'));
@@ -137,12 +181,12 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     });
   }
 
-  function renderGraph(endpoint) {
+  function renderGraph(record, rootId, rootLabel) {
     if (graph) graph.destroy();
-    var elements = endpoint.scene.nodes.map(function (node) {
+    var elements = record.scene.nodes.map(function (node) {
       var suffix = node.uncertainty === 'resolved' ? '' : ' · ' + node.uncertainty;
       return { data: { id: node.id, label: node.label + suffix, kind: node.kind, uncertainty: node.uncertainty, impact: node.impact, evidenceIds: node.evidenceIds } };
-    }).concat(endpoint.scene.edges.map(function (edge) {
+    }).concat(record.scene.edges.map(function (edge) {
       var suffix = edge.uncertainty === 'resolved' ? '' : ' · ' + edge.uncertainty;
       return { data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label + suffix, kind: edge.kind, uncertainty: edge.uncertainty, impact: edge.impact, evidenceIds: edge.evidenceIds } };
     }));
@@ -178,14 +222,30 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
         { selector: '.focus', style: { 'opacity': 1, 'z-index': 20 } }
       ]
     });
-    graph.layout({ name: 'breadthfirst', directed: true, roots: graph.getElementById(endpoint.endpointId), padding: 28, spacingFactor: 1.15 }).run();
+    graph.layout({ name: 'breadthfirst', directed: true, roots: graph.getElementById(rootId), padding: 28, spacingFactor: 1.15 }).run();
     graph.on('tap', 'node', function (event) {
       graph.elements().removeClass('dim focus');
       var target = event.target;
       var path = target.predecessors().union(target.successors()).union(target);
       graph.elements().not(path).addClass('dim');
       path.addClass('focus');
-      showEvidence(endpoint, target.data('label'), target.data('evidenceIds') || []);
+      var handlerView = handlers.find(function (handler) { return handler.handlerId === target.id(); });
+      if (handlerView && (controls.view.value !== 'handlers' || selectedId !== handlerView.handlerId)) {
+        controls.view.value = 'handlers';
+        selectedId = handlerView.handlerId;
+        renderList();
+        return;
+      }
+      var producerView = endpoints.find(function (endpoint) {
+        return endpoint.scene.nodes.some(function (node) { return node.id === target.id() && node.kind === 'interaction'; });
+      });
+      if (producerView && controls.view.value === 'handlers' && target.data('kind') === 'interaction') {
+        controls.view.value = 'endpoints';
+        selectedId = producerView.endpointId;
+        renderList();
+        return;
+      }
+      showEvidence(record, target.data('label'), target.data('evidenceIds') || []);
     });
     graph.on('tap', 'edge', function (event) {
       graph.elements().removeClass('dim focus');
@@ -193,12 +253,13 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       var path = target.source().predecessors().union(target.target().successors()).union(target).union(target.source()).union(target.target());
       graph.elements().not(path).addClass('dim');
       path.addClass('focus');
-      showEvidence(endpoint, target.data('label'), target.data('evidenceIds') || []);
+      showEvidence(record, target.data('label'), target.data('evidenceIds') || []);
     });
     graph.on('tap', function (event) {
       if (event.target === graph) {
         graph.elements().removeClass('dim focus');
-        showEvidence(endpoint, 'Endpoint evidence', endpoint.scene.nodes.find(function (node) { return node.id === endpoint.endpointId; }).evidenceIds);
+        var root = record.scene.nodes.find(function (node) { return node.id === rootId; });
+        showEvidence(record, rootLabel, root ? root.evidenceIds : []);
       }
     });
   }
@@ -261,11 +322,44 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     var omitted = endpoint.scene.omitted;
     limitNotice.hidden = omitted.nodes + omitted.edges + omitted.evidence === 0;
     limitNotice.textContent = 'Display limits omitted ' + omitted.nodes + ' nodes, ' + omitted.edges + ' edges, and ' + omitted.evidence + ' evidence records for this endpoint. The counts are explicit; no omitted fact is inferred as absent.';
-    renderGraph(endpoint);
+    renderGraph(endpoint, endpoint.endpointId, 'Endpoint evidence');
     renderFacts(endpoint);
     renderFallback(endpoint);
     var root = endpoint.scene.nodes.find(function (node) { return node.id === endpoint.endpointId; });
     showEvidence(endpoint, 'Endpoint evidence', root ? root.evidenceIds : []);
+  }
+
+  function renderHandler(handler) {
+    if (!handler) {
+      title.textContent = handlers.length === 0 ? 'No interaction handlers in this analysis' : 'No matching interaction handler';
+      badges.replaceChildren();
+      chips.replaceChildren();
+      facts.replaceChildren();
+      tableBody.replaceChildren();
+      inspector.replaceChildren(element('p', 'inspector-empty', 'Select an interaction handler to inspect evidence.'));
+      limitNotice.hidden = true;
+      if (graph) { graph.destroy(); graph = null; }
+      document.getElementById('graph').replaceChildren();
+      return;
+    }
+    title.textContent = handler.kind.replaceAll('_', ' ') + ' · ' + handler.target;
+    badges.replaceChildren(badge(handler.registrationState, handler.registrationState === 'proven_registered' ? 'resolved' : 'unknown'), badge(handler.causalClass, handler.causalClass === 'unknown' ? 'unknown' : 'potential'));
+    chips.replaceChildren();
+    appendChip(chips, handler.method);
+    appendChip(chips, handler.boundary);
+    appendChip(chips, handler.scene.nodes.length + ' nodes · ' + handler.scene.edges.length + ' edges');
+    var omitted = handler.scene.omitted;
+    limitNotice.hidden = omitted.nodes + omitted.edges + omitted.evidence === 0;
+    limitNotice.textContent = 'Display limits omitted ' + omitted.nodes + ' nodes, ' + omitted.edges + ' edges, and ' + omitted.evidence + ' evidence records for this handler. The counts are explicit; no omitted fact is inferred as absent.';
+    renderGraph(handler, handler.handlerId, 'Handler evidence');
+    facts.replaceChildren();
+    addFactSection(facts, 'Handler data access', handler.dbReads.map(function (name) { return 'READ ' + name; }).concat(handler.dbWrites.map(function (name) { return 'WRITE ' + name; })), 'No table access proven');
+    addFactSection(facts, 'Boundary semantics', [handler.boundary + ' · ' + handler.causalClass], 'Boundary unknown');
+    addFactSection(facts, 'Local producer candidates', handler.producerInteractionIds, 'No in-repository producer candidate');
+    addFactSection(facts, 'Diagnostics', handler.diagnostics.map(function (item) { return item.code + ' — ' + item.message; }), 'No handler-relevant diagnostics');
+    renderFallback(handler);
+    var root = handler.scene.nodes.find(function (node) { return node.id === handler.handlerId; });
+    showEvidence(handler, 'Handler evidence', root ? root.evidenceIds : []);
   }
 
   Object.keys(controls).forEach(function (key) {

@@ -180,6 +180,31 @@ export const DIAGNOSTIC_CATALOGUE: Readonly<Record<DiagnosticCode, DiagnosticDef
     summary:
       'A BullMQ worker inspects the job name, but bounded branch slicing is not enabled; effects remain queue-wide and conditional.',
   },
+  MICROSERVICE_TRANSPORT_UNKNOWN: {
+    defaultSeverity: 'warning',
+    summary:
+      'A Nest microservice application or client token has a dynamic, missing, or ambiguous transport binding.',
+  },
+  MICROSERVICE_TRANSPORT_MISMATCH: {
+    defaultSeverity: 'info',
+    summary:
+      'A local Nest microservice handler has the same pattern but an incompatible proven transport.',
+  },
+  MICROSERVICE_ACTIVATION_UNKNOWN: {
+    defaultSeverity: 'warning',
+    summary:
+      'A cold ClientProxy.send() producer crosses an unsupported Observable activation boundary.',
+  },
+  MICROSERVICE_HANDLER_REGISTRATION_UNKNOWN: {
+    defaultSeverity: 'warning',
+    summary:
+      'A Nest microservice pattern handler cannot be proven as a reachable controller of a supported application root.',
+  },
+  MICROSERVICE_REQUEST_HANDLER_AMBIGUOUS: {
+    defaultSeverity: 'warning',
+    summary:
+      'A request-response pattern has multiple in-repository handler candidates; none is selected or traversed.',
+  },
 };
 
 export function createDiagnostic(input: {

@@ -60,6 +60,11 @@ The same projection applies to Phase 35 `job_queue` records. Queue or job identi
 changes are add/remove changes; worker registration and rule changes are handler
 modifications. Comparison does not interpret a local queue candidate as delivered.
 
+Phase 36 `microservice_message` records use the same projection. Mode, canonical
+pattern, client token, transport, and application context participate in semantic
+identity. Activation/boundary/rule changes remain modifications. A local pattern
+candidate is never interpreted as broker delivery.
+
 The document contains no timestamp or absolute input path. Arrays and object keys are
 canonically ordered before JSON publication. Markdown is rendered only after the
 `DiffDocument` passes its own strict schema and integrity checks.

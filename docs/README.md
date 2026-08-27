@@ -42,6 +42,7 @@ references.
 - [Selected scan bundles](selected-scan-bundles.md)
 - [Structured evidence exports](structured-evidence-exports.md)
 - [Offline interactive graph](offline-graph-report.md)
+- [Distributed policy and graph hardening](phase37-distributed-policy-report-hardening.md)
 
 ## Analysis feature guides
 
@@ -55,6 +56,7 @@ references.
 - [Nest HttpService and symbolic targets](nest-http-service.md)
 - [In-process events](in-process-events.md)
 - [BullMQ queue interactions](bullmq-interactions.md)
+- [Nest microservice interactions](nest-microservices.md)
 
 ## Historical and non-normative records
 
@@ -67,7 +69,7 @@ references.
   production implementation.
 - [Distributed Gate D0](distributed-gate-d0.md) is the frozen distributed-interaction
   corpus decision. Its BullMQ portion was consumed by Phase 35; its microservice
-  portion gates Phase 36.
+  portion was consumed by Phase 36.
 - [Phase 11 real-repository validation](real-repository-validation.md) and the
   associated `official-nestjs-typeorm` outputs are historical evidence, not current
   report-format examples.
@@ -90,4 +92,4 @@ Documentation Gate D1 checks that:
 - current example artifacts remain readable and match generated reports; and
 - historical records are not presented as current product behavior.
 
-Phase 36 must not begin while this gate is failing.
+New interaction phases must not begin while this gate is failing.

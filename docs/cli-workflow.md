@@ -44,7 +44,8 @@ are mutually exclusive. Versions 2 and 3 supply analysis, output, policy-rule, p
 graph, controls, and OpenAPI report recipes. Version 3 additionally accepts bounded
 interaction-traversal limits; those values do not enable extractors. The current eager
 and Nest `HttpService` outbound-HTTP extractors, exact/configured-wildcard in-process
-EventEmitter analysis, and bounded BullMQ queue analysis are enabled automatically.
+EventEmitter analysis, bounded BullMQ queue analysis, and bounded Nest microservice
+analysis are enabled automatically.
 They have no network, environment-value, broker, or target-runtime configuration
 option. Explicit CLI options take precedence.
 Every requested report uses the same in-memory analysis and standalone renderer;

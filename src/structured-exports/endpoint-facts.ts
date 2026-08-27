@@ -9,6 +9,7 @@ import { buildEndpointTrace } from '../tracing/endpoint-trace.js';
 import {
   inProcessEventTargetLabel,
   jobQueueTargetLabel,
+  microserviceMessageTargetLabel,
   outboundHttpTargetLabel,
 } from '../reporting/interaction-labels.js';
 import type {
@@ -189,7 +190,7 @@ export function buildEndpointExportFacts(input: {
     }
     const summarizeInteraction = (interactionId: string): EndpointInteractionSummary | null => {
       const interaction = interactionById.get(interactionId);
-      if (interaction === undefined || interaction.kind === 'microservice_message') return null;
+      if (interaction === undefined) return null;
       return {
         interactionId: interaction.id,
         kind: interaction.kind,
@@ -198,7 +199,9 @@ export function buildEndpointExportFacts(input: {
             ? outboundHttpTargetLabel(interaction.target)
             : interaction.kind === 'in_process_event'
               ? inProcessEventTargetLabel(interaction.target)
-              : jobQueueTargetLabel(interaction.target),
+              : interaction.kind === 'job_queue'
+                ? jobQueueTargetLabel(interaction.target)
+                : microserviceMessageTargetLabel(interaction.target),
         activation: interaction.activation,
         boundary: interaction.boundary,
         dispatchTiming: interaction.dispatchTiming,

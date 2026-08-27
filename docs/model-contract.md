@@ -20,20 +20,19 @@ replace or add facts to `AnalysisDocument`.
 
 ## Current version matrix
 
-| Artifact                   | Current writer behavior                                                             |
-| -------------------------- | ----------------------------------------------------------------------------------- |
-| `analysis.json`            | `3.0.0`; v1/v2 remain readable and frozen                                           |
-| `diff.json`                | `2.0.0` when either input is analysis v3; otherwise `1.0.0`                         |
-| `impact.json`              | `1.0.0`                                                                             |
-| `policy-results.json`      | `1.0.0`                                                                             |
-| graph view                 | `3.0.0` for analysis v3; `1.0.0` for v1/v2; graph v2 remains readable only          |
-| OpenAPI enrichment sidecar | `3.0.0` with BullMQ records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
-| control-evidence JSON/CSV  | `3.0.0` with BullMQ records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
-| `bundle.json`              | `1.0.0`                                                                             |
+| Artifact                   | Current writer behavior                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `analysis.json`            | `3.0.0`; v1/v2 remain readable and frozen                                                            |
+| `diff.json`                | `2.0.0` when either input is analysis v3; otherwise `1.0.0`                                          |
+| `impact.json`              | `1.0.0`                                                                                              |
+| `policy-results.json`      | `1.0.0`                                                                                              |
+| graph view                 | `4.0.0` for analysis v3; `1.0.0` for v1/v2; graph v2/v3 remain readable only                         |
+| OpenAPI enrichment sidecar | `3.0.0` with distributed interaction records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
+| control-evidence JSON/CSV  | `3.0.0` with distributed interaction records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
+| `bundle.json`              | `1.0.0`                                                                                              |
 
-The scanner currently supports and enables `outbound_http`, `in_process_event`, and
-`job_queue`. `microservice_message` is representable but unsupported until its owning
-phase passes the distributed gate.
+The scanner currently supports and enables `outbound_http`, `in_process_event`,
+`job_queue`, and `microservice_message`.
 
 ## Stable identities
 
@@ -176,7 +175,8 @@ trusted `analysis.json`.
 OpenAPI enrichment sidecars and control-evidence matrices are independently versioned.
 Schema `1.0.0` represents analysis v1/v2 facts, `2.0.0` adds outbound/local
 interaction fields for analysis v3, and `3.0.0` adds distributed interactions and
-distributed-conditional effects when BullMQ records are present. Their cross-record
+distributed-conditional effects when BullMQ or Nest microservice records are present.
+Their cross-record
 validators require canonical snapshot identity, valid endpoint/table/evidence
 references, and complete evidence closure. The matrix additionally requires exactly
 one row for every canonical endpoint and accepts policy outcomes only from a validated
@@ -191,23 +191,24 @@ matrix JSON; spreadsheet formula neutralization does not alter the underlying fa
 ## Offline graph-view contract
 
 The graph view is independently versioned: schema `1.0.0` remains readable for
-analysis v1/v2, historical interaction reports may use `2.0.0`, and current analysis
-v3 reports emit `3.0.0`. Cross-record validation requires snapshot identity, exactly
-one view per canonical endpoint, unique node/edge/evidence IDs, complete scene
+analysis v1/v2, historical interaction reports may use `2.0.0` or `3.0.0`, and current
+analysis v3 reports emit graph schema `4.0.0`. Cross-record validation requires
+snapshot identity, exactly one view per canonical endpoint, exactly one view per
+canonical interaction handler, unique node/edge/evidence IDs, complete scene
 references, canonical evidence closure, declared display limits, and summary
 agreement. Optional policy input must match the analysis ID; optional impact input
 must contain that analysis on its validated before or after side.
 
-Each scene is an endpoint-centered projection of existing catalogue, trace, guard, and
-provenance views. Gap nodes represent null assertion targets without inventing a
-record. Impact styling applies only to the endpoint and canonical assertion steps
+Each scene is an endpoint- or handler-rooted projection of existing catalogue, trace,
+guard, and provenance views. Gap nodes represent null assertion targets without
+inventing a record. Impact styling applies only to the endpoint and canonical assertion steps
 present in validated impact paths. HTML is a rendering of this document and is not a
 canonical or independently inferred artifact.
 
 Graph schema `2.0.0` was introduced for early canonical interaction nodes and remains
-readable for compatibility. Current graph-v3 scenes represent outbound HTTP, local
-event, and BullMQ interaction/handler/boundary nodes; assertion edges remain labeled as
-candidate matches rather than delivery.
+readable for compatibility. Current graph-v4 scenes represent outbound HTTP, local
+event, BullMQ, and Nest microservice interaction/handler/boundary nodes; assertion
+edges remain labeled as candidate matches rather than delivery.
 
 ## Analysis v3 interaction substrate
 
@@ -223,8 +224,8 @@ enabled, with `complete` or `incomplete` extractor state; the remaining kinds st
 reserved only. Phase 32 does not add another kind; it extends `outbound_http` with
 Nest `HttpService` activation and symbolic targets. Phase 33 activates
 `in_process_event`, application roots, and independent local handler records. The
-current scanner additionally supports and enables `job_queue`; only
-`microservice_message` remains reserved.
+current scanner additionally supports and enables `job_queue` and
+`microservice_message`.
 Integrity requires enabled kinds to be supported, complete
 evidence/reference closure, kind-correct interaction/handler matches, and supporting
 method/application assertions for canonical records.
@@ -238,9 +239,9 @@ retains `{ kind: wildcard, delimiter }`, only when static root configuration pro
 wildcards enabled. Exact/wildcard match integrity uses compatible application scope,
 EventEmitter2 segment semantics, and the owning rule ID. Phase 35 emits queue targets
 with `technology: bullmq` and independently exact/dynamic queue and job identities.
-Microservice targets remain representable for a future phase but no current extractor
-emits them. Headers, bodies, credentials, environment values, queue payloads, broker
-delivery, and remote consumers are not canonical facts.
+Phase 36 emits canonical microservice mode/pattern/client/transport targets for the
+supported Nest `ClientProxy` subset. Headers, bodies, credentials, environment values,
+queue payloads, broker delivery, and remote consumers are not canonical facts.
 
 Phase 31 outbound records use `direction: outbound`, `activation: eager`,
 `boundary: external_or_unobserved`, and `dispatchTiming: asynchronous`. Their target
@@ -282,11 +283,21 @@ by design; matched proven-registered worker terminals are
 trace includes `distributedInteractionIds` only when such queue interactions are
 reachable. See [BullMQ Queue Interactions](bullmq-interactions.md).
 
+Phase 36 microservice producers retain `request_response` or `event` mode, a bounded
+canonical scalar/plain-JSON pattern, client token, and supported transport inventory.
+`emit` is eager; `send` distinguishes proven activation, cold construction, and
+unknown flow. Matches require the same resolved application, mode, pattern, and
+transport. Event handlers may fan out; duplicate request handlers use `ambiguous`
+assertions and are not traversed. Candidate handler effects are
+`distributed_conditional`. See
+[Nest Microservice Interactions](nest-microservices.md).
+
 The v3 predicates are `APPLICATION_USES_ROOT_MODULE`,
 `METHOD_INITIATES_INTERACTION`, `INTERACTION_MATCHES_LOCAL_HANDLER`, and
 `HANDLER_IMPLEMENTED_BY`. A handler match is a local static candidate, not proof of
-delivery or execution. One-to-many fan-out uses multiple assertions rather than
-misusing `ambiguous`.
+delivery or execution. Proven event/queue fan-out uses multiple resolved assertions;
+`ambiguous` is reserved for cases such as duplicate microservice request handlers
+where traversal is deliberately withheld.
 
 The pure version normalizer exposes v2 families as unavailable for v1 and interaction
 families as unavailable for v1/v2. It never turns a missing historical family into a

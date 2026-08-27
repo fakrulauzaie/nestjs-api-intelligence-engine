@@ -16,6 +16,7 @@ import { buildEndpointTrace } from '../tracing/endpoint-trace.js';
 import {
   inProcessEventTargetLabel,
   jobQueueTargetLabel,
+  microserviceMessageTargetLabel,
   outboundHttpTargetLabel,
 } from './interaction-labels.js';
 
@@ -68,6 +69,21 @@ export interface EndpointCatalogueEntry {
     | readonly {
         readonly interactionId: string;
         readonly label: string;
+        readonly boundary:
+          | 'in_process'
+          | 'broker_or_worker_boundary'
+          | 'external_or_unobserved'
+          | 'unknown';
+        readonly handlerStates: readonly string[];
+        readonly handlerCandidates: readonly string[];
+      }[]
+    | undefined;
+  readonly microserviceMessageInteractions?:
+    | readonly {
+        readonly interactionId: string;
+        readonly label: string;
+        readonly mode: 'request_response' | 'event';
+        readonly activation: 'eager' | 'proven_activated' | 'constructed_cold' | 'unknown';
         readonly boundary:
           | 'in_process'
           | 'broker_or_worker_boundary'
@@ -211,8 +227,10 @@ export function buildEndpointCatalogue(
                 ? inProcessEventTargetLabel(handler.target)
                 : handler.kind === 'job_queue'
                   ? jobQueueTargetLabel(handler.target)
-                  : interactionTargetKey(handler.target)
-            } (${handler.registrationState})`,
+                  : handler.kind === 'microservice_message'
+                    ? microserviceMessageTargetLabel(handler.target)
+                    : interactionTargetKey(handler.target)
+            } (${handler.registrationState}${handler.kind === 'microservice_message' ? `; ${step.status}` : ''})`,
           ]);
         }
       }
@@ -260,6 +278,30 @@ export function buildEndpointCatalogue(
                   ]
                 : [];
             });
+      const microserviceMessageInteractions =
+        trace?.status !== 'resolved'
+          ? []
+          : trace.trace.steps.flatMap((step) => {
+              if (step.relation !== 'METHOD_INITIATES_INTERACTION' || step.toId === null) return [];
+              const interaction = interactionById.get(step.toId);
+              return interaction?.kind === 'microservice_message'
+                ? [
+                    {
+                      interactionId: interaction.id,
+                      label: microserviceMessageTargetLabel(interaction.target),
+                      mode: interaction.target.mode,
+                      activation: interaction.activation,
+                      boundary: interaction.boundary,
+                      handlerStates: [
+                        ...new Set(handlerStatesByInteraction.get(interaction.id) ?? []),
+                      ].sort(),
+                      handlerCandidates: [
+                        ...new Set(handlerCandidatesByInteraction.get(interaction.id) ?? []),
+                      ].sort(),
+                    },
+                  ]
+                : [];
+            });
 
       return {
         endpointId: endpoint.id,
@@ -294,6 +336,13 @@ export function buildEndpointCatalogue(
           ? {}
           : {
               jobQueueInteractions: jobQueueInteractions.sort((left, right) =>
+                left.interactionId.localeCompare(right.interactionId),
+              ),
+            }),
+        ...(microserviceMessageInteractions.length === 0
+          ? {}
+          : {
+              microserviceMessageInteractions: microserviceMessageInteractions.sort((left, right) =>
                 left.interactionId.localeCompare(right.interactionId),
               ),
             }),
@@ -420,6 +469,26 @@ export function renderEndpointCatalogueMarkdown(catalogue: EndpointCatalogueView
       ...jobQueues.map(
         ({ endpoint, interaction }) =>
           `| ${endpoint.httpMethod} ${escapeTableCell(endpoint.path)} | ${escapeTableCell(interaction.label)} | ${interaction.boundary} | ${escapeTableCell(interaction.handlerCandidates.length === 0 ? 'none_proven' : interaction.handlerCandidates.join(', '))} |`,
+      ),
+    );
+  }
+
+  const microserviceMessages = catalogue.endpoints.flatMap((endpoint) =>
+    (endpoint.microserviceMessageInteractions ?? []).map((interaction) => ({
+      endpoint,
+      interaction,
+    })),
+  );
+  if (microserviceMessages.length > 0) {
+    lines.push(
+      '',
+      '## Nest microservice interactions',
+      '',
+      '| Endpoint | Mode, pattern, client, and transport | Activation | Boundary | In-repository delivery candidates |',
+      '|---|---|---|---|---|',
+      ...microserviceMessages.map(
+        ({ endpoint, interaction }) =>
+          `| ${endpoint.httpMethod} ${escapeTableCell(endpoint.path)} | ${escapeTableCell(interaction.label)} | ${interaction.activation} | ${interaction.boundary} | ${escapeTableCell(interaction.handlerCandidates.length === 0 ? 'none_proven' : interaction.handlerCandidates.join(', '))} |`,
       ),
     );
   }

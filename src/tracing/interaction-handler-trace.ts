@@ -183,7 +183,12 @@ export function buildInteractionHandlerTrace(
       steps.set(initiation.id, assertionStep(initiation));
       if (!traversable(initiation)) continue;
       const interaction = interactions.get(initiation.objectId!);
-      if (interaction?.kind !== 'in_process_event' && interaction?.kind !== 'job_queue') continue;
+      if (
+        interaction?.kind !== 'in_process_event' &&
+        interaction?.kind !== 'job_queue' &&
+        interaction?.kind !== 'microservice_message'
+      )
+        continue;
       relevantIds.add(interaction.id);
       const allMatches = interactionIndexes.handlersByInteraction.get(interaction.id) ?? [];
       const matches = allMatches.slice(0, configuration.maxFanOutPerInteraction);
@@ -200,6 +205,12 @@ export function buildInteractionHandlerTrace(
       for (const match of matches) {
         steps.set(match.id, assertionStep(match));
         if (!traversable(match)) continue;
+        if (
+          interaction.kind === 'microservice_message' &&
+          interaction.target.mode === 'request_response' &&
+          match.status !== 'resolved'
+        )
+          continue;
         const matchedHandler = handlers.get(match.objectId!);
         if (matchedHandler === undefined) continue;
         relevantIds.add(matchedHandler.id);
@@ -238,7 +249,9 @@ export function buildInteractionHandlerTrace(
             continue;
           }
           const causalClass: TraceCausalClass | null =
-            interaction.kind === 'job_queue' || state.causalClass === 'distributed_conditional'
+            interaction.kind === 'job_queue' ||
+            interaction.kind === 'microservice_message' ||
+            state.causalClass === 'distributed_conditional'
               ? 'distributed_conditional'
               : interaction.dispatchTiming === 'asynchronous' ||
                   matchedHandler.ruleId.includes('.async.')

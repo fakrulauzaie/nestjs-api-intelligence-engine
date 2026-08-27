@@ -38,6 +38,10 @@ described below. Similar names alone are never enough.
 | BullMQ queue producers            | `queue.bullmq.queue-add.v1`                                                                                                                                                                     | Package-proven `@nestjs/bullmq` `@InjectQueue()` member typed as `bullmq` `Queue`; direct `add()` with bounded queue/job strings; dynamic identities retained explicitly                                                     | Ambiguous/reassigned/lookalike receivers produce no guessed interaction; payload/options are not retained; no enqueue or delivery success claim                                           | `test/unit/extractors/nest-bullmq.test.ts`                                                                                                                |
 | BullMQ WorkerHost candidates      | `queue.bullmq.worker-host.process.queue-wide.v1`, `queue.bullmq.queue-wide-candidate.v1`                                                                                                        | Package-proven `@Processor(queue)` class extending package `WorkerHost`; one `process()` method; same exact queue links to every bounded queue-wide candidate; module provider metadata proves registration                  | `job.name` branches remain queue-wide and diagnosed; registration-unknown candidates do not contribute endpoint effects; duplicate workers are all retained; legacy Bull is unsupported   | `test/unit/extractors/nest-bullmq.test.ts`                                                                                                                |
 | BullMQ conditional traversal      | Phase 35 distributed interaction traversal                                                                                                                                                      | Endpoint and handler-rooted paths cross matched, proven-registered local worker candidates and classify downstream table terminals as `distributed_conditional`                                                              | Broker/worker crossing never changes synchronous DB facts or proves delivery, completion, retry behavior, remote ownership, or an exact job-specific effect                               | `test/unit/extractors/nest-bullmq.test.ts`                                                                                                                |
+| Nest microservice applications    | `nest.application.microservice-root.v1`, `nest.application.hybrid-microservice-root.v1`                                                                                                         | Direct `createMicroservice()` roots and bounded `create()` + `connectMicroservice()` hybrids; static TCP/Redis/RMQ/Kafka transport inventory                                                                                 | Dynamic bootstrap/factory/configuration and broker topology are not evaluated; transport inventory never proves routing or delivery                                                       | `test/unit/extractors/nest-microservices.test.ts`                                                                                                         |
+| ClientProxy producers             | `microservice.client-proxy.send.v1`, `microservice.client-proxy.emit.v1`                                                                                                                        | Package-proven injected `ClientProxy`, static `ClientsModule.register()` token/transport, bounded scalar/plain-JSON patterns; eager `emit` and cold `send` activation states                                                 | Lookalikes, ambiguous receivers/tokens, dynamic patterns, arbitrary wrappers, and unsupported transports remain absent or explicitly uncertain; payloads are not retained                 | `test/unit/extractors/nest-microservices.test.ts`                                                                                                         |
+| Nest message/event handlers       | `microservice.message-pattern.v1`, `microservice.event-pattern.v1`                                                                                                                              | Package-proven controller handler inventory, including consumer-only roots and registration state                                                                                                                            | Provider decorators remain registration-unknown; local lookalikes are rejected; no handler declaration proves deployment or execution                                                     | `test/unit/extractors/nest-microservices.test.ts`                                                                                                         |
+| Microservice candidate matching   | `microservice.request-response-candidate.v1`, `microservice.request-response-ambiguous-candidate.v1`, `microservice.event-candidate.v1`                                                         | Same resolved application, mode, canonical pattern, and proven compatible transport; events retain all candidates; duplicate request handlers remain ambiguous and non-traversable                                           | No delivery/acknowledgement claim, no request fan-out, no cross-application or transport-equivalence inference, and no transport-specific routing simulation                              | `test/unit/extractors/nest-microservices.test.ts`                                                                                                         |
 
 ## Explicit uncertainty behavior
 
@@ -100,6 +104,12 @@ open-world topologies. Dynamic queue/job identity uses
 `INTERACTION_TARGET_DYNAMIC`; duplicate candidates are bounded fan-out rather than a
 guessed single consumer.
 
+Nest microservice gaps additionally use `MICROSERVICE_TRANSPORT_UNKNOWN`,
+`MICROSERVICE_TRANSPORT_MISMATCH`, `MICROSERVICE_ACTIVATION_UNKNOWN`,
+`MICROSERVICE_HANDLER_REGISTRATION_UNKNOWN`, and
+`MICROSERVICE_REQUEST_HANDLER_AMBIGUOUS`. Duplicate request handlers are visible
+ambiguity records but are not traversed as event-style fan-out.
+
 ## Independent repository confirmation
 
 The rule table was also checked against the official NestJS `05-sql-typeorm` sample at
@@ -126,8 +136,10 @@ model polymorphic/interface dispatch, callback value flow, pipes, effective vali
 or transformation, dynamic Nest module behavior, interceptors/serialization,
 dynamic/non-PostgreSQL raw SQL, custom repositories, general RxJS alias/callback flow,
 arbitrary HTTP clients, dynamic/manual EventEmitter listeners, legacy/custom queue
-APIs, exact BullMQ job-branch slicing, Nest microservices, or raw broker messaging.
-The supported eager, Nest `HttpService`, exact local-event, and bounded BullMQ subsets
+APIs, exact BullMQ job-branch slicing, dynamic/custom Nest microservice clients or
+broker topology, or raw broker messaging.
+The supported eager, Nest `HttpService`, exact local-event, bounded BullMQ, and
+bounded Nest microservice subsets
 are documented separately. Unsupported QueryBuilder, raw-SQL,
 and HTTP flow remains diagnosed rather than modeled. These are not silently converted
 into nearby supported facts. Monorepo-wide application discovery, distributed
@@ -140,8 +152,8 @@ The frozen analysis-v1 output remains at
 
 ## Analysis v3 capability boundary
 
-The current capability statement is: `outbound_http`, `in_process_event`, and
-`job_queue` are supported and enabled; `microservice_message` is schema-only. The
+The current capability statement is: `outbound_http`, `in_process_event`,
+`job_queue`, and `microservice_message` are supported and enabled. The
 phase chronology below documents compatibility evolution and must not be read as the
 current scanner state at each intermediate step.
 
@@ -168,29 +180,36 @@ Phase 35 activates `job_queue` for the bounded BullMQ producer and queue-wide
 `distributed_conditional` effects while preserving open-world producer-only and
 consumer-only topologies.
 
-Current scans therefore advertise `outbound_http`, `in_process_event`, and
-`job_queue` as supported and enabled. `microservice_message` remains a schema
-reservation rather than a supported fact.
+Phase 36 activates `microservice_message` for the bounded Nest `ClientProxy`, static
+registration/transport, canonical pattern, and controller-handler surface. Local
+matches are delivery candidates only; downstream effects remain
+`distributed_conditional`.
+
+Current scans therefore advertise all four interaction kinds as supported and
+enabled.
 
 Schema representation must not be interpreted as static-analysis support. The
 supported outbound subsets are defined in
 [Eager Outbound HTTP Analysis](outbound-http.md) and
 [Nest HttpService and Symbolic Targets](nest-http-service.md). Exact and configured
 wildcard local events are defined in [In-Process Event Analysis](in-process-events.md).
-The BullMQ subset is defined in [BullMQ Queue Interactions](bullmq-interactions.md).
-Dynamic/manual EventEmitter listeners, legacy Bull, raw/custom BullMQ APIs, Nest
-microservices, raw broker SDKs, delivery, and remote consumers remain unmodeled until
-an owning phase adds evidence-backed rules and updates this document. The
+The BullMQ subset is defined in [BullMQ Queue Interactions](bullmq-interactions.md),
+and the Nest microservice subset in
+[Nest Microservice Interactions](nest-microservices.md). Dynamic/manual EventEmitter
+listeners, legacy Bull, raw/custom BullMQ APIs, dynamic/custom microservice clients,
+raw broker SDKs, delivery, and remote consumers remain unmodeled. The
 non-executable corpus in [Distributed Gate D0](distributed-gate-d0.md) is the frozen
-BullMQ contract already consumed by Phase 35 and a future microservice extractor
-contract; it is not broader static-analysis support.
+BullMQ and Nest microservice contracts consumed by Phases 35 and 36; it is not
+broader static-analysis support.
 
 ## Derived architecture policies
 
-The four Phase 16 policy rules consume only the supported canonical and semantic-diff
+The seven built-in policy rules consume only supported canonical and semantic-diff
 facts above. They do not broaden static-analysis support. Direct controller repository
-access, guard declarations on write endpoints, write-trace completeness, and new
-diagnostics are covered by `test/unit/policy/evaluate.test.ts`; strict configuration,
+access, guard declarations on synchronous write endpoints, write-trace completeness,
+new diagnostics, bounded interaction targets, proven interaction activation, and
+closed-world local-event handler presence are covered by
+`test/unit/policy/evaluate.test.ts`; strict configuration,
 canonical ordering, and integrity are covered by
 `test/unit/policy/contracts.test.ts`. The result vocabulary and limitations are in
 [Typed Architecture Policy Engine](policy-engine.md).
@@ -212,8 +231,9 @@ behavior. See [Structured Evidence Exports](structured-evidence-exports.md).
 
 ## Derived offline graph report
 
-Phase 23 projects one bounded scene per canonical endpoint from the existing endpoint
-catalogue, endpoint trace, effective-guard, and request-provenance views. Assertion
+Graph schema v4 projects one bounded scene per canonical endpoint and one per canonical
+interaction handler from the existing endpoint/handler traces, effective-guard, and
+request-provenance views. Assertion
 status remains resolved, ambiguous, unresolved, or unsupported; derived unknown states
 remain named. Optional policy results must match the snapshot, and optional impact
 results must contain it on an exact before/after side. Impact path assertion IDs—not

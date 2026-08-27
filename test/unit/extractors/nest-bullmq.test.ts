@@ -113,6 +113,19 @@ describe('Nest BullMQ extraction', () => {
         ]);
       }
       const graph = buildGraphReportDocument({ analysis });
+      expect(graph.schemaVersion).toBe('4.0.0');
+      expect(graph.interactionHandlers).toEqual([
+        expect.objectContaining({
+          kind: 'job_queue',
+          boundary: 'broker_or_worker_boundary',
+          causalClass: 'distributed_conditional',
+          dbWrites: ['report_job'],
+          producerInteractionIds: [interactions[0]!.id],
+        }),
+      ]);
+      expect(
+        graph.interactionHandlers?.[0]?.scene.nodes.some(({ id }) => id === handlers[0]!.id),
+      ).toBe(true);
       const scene = graph.endpoints.find(({ path }) => path === '/reports')?.scene;
       expect(scene?.nodes.some(({ label }) => label.includes('bullmq queue reports'))).toBe(true);
       expect(scene?.nodes.some(({ label }) => label.includes('@Processor'))).toBe(true);

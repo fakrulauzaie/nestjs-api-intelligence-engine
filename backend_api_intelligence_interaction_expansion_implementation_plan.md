@@ -976,8 +976,8 @@ superseded claims are replaced. ADRs remain historical decision records.
 
 ## Status
 
-Eligible but not started. Phase 35, Documentation Gate D1, and the independently
-frozen Phase 36 portion of Gate D0 pass as of 2026-08-26.
+Complete as of 2026-08-27. Phase 35, Documentation Gate D1, and the independently
+frozen Phase 36 portion of Gate D0 passed before implementation began.
 
 ## Goal
 
@@ -1029,7 +1029,10 @@ application-boundary facts and local delivery candidates.
 
 ## Status
 
-Deferred until Phases 35-36 are accepted.
+Complete (2026-08-27). The Phase 35-36 re-audit found comparison, impact,
+endpoint-trace, OpenAPI, and control-evidence integration already complete. Phase 37
+therefore added only handler-rooted graph scenes plus three evidence-backed opt-in
+policies; it did not redesign already-correct consumers.
 
 ## Goal
 
@@ -1092,18 +1095,18 @@ Every implemented phase must pass:
 
 # 16. Progress ledger
 
-| Phase/gate | Status                 | Intended outcome                                                  |
-| ---------: | ---------------------- | ----------------------------------------------------------------- |
-|         30 | Complete (2026-08-25)  | Analysis v3 application/interaction/handler substrate             |
-|         31 | Complete (2026-08-25)  | Eager Axios/fetch/Undici outbound HTTP                            |
-|         32 | Complete (2026-08-25)  | Nest HttpService activation and symbolic targets                  |
-|         33 | Complete (2026-08-25)  | Exact in-process EventEmitter flows                               |
-|         34 | Complete (2026-08-26)  | Wildcards, fan-out, all local-interaction consumers, Milestone I1 |
-|         D0 | Complete (2026-08-26)  | Distributed fixture matrix and semantic contract freeze           |
-|         35 | Complete (2026-08-26)  | BullMQ-first queue interactions                                   |
-|         D1 | Complete (2026-08-26)  | Current documentation reconciliation and drift automation         |
-|         36 | Eligible (not started) | Nest microservice boundary inventory                              |
-|         37 | Deferred/gated         | Distributed policies, reports, and hardening                      |
+| Phase/gate | Status                | Intended outcome                                                  |
+| ---------: | --------------------- | ----------------------------------------------------------------- |
+|         30 | Complete (2026-08-25) | Analysis v3 application/interaction/handler substrate             |
+|         31 | Complete (2026-08-25) | Eager Axios/fetch/Undici outbound HTTP                            |
+|         32 | Complete (2026-08-25) | Nest HttpService activation and symbolic targets                  |
+|         33 | Complete (2026-08-25) | Exact in-process EventEmitter flows                               |
+|         34 | Complete (2026-08-26) | Wildcards, fan-out, all local-interaction consumers, Milestone I1 |
+|         D0 | Complete (2026-08-26) | Distributed fixture matrix and semantic contract freeze           |
+|         35 | Complete (2026-08-26) | BullMQ-first queue interactions                                   |
+|         D1 | Complete (2026-08-26) | Current documentation reconciliation and drift automation         |
+|         36 | Complete (2026-08-27) | Nest microservice boundary inventory                              |
+|         37 | Complete (2026-08-27) | Distributed policies, handler graphs, and hardening               |
 
 When a phase completes, append a completion record containing the date, exact
 artifacts, test counts, verification commands, benchmark results where applicable,
@@ -1639,10 +1642,140 @@ Remaining boundaries and gate decision:
 
 ---
 
+## 16.9 Phase 36 completion record
+
+Completed on 2026-08-27. The independently frozen Nest microservice portion of D0
+and Documentation Gate D1 passed before implementation; Phase 36 consumes those
+contracts without broadening them.
+
+Artifacts:
+
+- `src/extractors/nest-microservices.ts` adds checker/package-proven extraction for
+  direct and bounded hybrid application roots, static TCP/Redis/RMQ/Kafka inventory,
+  injected `ClientProxy.send()`/`emit()` producers, canonical scalar/plain-JSON
+  patterns, and controller pattern handlers.
+- Cold `send()` distinguishes `constructed_cold`, `proven_activated`, and `unknown`;
+  `emit()` remains eager. No state claims broker acceptance, delivery,
+  acknowledgement, handler execution, or completion.
+- Local candidates require equal mode, canonical pattern, resolved application, and
+  compatible proven transport. Events retain all candidates; duplicate request
+  handlers publish ambiguous, non-traversable assertions rather than request fan-out.
+- Producer-only and consumer-only repositories remain normal open-world topologies.
+  Handler-rooted and endpoint-reachable effects cross a broker/worker boundary as
+  `distributed_conditional` only.
+- Canonical integrity, endpoint/handler traces, comparison, impact, Markdown
+  catalogue/trace reports, graph scenes, OpenAPI enrichment, and control-evidence
+  JSON/CSV consume `microservice_message` records. Structured export schema `3.0.0`
+  now applies to either queue or microservice distributed records.
+- Five new microservice diagnostics plus existing interaction receiver/target/limit
+  diagnostics distinguish unknown/mismatched transports, unknown cold activation,
+  registration uncertainty, ambiguous request handlers, and generic static gaps.
+- `test/unit/extractors/nest-microservices.test.ts` covers every frozen topology,
+  activation state, canonical/dynamic pattern, event/request multiplicity, supported
+  transport, mismatch, ambiguous binding, provider/lookalike negative, determinism,
+  comparison/impact, exports, graph, and bounded hybrid bootstrap without executing
+  target code.
+- `docs/nest-microservices.md`, the living D1 references, supported-pattern table,
+  Phase 36 benchmark, and documentation contract publish the exact current surface
+  and exclusions. No runtime dependency was added.
+
+Verification:
+
+- `pnpm run typecheck`, `pnpm run lint`, `pnpm run build`, and
+  `pnpm run format:check` pass.
+- The focused Phase 36 extraction suite passes 8/8 tests. The D0 corpus audit passes
+  14/14 tests, including static compilation of all seven microservice fixtures.
+- The complete single-worker suite passes 293/293 tests across 114 files after four
+  older capability expectations and one documentation phrase were updated for the
+  fourth supported interaction kind.
+- Repeated negative scans are byte-identical, comparison/impact target changes are
+  deterministic, graph edges never use `delivered`, and request-handler ambiguity is
+  excluded from endpoint/impact traversal.
+- A built-CLI scan into a path containing spaces publishes schema `3.0.0`, seven
+  endpoints, zero interactions, and all four supported/enabled kinds.
+
+Benchmark:
+
+- The eight Phase 36 test bodies completed in 6,763 ms; the persisted activation case
+  completed in 1,313 ms and produced a 34,886-byte analysis plus a 477,038-byte graph.
+- Three built-CLI self-impact/graph runs produced byte-identical files. Median impact
+  time was 592.29 ms and median graph time was 580.15 ms.
+- The path-containing-spaces example scan completed in 3,161.21 ms. These workstation
+  measurements are smoke baselines, not durable performance thresholds.
+
+Remaining boundaries and gate decision:
+
+- Dynamic module/client factories, arbitrary wrappers, unsupported transports,
+  transport-specific routing, gRPC/protobuf semantics, raw SDKs, payload lineage,
+  cross-repository discovery, and every runtime broker guarantee remain excluded.
+- A handler candidate is not a delivery fact. Static co-location does not prove one
+  deployment, and absent local peers do not prove missing runtime consumers.
+- Phase 36 passes. All four reserved interaction kinds now have bounded extractors;
+  Phase 37 is eligible but has not started.
+
+---
+
+## 16.10 Phase 37 completion record
+
+Completed on 2026-08-27.
+
+Artifacts:
+
+- The policy model, strict configuration/schema, evaluator, validator, and docs add
+  opt-in `forbid-dynamic-interaction-target`,
+  `require-proven-interaction-activation`, and
+  `require-local-in-process-event-handler` rules. Each evaluates canonical
+  interaction subjects with pass/fail/unknown/not-applicable outcomes and retained
+  evidence; existing synchronous rules are unchanged.
+- Graph report schema `4.0.0` adds exactly one bounded handler-rooted scene per
+  canonical interaction handler, handler summary counts, evidence closure, and
+  integrity checks. Historical graph v1-v3 schemas remain readable.
+- The offline UI switches between endpoint producers and interaction handlers,
+  navigates from a handler node to its handler scene and from an interaction in a
+  handler scene to a related endpoint when available, and keeps consumer-only
+  repositories visible without inventing endpoints or remote producers.
+- `docs/phase37-distributed-policy-report-hardening.md`, the policy/graph/model/
+  supported-pattern references, the generated configuration JSON Schema, and
+  executable documentation tests record the adopted and rejected scope.
+- The Phase 37 re-audit confirmed that comparison, impact, endpoint traces, OpenAPI,
+  and control-evidence exports already consume the Phase 35-36 generic facts. No
+  duplicate projection or format churn was introduced.
+
+Verification:
+
+- TypeScript typecheck, ESLint with zero warnings, Prettier check, production build,
+  all 115 test files / 296 tests, and deterministic graph/config contracts pass.
+- Focused event, BullMQ, and microservice graph tests prove local, distributed,
+  producer-only, and consumer-only scenes without executing application code.
+- Built-CLI scan, check, and graph smoke commands publish analysis v3, policy results
+  v1, and graph v4 through paths containing spaces.
+
+Benchmark:
+
+- The Phase 37 focused policy/graph/distributed suite completed 27 tests across six
+  files in 10.06 seconds on the documented Windows/Node workstation. A persisted
+  graph-v4 benchmark and deterministic built-CLI measurements are recorded in
+  `docs/benchmarks/phase37-distributed-hardening.md`.
+
+Remaining boundaries and decision record:
+
+- Allowed-origin, queue/topic/module allowlists are not adopted without typed rule
+  parameters and stable ownership evidence. HTTP-timeout enforcement is not adopted
+  without canonical timeout evidence across clients and configuration layers.
+- The local-listener rule is intentionally closed-world and applies only to
+  in-process events. Missing BullMQ or microservice consumers remain normal
+  open-world topology and never become a default gap or failure.
+- Static target, activation, candidate matching, and local co-location never prove
+  delivery, acknowledgement, response, completion, retry behavior, deployment
+  topology, or remote ownership.
+- Phase 37 and the interaction-expansion roadmap are complete. Further protocol or
+  policy expansion requires a separately reviewed evidence contract and plan.
+
+---
+
 # 17. Immediate next action
 
-Phase 35 and Documentation Gate D1 are complete. Phase 36 is the next eligible work
-item because its frozen D0 microservice corpus remains valid, but it has not started.
-Re-audit that corpus against the reconciled current contracts before activating only
-the bounded Nest `ClientProxy` and message-handler surface; do not add legacy Bull,
-raw broker SDKs, delivery claims, transport simulation, or cross-repository inference.
+No phase in this interaction-expansion plan remains eligible. Preserve the completed
+contracts and treat any raw broker SDK, cross-repository discovery, transport
+simulation, configurable allowlist, or timeout-policy proposal as a new gated roadmap
+rather than an implicit continuation.

@@ -38,7 +38,7 @@ export type ControlEvidenceSchemaVersion =
 
 export interface EndpointInteractionSummary {
   readonly interactionId: string;
-  readonly kind: 'outbound_http' | 'in_process_event' | 'job_queue';
+  readonly kind: 'outbound_http' | 'in_process_event' | 'job_queue' | 'microservice_message';
   readonly target: string;
   readonly activation: InteractionActivationState;
   readonly boundary: InteractionBoundaryState;

@@ -21,11 +21,13 @@
     "supportedKinds": [
       "in_process_event",
       "job_queue",
+      "microservice_message",
       "outbound_http"
     ],
     "enabledKinds": [
       "in_process_event",
       "job_queue",
+      "microservice_message",
       "outbound_http"
     ],
     "state": "complete"

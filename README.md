@@ -5,7 +5,10 @@ endpoints through constructor-injected services to TypeORM table reads/writes an
 outbound HTTP interactions, including cold Nest `HttpService` activation state, plus
 configured exact/wildcard local `EventEmitter2` fan-out and separately classified
 causal database effects, and bounded BullMQ queue/worker candidate paths whose
-database effects remain distributed-conditional. Its
+database effects remain distributed-conditional. It also inventories bounded Nest
+`ClientProxy` `send`/`emit` interactions and transport-compatible
+`@MessagePattern`/`@EventPattern` delivery candidates under the
+`microservice_message` kind. Its
 output is deterministic, runtime-validated, evidence-backed, and explicit about gaps.
 
 The MVP analyzes source; it does not start the target application, import target
@@ -127,7 +130,7 @@ the effective value in output metadata. Analysis settings can also come from a
 version-2 or version-3 project configuration. Version 3 additionally records bounded
 interaction-traversal limits; those settings do not enable extractors by themselves.
 The supported eager/Nest `HttpService` outbound-HTTP, configured in-process event,
-and BullMQ queue extractors run on every current scan.
+BullMQ queue, and bounded Nest microservice extractors run on every current scan.
 Raw-SQL analysis remains disabled unless the CLI or configuration explicitly selects
 `postgresql-18`.
 
@@ -169,13 +172,17 @@ causal tracing, and limits are in
 Checker-proven `@InjectQueue()` producers, queue-wide `WorkerHost` candidates, and
 distributed-conditional effects are in
 [BullMQ Queue Interactions](docs/bullmq-interactions.md).
-The frozen, non-executable queue and microservice topology contracts that gate future
-distributed extractors are documented in
+Checker-proven `ClientProxy`, canonical scalar/object patterns, cold `send`
+activation, controller handlers, and TCP/Redis/RMQ/Kafka inventory are in
+[Nest Microservice Interactions](docs/nest-microservices.md).
+The frozen, non-executable queue and microservice topology contracts that underpin the
+current distributed extractors and gate any future expansion are documented in
 [Distributed Gate D0](docs/distributed-gate-d0.md).
 Exact OpenAPI enrichment and deterministic control-evidence JSON/CSV are documented in
 [Structured Evidence Exports](docs/structured-evidence-exports.md).
-Endpoint-centered interaction, offline/CSP protections, limits, and accessible fallback
-are documented in the [Offline Interactive Graph Report](docs/offline-graph-report.md).
+Endpoint- and handler-rooted interaction views, offline/CSP protections, limits, and
+accessible fallback are documented in the
+[Offline Interactive Graph Report](docs/offline-graph-report.md).
 
 ## Result states
 
@@ -229,10 +236,16 @@ cancellation have distinct exit codes documented in the CLI workflow.
   producers, package-proven `@Processor()`/`WorkerHost.process()` queue-wide
   candidates, producer-only and consumer-only topologies, and
   distributed-conditional worker table effects.
+- Checker-proven Nest `ClientProxy.send()`/`emit()` receivers, static
+  `ClientsModule.register()` tokens and TCP/Redis/RMQ/Kafka transports, canonical
+  scalar/plain-JSON patterns, controller `@MessagePattern()`/`@EventPattern()`
+  candidates, cold-send activation, open-world topologies, and
+  distributed-conditional handler effects.
 - Exact OpenAPI 3.0/3.1 JSON enrichment plus strict match/evidence sidecars, and
   one-row-per-endpoint control-evidence JSON/CSV exports.
-- A self-contained offline Cytoscape.js report over validated endpoint scenes, with
-  evidence, uncertainty, optional policy/impact overlays, filters, and a table fallback.
+- A self-contained offline Cytoscape.js report over validated endpoint and interaction-
+  handler scenes, with evidence, uncertainty, optional policy/impact overlays,
+  producer/consumer navigation, filters, and a table fallback.
 
 The authoritative [supported-pattern table](docs/supported-patterns.md) maps every
 canonical rule to executable tests.
@@ -249,9 +262,11 @@ canonical rule to executable tests.
   builders, dynamic/non-PostgreSQL raw SQL, and custom repositories are not persistence
   facts. Arbitrary HTTP clients/wrappers, general RxJS data flow, dynamic/manual
   EventEmitter listeners, legacy Bull, custom/raw BullMQ APIs, exact job-branch
-  slicing, Nest microservices, and raw broker SDKs are outside the current interaction
-  extractor. The frozen Distributed Gate D0 corpus remains the semantic contract for
-  the supported BullMQ subset and the future microservice subset.
+  slicing, dynamic microservice factories/patterns, transport-specific broker routing,
+  custom `ClientProxy` wrappers, gRPC/protobuf semantics, and raw broker SDKs are
+  outside the current interaction extractors. The frozen Distributed Gate D0 corpus
+  is the semantic contract consumed by the supported BullMQ and Nest microservice
+  subsets.
 - Request-field influence is modeled as `direct`, `derived`, or `unknown` within one
   method and through bounded direct injected-member calls. Polymorphic/interface
   dispatch, callbacks, spread/rest mappings, pipes, runtime validation/transformation,
@@ -294,8 +309,8 @@ stages complete files, commits canonical analysis last, and preserves unrelated 
 See [Architecture](docs/architecture.md) and the [Canonical Model Contract](docs/model-contract.md).
 
 The current scanner publishes strict analysis schema `3.0.0` and advertises
-`outbound_http`, `in_process_event`, and `job_queue` as supported and enabled. Phase
-30 originally introduced empty
+`outbound_http`, `in_process_event`, `job_queue`, and `microservice_message` as
+supported and enabled. Phase 30 originally introduced empty
 interaction collections; frozen v1/v2 documents remain readable, and missing
 historical interaction families normalize to unavailable rather than empty proof.
 

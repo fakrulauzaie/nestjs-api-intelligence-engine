@@ -141,6 +141,27 @@ export interface MicroserviceMessageTarget {
   readonly transport: NestMicroserviceTransport | null;
 }
 
+/**
+ * Matches only statically canonical Nest message patterns with the same communication
+ * mode and proven transport. Handler targets deliberately carry a dynamic client token
+ * because Nest pattern decorators do not identify a producer token; token/application
+ * compatibility is enforced by extractor and integrity rules instead of being guessed.
+ */
+export function microserviceMessageTargetsMatch(
+  interaction: MicroserviceMessageTarget,
+  handler: MicroserviceMessageTarget,
+): boolean {
+  return (
+    interaction.mode === handler.mode &&
+    interaction.patternKind !== 'dynamic' &&
+    handler.patternKind !== 'dynamic' &&
+    interaction.canonicalPattern !== null &&
+    interaction.canonicalPattern === handler.canonicalPattern &&
+    interaction.transport !== null &&
+    interaction.transport === handler.transport
+  );
+}
+
 export type InteractionTarget =
   | OutboundHttpTarget
   | InProcessEventTarget

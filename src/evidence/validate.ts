@@ -6,6 +6,7 @@ import {
   INTERACTION_KINDS,
   interactionTargetKey,
   jobQueueTargetsMatch,
+  microserviceMessageTargetsMatch,
 } from '../model/interactions.js';
 import { canonicalStringify } from '../model/ordering.js';
 import { analysisDocumentSchema } from '../model/schemas.js';
@@ -832,14 +833,28 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
                 ? !inProcessEventTargetsMatch(interaction.target, handler.target)
                 : interaction.kind === 'job_queue' && handler.kind === 'job_queue'
                   ? !jobQueueTargetsMatch(interaction.target, handler.target)
-                  : interactionTargetKey(interaction.target) !==
-                    interactionTargetKey(handler.target);
+                  : interaction.kind === 'microservice_message' &&
+                      handler.kind === 'microservice_message'
+                    ? !microserviceMessageTargetsMatch(interaction.target, handler.target)
+                    : interactionTargetKey(interaction.target) !==
+                      interactionTargetKey(handler.target);
             const applicationMismatch =
-              interaction.applicationId !== null &&
-              handler.applicationId !== null &&
-              interaction.applicationId !== handler.applicationId;
+              interaction.kind === 'microservice_message'
+                ? interaction.applicationId === null ||
+                  handler.applicationId === null ||
+                  interaction.applicationId !== handler.applicationId
+                : interaction.applicationId !== null &&
+                  handler.applicationId !== null &&
+                  interaction.applicationId !== handler.applicationId;
+            const statusMismatch =
+              assertion.status !== 'resolved' &&
+              !(
+                assertion.status === 'ambiguous' &&
+                interaction.kind === 'microservice_message' &&
+                interaction.target.mode === 'request_response'
+              );
             if (
-              assertion.status !== 'resolved' ||
+              statusMismatch ||
               interaction.kind !== handler.kind ||
               targetMismatch ||
               applicationMismatch ||

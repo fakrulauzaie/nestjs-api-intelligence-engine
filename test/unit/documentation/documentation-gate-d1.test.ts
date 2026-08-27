@@ -13,7 +13,7 @@ import { reportCommand } from '../../../src/cli/commands/report.js';
 import { scanCommand } from '../../../src/cli/commands/scan.js';
 import { traceCommand } from '../../../src/cli/commands/trace.js';
 import { DIFF_SCHEMA_V2_VERSION } from '../../../src/comparison/model.js';
-import { GRAPH_REPORT_SCHEMA_V3_VERSION } from '../../../src/graph-report/model.js';
+import { GRAPH_REPORT_SCHEMA_V4_VERSION } from '../../../src/graph-report/model.js';
 import { IMPACT_SCHEMA_VERSION } from '../../../src/impact/model.js';
 import { CURRENT_ANALYSIS_SCHEMA_VERSION } from '../../../src/model/analysis.js';
 import { INTERACTION_KINDS } from '../../../src/model/interactions.js';
@@ -79,7 +79,7 @@ describe('Documentation Gate D1 conformance', () => {
     expect(normalizedModel).toContain(`diff.json\` | \`${DIFF_SCHEMA_V2_VERSION}`);
     expect(normalizedModel).toContain(`impact.json\` | \`${IMPACT_SCHEMA_VERSION}`);
     expect(normalizedModel).toContain(`policy-results.json\` | \`${POLICY_RESULTS_SCHEMA_VERSION}`);
-    expect(normalizedModel).toContain(`graph view | \`${GRAPH_REPORT_SCHEMA_V3_VERSION}`);
+    expect(normalizedModel).toContain(`graph view | \`${GRAPH_REPORT_SCHEMA_V4_VERSION}`);
     expect(normalizedModel).toContain(
       `OpenAPI enrichment sidecar | \`${OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION}`,
     );
@@ -101,9 +101,7 @@ describe('Documentation Gate D1 conformance', () => {
     const unsupportedKinds = INTERACTION_KINDS.filter(
       (kind) => !SUPPORTED_INTERACTION_KINDS.includes(kind as never),
     );
-    expect(unsupportedKinds).toEqual(['microservice_message']);
-    expect(projectConfig).toContain('`microservice_message` remains a');
-    expect(projectConfig).toContain('schema reservation');
+    expect(unsupportedKinds).toEqual([]);
   });
 
   it('has no broken local Markdown links in README or docs', async () => {

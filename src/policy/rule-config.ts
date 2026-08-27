@@ -27,6 +27,9 @@ export const policyRuleSettingsSchema = z
     'require-guard-on-write-endpoint': setting(unknownOptionsSchema).optional(),
     'require-complete-write-trace': setting(unknownOptionsSchema).optional(),
     'no-new-diagnostics': setting(diagnosticOptionsSchema).optional(),
+    'forbid-dynamic-interaction-target': setting(unknownOptionsSchema).optional(),
+    'require-proven-interaction-activation': setting(unknownOptionsSchema).optional(),
+    'require-local-in-process-event-handler': setting(unknownOptionsSchema).optional(),
   })
   .strict()
   .refine((rules) => Object.keys(rules).length > 0, 'At least one policy rule is required.')

@@ -105,11 +105,12 @@ export async function renderOfflineGraphReport(
       <div class="snapshot">${escapeHtml(document.analysis.toolName)} ${escapeHtml(document.analysis.toolVersion)}<br>Schema ${escapeHtml(document.schemaVersion)} · ${escapeHtml(document.analysis.resultState)}</div>
     </header>
     <div class="layout">
-      <aside class="sidebar" aria-label="Endpoint selection and filters">
+      <aside class="sidebar" aria-label="Graph view selection and filters">
         <section class="filters">
-          <h2>Find endpoints</h2>
+          <h2>Find graph views</h2>
           <div class="filter-grid">
-            <label>Search method, path, or handler<input id="filter-search" type="search" autocomplete="off"></label>
+            <label>View<select id="filter-view"><option value="endpoints">Endpoint producers</option><option value="handlers">Interaction handlers</option></select></label>
+            <label>Search path, target, or handler<input id="filter-search" type="search" autocomplete="off"></label>
             <label>Method<select id="filter-method"><option value="">Any</option></select></label>
             <label>Guard<select id="filter-guard"><option value="">Any</option><option value="declared">Declared</option><option value="none">None proven</option><option value="unknown">Unknown</option></select></label>
             <label>Diagnostics<select id="filter-diagnostic"><option value="">Any</option><option value="with">With diagnostics</option><option value="without">Without diagnostics</option></select></label>
@@ -119,31 +120,31 @@ export async function renderOfflineGraphReport(
           </div>
         </section>
         <p id="result-count" class="result-count" role="status"></p>
-        <ul id="endpoint-list" class="endpoint-list" aria-label="Matching endpoints"></ul>
+        <ul id="endpoint-list" class="endpoint-list" aria-label="Matching graph views"></ul>
       </aside>
       <main class="main">
         <div class="endpoint-heading">
-          <h2 id="endpoint-title">Select an endpoint</h2>
-          <div id="endpoint-badges" aria-label="Endpoint states"></div>
+          <h2 id="endpoint-title">Select a graph view</h2>
+          <div id="endpoint-badges" aria-label="Graph view states"></div>
         </div>
-        <div id="endpoint-chips" class="chips" aria-label="Endpoint summary"></div>
+        <div id="endpoint-chips" class="chips" aria-label="Graph view summary"></div>
         <p id="limit-notice" class="notice" role="status" hidden></p>
         <div class="workspace">
           <section class="graph-card" aria-labelledby="graph-label">
-            <h3 id="graph-label" class="visually-hidden">Interactive endpoint graph</h3>
+            <h3 id="graph-label" class="visually-hidden">Interactive evidence graph</h3>
             <div id="graph" aria-hidden="true"></div>
-            <p class="graph-caption">Select a node or edge to highlight its endpoint path and inspect retained evidence. Dashed labels and borders also name uncertainty without relying on color.</p>
+            <p class="graph-caption">Select a node or edge to highlight its causal path and inspect retained evidence. Dashed labels and borders name uncertainty without relying on color. Selecting a handler node opens its handler-rooted view; selecting a producer interaction from a handler view returns to a related endpoint when present.</p>
           </section>
           <aside class="inspector" aria-live="polite" aria-label="Evidence inspector">
             <div id="inspector-content"><p class="inspector-empty">Select an endpoint to inspect evidence.</p></div>
           </aside>
         </div>
-        <section class="facts" aria-label="Endpoint facts"><div id="facts-grid" class="facts-grid"></div></section>
+        <section class="facts" aria-label="Graph view facts"><div id="facts-grid" class="facts-grid"></div></section>
         <details class="fallback" open>
           <summary>Accessible graph table</summary>
           <div class="table-scroll">
             <table>
-              <caption class="visually-hidden">Nodes and edges for the selected endpoint</caption>
+              <caption class="visually-hidden">Nodes and edges for the selected graph view</caption>
               <thead><tr><th>Record</th><th>Kind</th><th>Label or connection</th><th>Certainty</th><th>Impact</th><th>Evidence</th></tr></thead>
               <tbody id="fallback-body"></tbody>
             </table>

@@ -47,6 +47,24 @@ const REASON_CODES_BY_RULE = {
     'diagnostic_comparison_ambiguous',
     'baseline_not_supplied',
   ]),
+  'forbid-dynamic-interaction-target': new Set([
+    'interaction_target_static',
+    'interaction_target_dynamic',
+    'interaction_target_unknown',
+    'no_interaction_subjects',
+  ]),
+  'require-proven-interaction-activation': new Set([
+    'interaction_activation_proven',
+    'interaction_activation_cold',
+    'interaction_activation_unknown',
+    'no_interaction_subjects',
+  ]),
+  'require-local-in-process-event-handler': new Set([
+    'local_event_handler_found',
+    'local_event_handler_missing',
+    'local_event_handler_unknown',
+    'no_in_process_event_subjects',
+  ]),
 } as const;
 
 export function validatePolicyResultsDocument(input: unknown): PolicyValidationResult {

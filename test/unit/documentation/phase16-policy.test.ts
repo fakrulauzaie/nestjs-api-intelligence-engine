@@ -23,6 +23,9 @@ describe('Phase 16 policy documentation', () => {
       'require-guard-on-write-endpoint',
       'require-complete-write-trace',
       'no-new-diagnostics',
+      'forbid-dynamic-interaction-target',
+      'require-proven-interaction-activation',
+      'require-local-in-process-event-handler',
     ]) {
       expect(guide).toContain(`\`${rule}\``);
       for (const branch of schema.anyOf) {

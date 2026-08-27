@@ -10,6 +10,9 @@ export const POLICY_RULE_IDS = [
   'require-guard-on-write-endpoint',
   'require-complete-write-trace',
   'no-new-diagnostics',
+  'forbid-dynamic-interaction-target',
+  'require-proven-interaction-activation',
+  'require-local-in-process-event-handler',
 ] as const;
 export type PolicyRuleId = (typeof POLICY_RULE_IDS)[number];
 
@@ -18,6 +21,9 @@ export const POLICY_RULE_VERSIONS: Readonly<Record<PolicyRuleId, '1.0.0'>> = {
   'require-guard-on-write-endpoint': '1.0.0',
   'require-complete-write-trace': '1.0.0',
   'no-new-diagnostics': '1.0.0',
+  'forbid-dynamic-interaction-target': '1.0.0',
+  'require-proven-interaction-activation': '1.0.0',
+  'require-local-in-process-event-handler': '1.0.0',
 };
 
 export const POLICY_SEVERITIES = ['warn', 'error'] as const;
@@ -43,6 +49,17 @@ export const POLICY_REASON_CODES = [
   'no_new_diagnostics',
   'diagnostic_comparison_ambiguous',
   'baseline_not_supplied',
+  'interaction_target_static',
+  'interaction_target_dynamic',
+  'interaction_target_unknown',
+  'no_interaction_subjects',
+  'interaction_activation_proven',
+  'interaction_activation_cold',
+  'interaction_activation_unknown',
+  'local_event_handler_found',
+  'local_event_handler_missing',
+  'local_event_handler_unknown',
+  'no_in_process_event_subjects',
 ] as const;
 export type PolicyReasonCode = (typeof POLICY_REASON_CODES)[number];
 

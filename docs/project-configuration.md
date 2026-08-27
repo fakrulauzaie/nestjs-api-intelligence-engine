@@ -29,13 +29,13 @@ configuration contract:
 ```
 
 All three interaction limits are optional when `interactions` is present and use the
-documented defaults above when omitted. They bound configured in-process event and
-BullMQ causal traversal; they do not enable or disable an extractor. Analysis v3 can
+documented defaults above when omitted. They bound configured in-process event,
+BullMQ, and Nest microservice causal traversal; they do not enable or disable an extractor. Analysis v3 can
 represent four interaction kinds, while capability metadata separately reports which
 kinds the running analyzer actually supports. The current scanner always enables
-`outbound_http`, `in_process_event`, and `job_queue`; `microservice_message` remains a
-schema reservation. Configuration cannot disable a supported extractor or activate a
-reserved one. Symbolic tokens are derived only from source identity, never project
+all four kinds: `outbound_http`, `in_process_event`, `job_queue`, and
+`microservice_message`. Configuration cannot disable a supported extractor. Symbolic
+tokens are derived only from source identity, never project
 configuration values or environment lookup.
 
 ## Version 2 compatibility

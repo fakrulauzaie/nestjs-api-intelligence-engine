@@ -5,8 +5,11 @@ import { buildAnalysisSemanticProjection } from '../comparison/projection.js';
 import { createSemanticKey } from '../comparison/semantic-key.js';
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
 import type { AnalysisDocument } from '../model/analysis.js';
+import type { AssertionRecord } from '../model/assertions.js';
 import type { DiagnosticSeverity } from '../model/diagnostics.js';
 import type { ClassRecord } from '../model/entities.js';
+import type { InProcessEventInteractionRecord, InteractionRecord } from '../model/interactions.js';
+import { interactionTargetKey } from '../model/interactions.js';
 import { buildEndpointTrace, type EndpointTraceBuildResult } from '../tracing/endpoint-trace.js';
 import {
   POLICY_RESULTS_SCHEMA_VERSION,
@@ -621,6 +624,192 @@ function evaluateDiagnosticRule(
   ];
 }
 
+function interactionSubject(
+  context: EvaluationContext,
+  interaction: InteractionRecord,
+): PolicySubject {
+  const method = context.analysis.methods.find(({ id }) => id === interaction.sourceMethodId);
+  return {
+    semanticKey:
+      context.projection.semanticKeyById.get(interaction.id) ??
+      createSemanticKey('interaction', [
+        interaction.sourceMethodId,
+        interaction.kind,
+        interactionTargetKey(interaction.target),
+      ]),
+    displayName: `${method?.qualifiedName ?? interaction.sourceMethodId} -> ${interaction.kind}`,
+    canonicalIds: [interaction.id, interaction.sourceMethodId],
+  };
+}
+
+function dynamicTargetState(interaction: InteractionRecord): 'static' | 'dynamic' | 'unknown' {
+  switch (interaction.kind) {
+    case 'outbound_http':
+      return interaction.target.url.resolution === 'dynamic' ||
+        interaction.target.method === 'UNKNOWN'
+        ? 'dynamic'
+        : 'static';
+    case 'in_process_event':
+      return interaction.target.identityKind === 'dynamic' ? 'dynamic' : 'static';
+    case 'job_queue':
+      return interaction.target.queue.resolution === 'dynamic' ||
+        interaction.target.job.resolution === 'dynamic'
+        ? 'dynamic'
+        : 'static';
+    case 'microservice_message':
+      if (
+        interaction.target.patternKind === 'dynamic' ||
+        interaction.target.clientToken.resolution === 'dynamic'
+      ) {
+        return 'dynamic';
+      }
+      return interaction.target.transport === null ? 'unknown' : 'static';
+  }
+}
+
+function noInteractionSubjects(
+  context: EvaluationContext,
+  configuration: NormalizedPolicyRuleConfiguration,
+): PolicyResult[] {
+  return [
+    policyResult({
+      configuration,
+      outcome: 'not_applicable',
+      reasonCode: 'no_interaction_subjects',
+      message: 'No canonical interaction subjects were found.',
+      subject: analysisSubject(context.analysis),
+    }),
+  ];
+}
+
+function evaluateDynamicInteractionTargetRule(
+  context: EvaluationContext,
+  configuration: NormalizedPolicyRuleConfiguration,
+): PolicyResult[] {
+  if (context.analysis.schemaVersion !== '3.0.0' || context.analysis.interactions.length === 0) {
+    return noInteractionSubjects(context, configuration);
+  }
+  return context.analysis.interactions.map((interaction) => {
+    const state = dynamicTargetState(interaction);
+    return policyResult({
+      configuration,
+      outcome: state === 'static' ? 'pass' : state === 'dynamic' ? 'fail' : 'unknown',
+      reasonCode:
+        state === 'static'
+          ? 'interaction_target_static'
+          : state === 'dynamic'
+            ? 'interaction_target_dynamic'
+            : 'interaction_target_unknown',
+      message:
+        state === 'static'
+          ? 'The interaction target is statically bounded.'
+          : state === 'dynamic'
+            ? 'The interaction target contains a proven dynamic component.'
+            : 'The interaction target cannot be fully classified from supported static evidence.',
+      subject: interactionSubject(context, interaction),
+      evidenceIds: interaction.evidenceIds,
+    });
+  });
+}
+
+function evaluateInteractionActivationRule(
+  context: EvaluationContext,
+  configuration: NormalizedPolicyRuleConfiguration,
+): PolicyResult[] {
+  if (context.analysis.schemaVersion !== '3.0.0' || context.analysis.interactions.length === 0) {
+    return noInteractionSubjects(context, configuration);
+  }
+  return context.analysis.interactions.map((interaction) => {
+    const state = interaction.activation;
+    return policyResult({
+      configuration,
+      outcome:
+        state === 'eager' || state === 'proven_activated'
+          ? 'pass'
+          : state === 'constructed_cold'
+            ? 'fail'
+            : 'unknown',
+      reasonCode:
+        state === 'eager' || state === 'proven_activated'
+          ? 'interaction_activation_proven'
+          : state === 'constructed_cold'
+            ? 'interaction_activation_cold'
+            : 'interaction_activation_unknown',
+      message:
+        state === 'eager' || state === 'proven_activated'
+          ? `Interaction activation is ${state}.`
+          : state === 'constructed_cold'
+            ? 'The interaction constructs a cold operation without proven activation.'
+            : 'Interaction activation is unknown.',
+      subject: interactionSubject(context, interaction),
+      evidenceIds: interaction.evidenceIds,
+    });
+  });
+}
+
+function evaluateLocalEventHandlerRule(
+  context: EvaluationContext,
+  configuration: NormalizedPolicyRuleConfiguration,
+): PolicyResult[] {
+  const analysis = context.analysis;
+  const interactions =
+    analysis.schemaVersion === '3.0.0'
+      ? analysis.interactions.filter(
+          (interaction): interaction is InProcessEventInteractionRecord =>
+            interaction.kind === 'in_process_event',
+        )
+      : [];
+  if (interactions.length === 0) {
+    return [
+      policyResult({
+        configuration,
+        outcome: 'not_applicable',
+        reasonCode: 'no_in_process_event_subjects',
+        message: 'No in-process event interaction subjects were found.',
+        subject: analysisSubject(context.analysis),
+      }),
+    ];
+  }
+  const matchesByInteraction = new Map<string, AssertionRecord[]>();
+  for (const assertion of context.analysis.assertions) {
+    if (assertion.predicate !== 'INTERACTION_MATCHES_LOCAL_HANDLER') continue;
+    matchesByInteraction.set(assertion.subjectId, [
+      ...(matchesByInteraction.get(assertion.subjectId) ?? []),
+      assertion,
+    ]);
+  }
+  return interactions.map((interaction) => {
+    const matches = matchesByInteraction.get(interaction.id) ?? [];
+    const resolved = matches.filter(({ status }) => status === 'resolved');
+    const uncertain =
+      interaction.target.identityKind === 'dynamic' ||
+      analysis.schemaVersion !== '3.0.0' ||
+      analysis.interactionAnalysis.state !== 'complete' ||
+      matches.some(({ status }) => status !== 'resolved');
+    return policyResult({
+      configuration,
+      outcome: resolved.length > 0 ? 'pass' : uncertain ? 'unknown' : 'fail',
+      reasonCode:
+        resolved.length > 0
+          ? 'local_event_handler_found'
+          : uncertain
+            ? 'local_event_handler_unknown'
+            : 'local_event_handler_missing',
+      message:
+        resolved.length > 0
+          ? `${resolved.length} local in-process event handler match(es) were proven.`
+          : uncertain
+            ? 'A local in-process event handler cannot be established across the available evidence.'
+            : 'No local handler matches this statically identified in-process event.',
+      subject: interactionSubject(context, interaction),
+      evidenceIds: sortedUnique([
+        ...interaction.evidenceIds,
+        ...matches.flatMap(({ evidenceIds }) => evidenceIds),
+      ]),
+    });
+  });
+}
+
 export function evaluatePolicies(input: {
   readonly analysis: AnalysisDocument;
   readonly configuration: NormalizedPolicyConfiguration;
@@ -642,6 +831,12 @@ export function evaluatePolicies(input: {
         return evaluateCompleteTraceRule(context, configuration);
       case 'no-new-diagnostics':
         return evaluateDiagnosticRule(context, input.baseline, configuration);
+      case 'forbid-dynamic-interaction-target':
+        return evaluateDynamicInteractionTargetRule(context, configuration);
+      case 'require-proven-interaction-activation':
+        return evaluateInteractionActivationRule(context, configuration);
+      case 'require-local-in-process-event-handler':
+        return evaluateLocalEventHandlerRule(context, configuration);
     }
   });
   const document = canonicalizePolicyResults({

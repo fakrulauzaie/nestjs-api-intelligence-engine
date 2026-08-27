@@ -18,7 +18,7 @@ describe('Distributed Gate D0 documentation', () => {
 
     expect(readme).toContain('[Distributed Gate D0](docs/distributed-gate-d0.md)');
     expect(architecture).toContain('Phase 35 now\nactivates only `job_queue`');
-    expect(patterns).toContain('future microservice extractor\ncontract');
+    expect(patterns).toContain('consumed by Phases 35 and 36');
     expect(gate).toContain('| `@nestjs/bullmq`');
     expect(gate).toContain('| `@nestjs/microservices`');
     expect(gate).toContain('never a missing-consumer failure');

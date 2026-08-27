@@ -42,7 +42,7 @@ const stringArray = z.array(nonEmptyString);
 const interactionSummarySchema = z
   .object({
     interactionId: stableIdSchema,
-    kind: z.enum(['outbound_http', 'in_process_event', 'job_queue']),
+    kind: z.enum(['outbound_http', 'in_process_event', 'job_queue', 'microservice_message']),
     target: nonEmptyString,
     activation: z.enum(INTERACTION_ACTIVATION_STATES),
     boundary: z.enum(INTERACTION_BOUNDARY_STATES),

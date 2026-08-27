@@ -33,8 +33,8 @@ describe('canonical repository scan assembly', () => {
       expect(result.analysis.interactionHandlers).toEqual([]);
       expect(result.analysis.interactionAnalysis).toEqual({
         schemaKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
-        supportedKinds: ['in_process_event', 'job_queue', 'outbound_http'],
-        enabledKinds: ['in_process_event', 'job_queue', 'outbound_http'],
+        supportedKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
+        enabledKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
         state: 'complete',
       });
       expect(result.analysis.endpoints).toHaveLength(1);

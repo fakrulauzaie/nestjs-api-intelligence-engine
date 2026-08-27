@@ -79,6 +79,11 @@ paths may cross `METHOD_INITIATES_INTERACTION` and
 distributed-conditional meaning. Producer-only boundaries and handler-only roots do
 not become fabricated endpoint impact.
 
+Nest microservice producer/handler changes use the same distributed path model.
+Transport-compatible event candidates may contribute conditional paths; ambiguous
+request-response candidates remain visible facts but are not traversed. Producer-only
+and consumer-only boundaries do not invent remote peers or broker delivery.
+
 JSON publication recursively orders object keys and all set-like arrays. Markdown is
 rendered only from a validated document and groups reasons under endpoint route slots.
 

@@ -3,6 +3,7 @@ import type { DiagnosticRecord } from '../model/diagnostics.js';
 import {
   inProcessEventTargetLabel,
   jobQueueTargetLabel,
+  microserviceMessageTargetLabel,
   outboundHttpTargetLabel,
 } from './interaction-labels.js';
 
@@ -29,12 +30,19 @@ function recordLabel(analysis: AnalysisDocument, id: string | null): string {
       return `event ${inProcessEventTargetLabel(interaction.target)}`;
     }
     if (interaction?.kind === 'job_queue') return jobQueueTargetLabel(interaction.target);
+    if (interaction?.kind === 'microservice_message') {
+      return microserviceMessageTargetLabel(interaction.target);
+    }
     const handler = analysis.interactionHandlers.find((record) => record.id === id);
     if (handler?.kind === 'in_process_event') {
       return `@OnEvent ${inProcessEventTargetLabel(handler.target)} (${handler.registrationState})`;
     }
     if (handler?.kind === 'job_queue') {
       return `@Processor ${jobQueueTargetLabel(handler.target)} (${handler.registrationState})`;
+    }
+    if (handler?.kind === 'microservice_message') {
+      const decorator = handler.target.mode === 'event' ? '@EventPattern' : '@MessagePattern';
+      return `${decorator} ${microserviceMessageTargetLabel(handler.target)} (${handler.registrationState})`;
     }
   }
   return id;
@@ -199,6 +207,37 @@ export function renderEndpointTraceMarkdown(input: {
         ...jobQueues.map((interaction) => {
           const states = matchesByInteraction.get(interaction.id) ?? [];
           return `| ${escapeTableCell(jobQueueTargetLabel(interaction.target))} | ${interaction.activation} | ${interaction.boundary} | ${escapeTableCell(states.length === 0 ? 'none_proven' : states.sort().join(', '))} | ${escapeTableCell(evidenceReferences(analysis, interaction.evidenceIds).join('<br>'))} |`;
+        }),
+      );
+    }
+    const microserviceMessages = trace.steps.flatMap((step) => {
+      if (step.relation !== 'METHOD_INITIATES_INTERACTION' || step.toId === null) return [];
+      const interaction = interactionById.get(step.toId);
+      return interaction?.kind === 'microservice_message' ? [interaction] : [];
+    });
+    if (microserviceMessages.length > 0) {
+      const handlerById = new Map(
+        analysis.interactionHandlers.map((record) => [record.id, record]),
+      );
+      const matchesByInteraction = new Map<string, string[]>();
+      for (const step of trace.steps) {
+        if (step.relation !== 'INTERACTION_MATCHES_LOCAL_HANDLER' || step.toId === null) continue;
+        const handler = handlerById.get(step.toId);
+        if (handler?.kind !== 'microservice_message') continue;
+        matchesByInteraction.set(step.fromId, [
+          ...(matchesByInteraction.get(step.fromId) ?? []),
+          `${step.status}:${handler.registrationState}`,
+        ]);
+      }
+      lines.push(
+        '',
+        '## Nest microservice interactions',
+        '',
+        '| Mode, pattern, client, and transport | Activation | Boundary | In-repository delivery candidates | Evidence |',
+        '|---|---|---|---|---|',
+        ...microserviceMessages.map((interaction) => {
+          const states = matchesByInteraction.get(interaction.id) ?? [];
+          return `| ${escapeTableCell(microserviceMessageTargetLabel(interaction.target))} | ${interaction.activation} | ${interaction.boundary} | ${escapeTableCell(states.length === 0 ? 'none_proven' : states.sort().join(', '))} | ${escapeTableCell(evidenceReferences(analysis, interaction.evidenceIds).join('<br>'))} |`;
         }),
       );
     }

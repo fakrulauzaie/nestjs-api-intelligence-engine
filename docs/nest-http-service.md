@@ -86,7 +86,7 @@ response data, `.env` contents, `ConfigService` return values, or live
 ## Derived views and boundaries
 
 Endpoint traces, catalogue Markdown, and graph scenes expose target resolution and
-activation independently. Graph v3 separates activation/timing on the interaction
+activation independently. Graph v4 separates activation/timing on the interaction
 node from resolution on the external-target node. Semantic comparison keys use the
 normalized target identity; diff schema `2.0.0` reports activation, boundary, timing,
 and rule changes as explicit interaction modifications.

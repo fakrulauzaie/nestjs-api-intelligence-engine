@@ -110,11 +110,14 @@ export function enrichOpenApiDocument(input: {
   const parsed = parseDocument(structuredClone(input.openApi));
   const pathPrefix = normalizeRoutePath(input.pathPrefix ?? '/');
   const includeEvidence = input.includeEvidence === true;
-  const hasDistributedQueueRecords =
+  const hasDistributedInteractionRecords =
     input.analysis.schemaVersion === '3.0.0' &&
     (input.analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
-      input.analysis.interactionHandlers.some(({ kind }) => kind === 'job_queue'));
-  const schemaVersion = hasDistributedQueueRecords
+      input.analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
+      input.analysis.interactionHandlers.some(
+        ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
+      ));
+  const schemaVersion = hasDistributedInteractionRecords
     ? OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
     : input.analysis.schemaVersion === '3.0.0'
       ? OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION

@@ -2,7 +2,7 @@ import type { AnalysisDocument } from '../model/analysis.js';
 import type { ImpactDocument, ImpactGraphSide } from '../impact/model.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
 import type { GraphReportDocument } from './model.js';
-import { GRAPH_REPORT_SCHEMA_VERSION, GRAPH_REPORT_SCHEMA_V3_VERSION } from './model.js';
+import { GRAPH_REPORT_SCHEMA_VERSION, GRAPH_REPORT_SCHEMA_V4_VERSION } from './model.js';
 import { graphReportDocumentSchema } from './schemas.js';
 
 export class GraphReportIntegrityError extends Error {
@@ -30,6 +30,8 @@ export function graphImpactSide(
 }
 
 function expectedSummary(document: GraphReportDocument): GraphReportDocument['summary'] {
+  const handlers = document.interactionHandlers ?? [];
+  const views = [...document.endpoints, ...handlers];
   return {
     endpoints: document.endpoints.length,
     endpointsWithGuards: document.endpoints.filter(({ guards }) => guards.length > 0).length,
@@ -37,18 +39,17 @@ function expectedSummary(document: GraphReportDocument): GraphReportDocument['su
       .length,
     endpointsWithWrites: document.endpoints.filter(({ dbWrites }) => dbWrites.length > 0).length,
     impactedEndpoints: document.endpoints.filter(({ impact }) => impact !== 'none').length,
-    omittedNodes: document.endpoints.reduce(
-      (total, endpoint) => total + endpoint.scene.omitted.nodes,
-      0,
-    ),
-    omittedEdges: document.endpoints.reduce(
-      (total, endpoint) => total + endpoint.scene.omitted.edges,
-      0,
-    ),
-    omittedEvidence: document.endpoints.reduce(
-      (total, endpoint) => total + endpoint.scene.omitted.evidence,
-      0,
-    ),
+    omittedNodes: views.reduce((total, view) => total + view.scene.omitted.nodes, 0),
+    omittedEdges: views.reduce((total, view) => total + view.scene.omitted.edges, 0),
+    omittedEvidence: views.reduce((total, view) => total + view.scene.omitted.evidence, 0),
+    ...(document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION
+      ? {
+          interactionHandlers: handlers.length,
+          handlersWithDiagnostics: handlers.filter(({ diagnostics }) => diagnostics.length > 0)
+            .length,
+          handlersWithWrites: handlers.filter(({ dbWrites }) => dbWrites.length > 0).length,
+        }
+      : {}),
   };
 }
 
@@ -62,7 +63,7 @@ export function assertValidGraphReportDocument(input: {
   const issues: string[] = [];
   const expectedSchemaVersion =
     input.analysis.schemaVersion === '3.0.0'
-      ? GRAPH_REPORT_SCHEMA_V3_VERSION
+      ? GRAPH_REPORT_SCHEMA_V4_VERSION
       : GRAPH_REPORT_SCHEMA_VERSION;
   if (document.schemaVersion !== expectedSchemaVersion) {
     issues.push('The graph report schema version does not match its interaction content.');
@@ -191,10 +192,83 @@ export function assertValidGraphReportDocument(input: {
     }
   }
 
+  const canonicalHandlerIds = new Set(
+    input.analysis.schemaVersion === '3.0.0'
+      ? input.analysis.interactionHandlers.map(({ id }) => id)
+      : [],
+  );
+  const canonicalInteractionIds = new Set(
+    input.analysis.schemaVersion === '3.0.0' ? input.analysis.interactions.map(({ id }) => id) : [],
+  );
+  const handlerViews = document.interactionHandlers ?? [];
+  const reportHandlerIds = handlerViews.map(({ handlerId }) => handlerId);
+  if (
+    new Set(reportHandlerIds).size !== reportHandlerIds.length ||
+    reportHandlerIds.toSorted().join('|') !== [...canonicalHandlerIds].sort().join('|')
+  ) {
+    issues.push('The graph report must contain exactly one view for every canonical handler.');
+  }
+  for (const handler of handlerViews) {
+    const nodeIds = handler.scene.nodes.map(({ id }) => id);
+    const edgeIds = handler.scene.edges.map(({ id }) => id);
+    const evidenceIds = handler.scene.evidence.map(({ id }) => id);
+    const nodes = new Set(nodeIds);
+    if (!nodes.has(handler.handlerId)) {
+      issues.push(`Handler ${handler.handlerId} is missing its root graph node.`);
+    }
+    if (new Set(nodeIds).size !== nodeIds.length || new Set(edgeIds).size !== edgeIds.length) {
+      issues.push(`Handler ${handler.handlerId} repeats a graph node or edge ID.`);
+    }
+    if (new Set(evidenceIds).size !== evidenceIds.length) {
+      issues.push(`Handler ${handler.handlerId} repeats graph evidence.`);
+    }
+    if (handler.scene.edges.some((edge) => !nodes.has(edge.source) || !nodes.has(edge.target))) {
+      issues.push(`Handler ${handler.handlerId} has an edge with a missing node.`);
+    }
+    if (
+      handler.producerInteractionIds.some((id) => !canonicalInteractionIds.has(id)) ||
+      handler.scene.nodes.some(
+        (node) =>
+          (node.kind === 'interaction' || node.kind === 'interaction_handler') &&
+          !canonicalInteractions.has(node.id),
+      )
+    ) {
+      issues.push(`Handler ${handler.handlerId} contains a non-canonical interaction reference.`);
+    }
+    const sceneEvidence = new Set(evidenceIds);
+    const referencedEvidence = [
+      ...handler.scene.nodes.flatMap(({ evidenceIds: ids }) => ids),
+      ...handler.scene.edges.flatMap(({ evidenceIds: ids }) => ids),
+      ...handler.diagnostics.flatMap(({ evidenceIds: ids }) => ids),
+    ];
+    if (referencedEvidence.some((id) => !canonicalEvidence.has(id) || !sceneEvidence.has(id))) {
+      issues.push(`Handler ${handler.handlerId} has incomplete canonical evidence closure.`);
+    }
+    if (
+      handler.scene.nodes.length > document.limits.maxNodesPerEndpoint ||
+      handler.scene.edges.length > document.limits.maxEdgesPerEndpoint ||
+      handler.scene.evidence.length > document.limits.maxEvidencePerEndpoint
+    ) {
+      issues.push(`Handler ${handler.handlerId} exceeds the declared display limits.`);
+    }
+    for (const values of [
+      handler.dbReads,
+      handler.dbWrites,
+      handler.producerInteractionIds,
+      ...handler.scene.nodes.map(({ evidenceIds: ids }) => ids),
+      ...handler.scene.edges.map(({ evidenceIds: ids }) => ids),
+    ]) {
+      if (values.join('|') !== sortedUnique(values).join('|')) {
+        issues.push(`Handler ${handler.handlerId} contains a non-canonical string set.`);
+        break;
+      }
+    }
+  }
+
   const summary = expectedSummary(document);
   for (const [field, value] of Object.entries(summary)) {
     if (document.summary[field as keyof typeof summary] !== value) {
-      issues.push(`Graph report summary.${field} does not match endpoint views.`);
+      issues.push(`Graph report summary.${field} does not match report views.`);
     }
   }
   if (issues.length > 0) throw new GraphReportIntegrityError(sortedUnique(issues));

@@ -39,7 +39,10 @@ evaluation of an existing canonical analysis. See
     "no-repository-access-in-controller": "error",
     "require-guard-on-write-endpoint": ["error", { "onUnknown": "error" }],
     "require-complete-write-trace": ["warn", { "onUnknown": "warn" }],
-    "no-new-diagnostics": ["warn", { "minimumSeverity": "warning", "onUnknown": "error" }]
+    "no-new-diagnostics": ["warn", { "minimumSeverity": "warning", "onUnknown": "error" }],
+    "forbid-dynamic-interaction-target": ["error", { "onUnknown": "warn" }],
+    "require-proven-interaction-activation": ["warn", { "onUnknown": "warn" }],
+    "require-local-in-process-event-handler": ["warn", { "onUnknown": "warn" }]
   }
 }
 ```
@@ -124,6 +127,37 @@ Compares the optional baseline with the current analysis through the semantic di
 engine. New diagnostics at or above `minimumSeverity` fail. Ambiguous diagnostic
 identity produces unknown when no definite threshold violation is already known. No
 qualifying new diagnostic passes. Without `--baseline`, the rule is not applicable.
+
+### `forbid-dynamic-interaction-target` v1.0.0
+
+Evaluates each canonical interaction independently. A proven dynamic URL/method,
+event identity, queue/job name, message pattern, or client token fails. Exact,
+templated, and symbolic bounded targets pass. A static Nest message pattern whose
+transport remains unresolved is unknown rather than fail. Analyses without canonical
+interaction subjects are not applicable.
+
+This rule does not claim that a static target exists, is reachable, or receives a
+message at runtime. It only enforces that the supported source expression is bounded.
+
+### `require-proven-interaction-activation` v1.0.0
+
+Evaluates the canonical activation field. `eager` and `proven_activated` pass;
+`constructed_cold` fails; `unknown` remains unknown. This is especially useful for
+Nest `HttpService` and `ClientProxy.send()` Observables. It does not prove network or
+broker delivery, a response, or successful completion.
+
+### `require-local-in-process-event-handler` v1.0.0
+
+Evaluates only `in_process_event` producers. At least one resolved canonical
+`INTERACTION_MATCHES_LOCAL_HANDLER` assertion passes. A complete supported scan with a
+static identity and no match fails. Dynamic identities, incomplete interaction
+analysis, or ambiguous matches remain unknown. Queue and microservice producers are
+excluded because their missing local consumers are normal open-world topology, not a
+policy failure.
+
+All three interaction rules are opt-in. Existing controller-repository,
+guard-on-write, and write-trace meanings remain synchronous and unchanged when the
+new rules are omitted.
 
 ## Exit behavior
 
