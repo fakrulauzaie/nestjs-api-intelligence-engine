@@ -1,8 +1,9 @@
 # Nest Modules and Effective Guard State
 
-Analysis schema `2.0.0` adds a bounded static NestJS module graph and evidence-backed
-application-global guard registrations. The analyzer still never imports or executes a
-target module, calls a dynamic module factory, or starts Nest.
+The bounded static NestJS module graph and evidence-backed application-global guard
+registrations were introduced in analysis schema `2.0.0` and remain part of current
+schema `3.0.0`. The analyzer never imports or executes a target module, calls a
+dynamic module factory, or starts Nest.
 
 ## Static module boundary
 

@@ -1,6 +1,6 @@
 # Inter-Method Request-to-Column Provenance
 
-Phase 21 conditionally extends the Phase 20 symbolic-origin analysis through already
+Inter-method provenance conditionally extends intraprocedural symbolic-origin analysis through already
 proven direct method calls. It can show that a request field declared by a Nest
 controller may influence a specific entity column written by a service, while keeping
 ordinary call reachability separate from value provenance.

@@ -39,6 +39,10 @@ between local interactions and broker-mediated interactions:
 3. **Interaction Milestone I2 - distributed interactions:** gated Phases 35-37 add
    BullMQ-first queues, bounded Nest microservice facts, and distributed reporting
    and policy hardening.
+4. **Documentation Gate D1 - current-contract reconciliation:** after Phase 35 and
+   before Phase 36, reconcile the public documentation with the current writer,
+   command, schema, and capability contracts; classify older material explicitly as
+   historical; and add executable drift checks.
 
 The plan deliberately does not call Milestone I1 "v0.3". The prior expansion plan
 already used v0.3-v0.5 as release-train names, while `package.json` still has its own
@@ -433,12 +437,15 @@ flowchart LR
   P34 --> I1["Milestone I1 acceptance"]
   I1 --> D0["Distributed Gate D0: fixtures + contracts"]
   D0 --> P35["Phase 35: BullMQ-first queues"]
-  P35 --> P36["Phase 36: Nest microservices"]
+  P35 --> D1["Documentation Gate D1: current-contract reconciliation"]
+  D1 --> P36["Phase 36: Nest microservices"]
   P36 --> P37["Phase 37: distributed policy/report hardening"]
 ```
 
 Phases 35-37 are not automatically authorized by completion of Phase 34. Gate D0
-must pass and the fixture evidence must still justify implementation.
+must pass and the fixture evidence must still justify implementation. Phase 36 also
+requires D1 so its design begins from accurate current contracts rather than stale
+phase-era documentation.
 
 ---
 
@@ -920,12 +927,57 @@ prove.
 
 ---
 
+# 12.1 Documentation Gate D1 - Current-contract reconciliation
+
+## Status
+
+Complete as of 2026-08-26. This gate changes documentation ownership and drift
+verification; it does not activate `microservice_message` or alter Phase 35 semantics.
+
+## Goal
+
+Make the concise current documentation trustworthy before Phase 36 introduces
+another distributed interaction kind, while preserving useful historical records
+without presenting them as current instructions.
+
+## Adopted structure
+
+1. **Living references:** root/readme index, CLI workflow, architecture, model
+   contract, project configuration, and supported-pattern table state the current
+   writer and analyzer behavior.
+2. **Operational feature guides:** active comparison, impact, policy, export, graph,
+   persistence, provenance, HTTP, event, and BullMQ guides retain detailed bounded
+   semantics and runnable repository commands.
+3. **Historical records:** ADRs, benchmarks, spikes, D0 contracts, and the Phase 11
+   external-repository validation remain in place and are explicitly labeled when a
+   reader could otherwise mistake them for current output.
+
+Temporary phase guides were not deleted merely because they originated in an older
+phase. An active, accurate feature guide remains operational documentation; only
+superseded claims are replaced. ADRs remain historical decision records.
+
+## Executable gate criteria
+
+- CLI synopsis text is checked against the command definitions.
+- Current schema versions and supported interaction kinds are checked from exported
+  source constants rather than duplicated only in tests.
+- Every implemented extractor rule ID remains named in the authoritative supported-
+  pattern table.
+- Local Markdown links under the root README and `docs/` resolve.
+- A repository-local current-output corpus is regenerated semantically from
+  `example-nestjs-app`; only revision-derived run IDs and ordering among equivalent
+  evidence/trace entries are normalized.
+- Legacy examples and validation records carry an explicit historical label.
+- The full documentation suite and repository-wide verification pass.
+
+---
+
 # 13. Phase 36 - Nest microservice boundary inventory
 
 ## Status
 
-Eligible but not started. Phase 35 passes and the independently frozen Phase 36
-portion of Gate D0 remains valid as of 2026-08-26.
+Eligible but not started. Phase 35, Documentation Gate D1, and the independently
+frozen Phase 36 portion of Gate D0 pass as of 2026-08-26.
 
 ## Goal
 
@@ -1049,6 +1101,7 @@ Every implemented phase must pass:
 |         34 | Complete (2026-08-26)  | Wildcards, fan-out, all local-interaction consumers, Milestone I1 |
 |         D0 | Complete (2026-08-26)  | Distributed fixture matrix and semantic contract freeze           |
 |         35 | Complete (2026-08-26)  | BullMQ-first queue interactions                                   |
+|         D1 | Complete (2026-08-26)  | Current documentation reconciliation and drift automation         |
 |         36 | Eligible (not started) | Nest microservice boundary inventory                              |
 |         37 | Deferred/gated         | Distributed policies, reports, and hardening                      |
 
@@ -1522,10 +1575,74 @@ Gate decision:
 
 ---
 
+## 16.8 Documentation Gate D1 completion record
+
+Completed on 2026-08-26. D1 passes and unblocks documentation-accurate Phase 36
+planning; it does not authorize a broader microservice surface than D0 froze.
+
+Artifacts:
+
+- `docs/README.md` defines the current source-of-truth hierarchy and separates living
+  references, operational guides, current examples, and historical records.
+- The root README and living CLI, architecture, model, configuration, and supported-
+  pattern references now describe analysis v3, graph/export version selection, and
+  the currently enabled `outbound_http`, `in_process_event`, and `job_queue` kinds.
+  `microservice_message` remains explicitly schema-only.
+- Active feature guides use phase-neutral current introductions and repository-
+  runnable `pnpm run cli -- ...` examples. The CLI reference retains bare
+  `api-intel ...` only as the installed-binary synopsis.
+- `docs/examples/current/` contains a current endpoint catalogue, read/write traces,
+  and compact analysis summary for `example-nestjs-app`. Its conformance test
+  normalizes only revision-derived identity and semantically equivalent evidence
+  ordering.
+- The Phase 11 official-repository output and validation document are retained but
+  clearly labeled historical. ADRs, benchmark records, spikes, D0 contracts, and
+  useful active feature guides were not deleted or rewritten as current proof.
+- `SUPPORTED_INTERACTION_KINDS` is exported from scanner assembly and drives both
+  capability metadata and documentation assertions.
+- `test/unit/documentation/documentation-gate-d1.test.ts` checks command synopses,
+  source-owned schema/capability facts, local links, and historical labels.
+  `test/integration/documentation-current-examples.test.ts` checks the current
+  generated example corpus. The supported-pattern contract now covers every current
+  HTTP, EventEmitter, BullMQ, Nest, TypeORM, and provenance rule constant.
+
+Verification:
+
+- `pnpm run format`, `pnpm run typecheck`, `pnpm run lint`, `pnpm run build`, and
+  `pnpm run format:check` pass.
+- The complete documentation/current-example suite passes 33/33 tests across 27
+  files: 26 documentation-unit files plus one integration file.
+- The clean complete single-worker suite passes 284/284 tests across 112 files.
+- The first full run reached 283/284 because one existing Phase 18 raw-SQL consumer
+  assertion failed transiently; that test passed immediately in isolation and the
+  complete clean rerun then passed 284/284.
+- The command-synopsis, schema/capability, supported-rule, local-link, current-output,
+  and historical-label conformance checks all pass.
+
+Benchmark decision:
+
+- No benchmark is required. D1 adds documentation and conformance automation; the
+  scanner change exports and reuses its existing capability list without adding
+  traversal, extraction, or report work.
+
+Remaining boundaries and gate decision:
+
+- Documentation tests cannot prove every paragraph true; implementation constants,
+  strict schemas, focused feature tests, and reviewed living references remain the
+  layered source of truth.
+- Current generated examples intentionally use the small local Nest application and
+  therefore advertise all supported interaction kinds while containing zero
+  interaction records. The dedicated HTTP, event, and BullMQ fixtures remain the
+  feature ground truth.
+- D1 passes. Phase 36 is eligible but not started and must still remain within the
+  frozen D0 microservice contracts. Phase 37 remains gated.
+
+---
+
 # 17. Immediate next action
 
-Phase 35 is complete. Phase 36 is the next eligible work item because its frozen D0
-microservice corpus remains valid, but it has not started. Re-audit that corpus before
-activating only the bounded Nest `ClientProxy` and message-handler surface; do not add
-legacy Bull, raw broker SDKs, delivery claims, transport simulation, or
-cross-repository inference.
+Phase 35 and Documentation Gate D1 are complete. Phase 36 is the next eligible work
+item because its frozen D0 microservice corpus remains valid, but it has not started.
+Re-audit that corpus against the reconciled current contracts before activating only
+the bounded Nest `ClientProxy` and message-handler surface; do not add legacy Bull,
+raw broker SDKs, delivery claims, transport simulation, or cross-repository inference.

@@ -1,6 +1,6 @@
 # Declared Request/Response Contracts and Entity Columns
 
-Phase 19 inventories source declarations needed by later provenance analysis. It does
+The analyzer inventories source declarations used by bounded provenance analysis. It does
 not execute the target application, decorators, mapped-type factories, validators,
 transformers, naming strategies, interceptors, or serializers.
 

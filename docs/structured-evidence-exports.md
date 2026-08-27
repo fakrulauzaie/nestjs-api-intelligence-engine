@@ -1,13 +1,13 @@
 # Structured Evidence Exports
 
-Phase 22 publishes validated analysis facts to OpenAPI consumers and auditor-friendly
+Structured evidence export publishes validated analysis facts to OpenAPI consumers and auditor-friendly
 JSON/CSV without changing canonical analysis or inferring a second fact graph. Both
 exporters consume an explicit, validated `analysis.json`; neither scans source.
 
 ## OpenAPI 3.x enrichment
 
 ```powershell
-api-intel openapi .api-intel/analysis.json `
+pnpm run cli -- openapi .api-intel/analysis.json `
   --document openapi.json `
   --output .api-intel/exports
 ```
@@ -86,7 +86,7 @@ local causal write without changing the older field's meaning.
 ## Control-evidence matrix
 
 ```powershell
-api-intel controls .api-intel/analysis.json `
+pnpm run cli -- controls .api-intel/analysis.json `
   --policy-results .api-intel/policy-results.json `
   --output .api-intel/exports
 ```

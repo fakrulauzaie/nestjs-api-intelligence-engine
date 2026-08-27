@@ -228,6 +228,11 @@ extractor and the same canonical validation boundary before any reporter consume
 
 ### Analysis v3 interaction boundary
 
+The current scanner supports `outbound_http`, `in_process_event`, and `job_queue`.
+`microservice_message` remains representable but unsupported. The chronology below
+explains how that current boundary evolved; statements scoped to an earlier phase are
+historical, not current capability claims.
+
 Phase 30 adds an inert interaction topology without adding an interaction extractor:
 
 ```mermaid

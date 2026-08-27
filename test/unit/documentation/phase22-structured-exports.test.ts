@@ -23,7 +23,7 @@ describe('Phase 22 structured-export documentation', () => {
     expect(workflow).toContain('api-intel openapi <analysis.json>');
     expect(workflow).toContain('api-intel controls <analysis.json>');
     expect(architecture).toContain('exact OpenAPI operation matcher');
-    expect(model).toContain('independent strict schema version `1.0.0`');
+    expect(model).toContain('`3.0.0` adds distributed interactions');
     expect(patterns).toContain('Derived structured evidence exports');
   });
 });

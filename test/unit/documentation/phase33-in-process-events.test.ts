@@ -46,7 +46,7 @@ describe('Phase 33-34 in-process event documentation', () => {
     expect(impact).toContain(
       '`HANDLER_IMPLEMENTED_BY` for exact or configured-wildcard local events',
     );
-    expect(config).toContain('Phase 33 exact local-event traversal');
+    expect(config).toMatch(/bound configured in-process event and\s+BullMQ causal traversal/u);
     expect(fixtureContract).toContain('Phase 33 exact-event contract');
     expect(plan).toContain('|         33 | Complete (2026-08-25)');
     expect(plan).toContain('## 16.4 Phase 33 completion record');

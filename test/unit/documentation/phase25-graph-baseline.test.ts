@@ -19,7 +19,7 @@ describe('Phase 25 graph baseline documentation', () => {
     expect(workflow).toContain('positional analysis as the current/after side');
     expect(workflow).toMatch(/mutually\s+exclusive with `--impact-results`/u);
     expect(guide).toMatch(/it does not\s+write `impact\.json`/u);
-    expect(guide).toContain('Use `api-intel impact` first');
+    expect(guide).toContain('Use `pnpm run cli -- impact` first');
     expect(benchmark).toContain('Median baseline generation was 641.20 ms');
     expect(benchmark).toContain('a 48.81% local wall-time reduction');
     expect(benchmark).toContain('HTML files were byte-identical');

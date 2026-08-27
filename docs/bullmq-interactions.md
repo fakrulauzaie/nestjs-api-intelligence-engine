@@ -1,6 +1,6 @@
 # BullMQ Queue Interactions
 
-Phase 35 activates the `job_queue` interaction kind for a bounded, checker-proven
+BullMQ analysis supports the `job_queue` interaction kind for a bounded, checker-proven
 BullMQ surface. The analyzer inventories Nest BullMQ producers and local worker
 candidates without importing the target, connecting to Redis, starting a worker, or
 claiming that a queued job was delivered.

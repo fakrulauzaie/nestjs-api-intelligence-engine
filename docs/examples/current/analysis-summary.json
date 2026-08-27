@@ -1,0 +1,33 @@
+{
+  "artifactKind": "current-analysis-summary-not-complete-canonical-document",
+  "schemaVersion": "3.0.0",
+  "resultState": "completed_with_gaps",
+  "recordCounts": {
+    "sourceFiles": 17,
+    "endpoints": 7,
+    "modules": 2,
+    "applications": 1,
+    "interactions": 0,
+    "interactionHandlers": 0,
+    "diagnostics": 7
+  },
+  "interactionAnalysis": {
+    "schemaKinds": [
+      "in_process_event",
+      "job_queue",
+      "microservice_message",
+      "outbound_http"
+    ],
+    "supportedKinds": [
+      "in_process_event",
+      "job_queue",
+      "outbound_http"
+    ],
+    "enabledKinds": [
+      "in_process_event",
+      "job_queue",
+      "outbound_http"
+    ],
+    "state": "complete"
+  }
+}

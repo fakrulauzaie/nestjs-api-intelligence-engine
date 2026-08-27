@@ -1,6 +1,6 @@
 # Nest HttpService and Symbolic Targets
 
-Phase 32 extends `outbound_http` analysis to checker-proven Nest
+Nest `HttpService` analysis extends `outbound_http` to checker-proven
 `@nestjs/axios` `HttpService` receivers. Unlike direct Axios and `fetch`, an
 `HttpService` method creates a cold RxJS Observable; creating it does not by itself
 initiate a network request. Canonical activation state preserves that distinction.

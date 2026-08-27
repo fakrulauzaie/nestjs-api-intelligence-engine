@@ -1,5 +1,8 @@
 # Endpoint Trace
 
+> Historical Phase 11 output. See [`../current/read-trace.md`](../current/read-trace.md)
+> for the current v3 report shape.
+
 Analysis: `analysis:1126173b1ce46d053395dca1566c4efa`  
 Endpoint: `GET /users/:id`  
 Direct guards: `none_declared`  

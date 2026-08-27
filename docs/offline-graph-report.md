@@ -1,12 +1,12 @@
 # Offline Interactive Graph Report
 
-Phase 23 generates one self-contained HTML file for exploring validated endpoint facts
+The `graph` command generates one self-contained HTML file for exploring validated endpoint facts
 without a server, hosted account, telemetry, or another analysis engine.
 
 ## Generate a report
 
 ```powershell
-api-intel graph .api-intel/analysis.json `
+pnpm run cli -- graph .api-intel/analysis.json `
   --policy-results .api-intel/policy-results.json `
   --impact-results .api-intel/impact.json `
   --output .api-intel
@@ -20,7 +20,7 @@ or `after` side; the report records which side it uses.
 For a one-step impact-aware graph, provide the canonical before snapshot directly:
 
 ```powershell
-api-intel graph .tmp/after/analysis.json `
+pnpm run cli -- graph .tmp/after/analysis.json `
   --baseline .tmp/before/analysis.json `
   --output .tmp/graph-with-impact
 ```
@@ -28,7 +28,7 @@ api-intel graph .tmp/after/analysis.json `
 `--baseline` and `--impact-results` are mutually exclusive. The positional analysis is
 always the current/after side. Baseline mode calls the same potential-impact analyzer
 in memory and passes its validated result to the existing graph projection; it does not
-write `impact.json`. Use `api-intel impact` first when the impact document itself must
+write `impact.json`. Use `pnpm run cli -- impact` first when the impact document itself must
 be retained, reviewed, or rendered as Markdown.
 
 ## Preview after publication
@@ -36,7 +36,7 @@ be retained, reviewed, or rendered as Markdown.
 Use `--open` or `-O` to request a one-time preview in the desktop's default browser:
 
 ```powershell
-api-intel graph .api-intel/analysis.json --output .api-intel --open
+pnpm run cli -- graph .api-intel/analysis.json --output .api-intel --open
 ```
 
 Preview is an explicit CLI effect, not stored configuration. It runs only after the

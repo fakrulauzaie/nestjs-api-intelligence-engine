@@ -33,11 +33,11 @@ POST /users
   -> WRITE user
 ```
 
-Each edge cites repository-relative source coordinates. See the sanitized
-[endpoint catalogue](docs/examples/official-nestjs-typeorm/endpoints.md),
-[read trace](docs/examples/official-nestjs-typeorm/read-trace.md),
-[write trace](docs/examples/official-nestjs-typeorm/write-trace.md), and
-[canonical JSON excerpt](docs/examples/official-nestjs-typeorm/analysis-excerpt.json).
+Each edge cites repository-relative source coordinates. See the current v3
+[endpoint catalogue](docs/examples/current/endpoints.md),
+[read trace](docs/examples/current/read-trace.md),
+[write trace](docs/examples/current/write-trace.md), and
+[canonical analysis summary](docs/examples/current/analysis-summary.json).
 
 ## Requirements
 
@@ -132,6 +132,8 @@ Raw-SQL analysis remains disabled unless the CLI or configuration explicitly sel
 `postgresql-18`.
 
 Full scan/report command behavior is in [CLI and Reporting Workflow](docs/cli-workflow.md).
+The [Documentation Index](docs/README.md) distinguishes current references and feature
+guides from historical validation, benchmark, spike, and ADR records.
 Strict version-3 defaults, exact-root discovery, path rules, precedence, and version-1/
 version-2 compatibility are in [Project Configuration](docs/project-configuration.md).
 Coherent selected-report publication and the final completeness manifest are in

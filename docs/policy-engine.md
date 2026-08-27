@@ -8,9 +8,9 @@ or execute the target application.
 ## Commands and artifacts
 
 ```text
-api-intel check analysis.json --config api-intel.config.json
-api-intel check analysis.json --baseline before.json --config api-intel.config.json
-api-intel check analysis.json --config api-intel.config.json --format markdown
+pnpm run cli -- check analysis.json --config api-intel.config.json
+pnpm run cli -- check analysis.json --baseline before.json --config api-intel.config.json
+pnpm run cli -- check analysis.json --config api-intel.config.json --format markdown
 ```
 
 JSON is the default and writes `policy-results.json`; Markdown writes
@@ -98,9 +98,9 @@ applicable.
 This is a guard-policy rule only. It does not label a guard as authentication and does
 not claim that an endpoint is public, authenticated, or authorized at runtime.
 For analysis v3 it remains intentionally synchronous: local-event handler writes and
-future distributed-conditional effects do not turn an emitting endpoint into a write
-endpoint. Those effects stay visible in traces and structured exports under their own
-causal classes.
+BullMQ distributed-conditional effects do not turn an initiating endpoint into a
+write endpoint. Those effects stay visible in traces and structured exports under
+their own causal classes.
 
 ### `require-complete-write-trace` v1.0.0
 

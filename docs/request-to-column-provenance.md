@@ -1,6 +1,6 @@
 # Intraprocedural Request-to-Column Provenance
 
-Phase 20 adds a deliberately bounded answer to this question: within one supported
+Intraprocedural provenance gives a deliberately bounded answer to this question: within one supported
 Nest handler, can a declared request field influence an explicit TypeORM write
 property whose entity column is proven?
 

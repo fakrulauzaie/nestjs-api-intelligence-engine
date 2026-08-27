@@ -1,5 +1,8 @@
 # Endpoint Catalogue
 
+> Historical Phase 11 output. See [`../current/endpoints.md`](../current/endpoints.md)
+> for the current v3 report shape.
+
 Analysis: `analysis:1126173b1ce46d053395dca1566c4efa`  
 Result: `completed_with_gaps`  
 Endpoints: 4 of 4

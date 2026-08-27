@@ -29,15 +29,13 @@ configuration contract:
 ```
 
 All three interaction limits are optional when `interactions` is present and use the
-documented defaults above when omitted. They bound Phase 33 exact local-event traversal
-and future interaction-aware traversal; they do not enable or disable an extractor.
-Analysis v3 can represent four interaction
-kinds, while capability metadata separately reports which kinds the running analyzer
-actually supports. Phase 30 deliberately reports none as extractor-supported. The
-current scanner always enables the Phase 31 eager and Phase 32 Nest `HttpService`
-extractors under `outbound_http` plus the Phase 33 exact EventEmitter extractor under
-`in_process_event`; configuration cannot disable them or enable queue/microservice
-reserved kinds. Symbolic tokens are derived only from source identity, never project
+documented defaults above when omitted. They bound configured in-process event and
+BullMQ causal traversal; they do not enable or disable an extractor. Analysis v3 can
+represent four interaction kinds, while capability metadata separately reports which
+kinds the running analyzer actually supports. The current scanner always enables
+`outbound_http`, `in_process_event`, and `job_queue`; `microservice_message` remains a
+schema reservation. Configuration cannot disable a supported extractor or activate a
+reserved one. Symbolic tokens are derived only from source identity, never project
 configuration values or environment lookup.
 
 ## Version 2 compatibility
@@ -94,9 +92,9 @@ disabled OpenAPI form. There is no `all` recipe and no stored browser-preview se
 ## Discovery and selection
 
 ```text
-api-intel scan <repository>
-api-intel scan <repository> --config <path>
-api-intel scan <repository> --no-config
+pnpm run cli -- scan <repository>
+pnpm run cli -- scan <repository> --config <path>
+pnpm run cli -- scan <repository> --no-config
 ```
 
 The default lookup checks exactly `<repository>/api-intel.config.json`. It never walks

@@ -25,7 +25,7 @@ import {
 import type { DiagnosticRecord } from '../model/diagnostics.js';
 import type { AnalysisConfiguration, ToolMetadata } from '../model/entities.js';
 import type { EvidenceRecord } from '../model/evidence.js';
-import { INTERACTION_KINDS } from '../model/interactions.js';
+import { INTERACTION_KINDS, type InteractionKind } from '../model/interactions.js';
 import { makeAnalysisRunId } from '../model/ids.js';
 import { canonicalizeAnalysisDocument, canonicalizeRunDocument } from '../model/ordering.js';
 import { normalizeRepositoryRelativePath } from '../model/paths.js';
@@ -58,6 +58,13 @@ export interface ScanRepositoryOptions {
   readonly now?: () => Date;
   readonly signal?: AbortSignal;
 }
+
+/** Extractor capabilities shipped by the current scanner, independent of schema reservations. */
+export const SUPPORTED_INTERACTION_KINDS = [
+  'outbound_http',
+  'in_process_event',
+  'job_queue',
+] as const satisfies readonly InteractionKind[];
 
 export interface ScanRepositoryResult {
   readonly analysis: AnalysisDocument;
@@ -468,8 +475,8 @@ export async function scanRepository(
     ),
     interactionAnalysis: {
       schemaKinds: [...INTERACTION_KINDS],
-      supportedKinds: ['outbound_http', 'in_process_event', 'job_queue'],
-      enabledKinds: ['outbound_http', 'in_process_event', 'job_queue'],
+      supportedKinds: [...SUPPORTED_INTERACTION_KINDS],
+      enabledKinds: [...SUPPORTED_INTERACTION_KINDS],
       state:
         outboundHttp.state === 'incomplete' ||
         nestHttpService.state === 'incomplete' ||

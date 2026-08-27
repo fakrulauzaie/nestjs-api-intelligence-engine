@@ -1,7 +1,9 @@
 # Canonical Model Contract
 
-This document records the Phase 2 contracts that future extractors and reporters must
-use. The TypeScript types and Zod schemas in `src/model/` are authoritative.
+This document records the current canonical and derived-document contracts. The
+TypeScript types, Zod schemas, integrity validators, and version constants under
+`src/` are authoritative. Historical phase notes explain compatibility decisions but
+do not override the current contract.
 
 ## Canonical and volatile documents
 
@@ -15,6 +17,23 @@ before repeatability comparisons.
 
 Endpoint trace files are derived views represented by `EndpointTraceView`. They do not
 replace or add facts to `AnalysisDocument`.
+
+## Current version matrix
+
+| Artifact                   | Current writer behavior                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `analysis.json`            | `3.0.0`; v1/v2 remain readable and frozen                                           |
+| `diff.json`                | `2.0.0` when either input is analysis v3; otherwise `1.0.0`                         |
+| `impact.json`              | `1.0.0`                                                                             |
+| `policy-results.json`      | `1.0.0`                                                                             |
+| graph view                 | `3.0.0` for analysis v3; `1.0.0` for v1/v2; graph v2 remains readable only          |
+| OpenAPI enrichment sidecar | `3.0.0` with BullMQ records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
+| control-evidence JSON/CSV  | `3.0.0` with BullMQ records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
+| `bundle.json`              | `1.0.0`                                                                             |
+
+The scanner currently supports and enables `outbound_http`, `in_process_event`, and
+`job_queue`. `microservice_message` is representable but unsupported until its owning
+phase passes the distributed gate.
 
 ## Stable identities
 
@@ -154,12 +173,14 @@ trusted `analysis.json`.
 
 ## Structured export contracts
 
-Phase 22 leaves the canonical analysis schema unchanged. OpenAPI enrichment sidecars
-and control-evidence matrices have independent strict schema version `1.0.0`. Their
-cross-record validators require the canonical snapshot identity, valid endpoint/table/
-evidence references, and complete evidence closure. The matrix additionally requires
-exactly one row for every canonical endpoint and accepts policy outcomes only from a
-validated policy document for that same snapshot.
+OpenAPI enrichment sidecars and control-evidence matrices are independently versioned.
+Schema `1.0.0` represents analysis v1/v2 facts, `2.0.0` adds outbound/local
+interaction fields for analysis v3, and `3.0.0` adds distributed interactions and
+distributed-conditional effects when BullMQ records are present. Their cross-record
+validators require canonical snapshot identity, valid endpoint/table/evidence
+references, and complete evidence closure. The matrix additionally requires exactly
+one row for every canonical endpoint and accepts policy outcomes only from a validated
+policy document for that same snapshot.
 
 An enriched OpenAPI document is a derived copy, not a canonical document. Only a
 uniquely exact method/path match may expose endpoint facts. Ambiguous, unresolved, and
@@ -169,12 +190,13 @@ matrix JSON; spreadsheet formula neutralization does not alter the underlying fa
 
 ## Offline graph-view contract
 
-Phase 23 leaves canonical analysis unchanged and publishes an independently versioned,
-strict `GraphReportDocument` schema `1.0.0`. Cross-record validation requires snapshot
-identity, exactly one view per canonical endpoint, unique node/edge/evidence IDs,
-complete scene references, canonical evidence closure, declared display limits, and
-summary agreement. Optional policy input must match the analysis ID; optional impact
-input must contain that analysis on its validated before or after side.
+The graph view is independently versioned: schema `1.0.0` remains readable for
+analysis v1/v2, historical interaction reports may use `2.0.0`, and current analysis
+v3 reports emit `3.0.0`. Cross-record validation requires snapshot identity, exactly
+one view per canonical endpoint, unique node/edge/evidence IDs, complete scene
+references, canonical evidence closure, declared display limits, and summary
+agreement. Optional policy input must match the analysis ID; optional impact input
+must contain that analysis on its validated before or after side.
 
 Each scene is an endpoint-centered projection of existing catalogue, trace, guard, and
 provenance views. Gap nodes represent null assertion targets without inventing a
@@ -182,11 +204,9 @@ record. Impact styling applies only to the endpoint and canonical assertion step
 present in validated impact paths. HTML is a rendering of this document and is not a
 canonical or independently inferred artifact.
 
-Phase 31 adds graph schema `2.0.0` for reports that contain canonical interaction
-nodes. Interaction-free reports retain `1.0.0`, preserving the original node-kind
-contract. Both versions use the same snapshot, limit, reference-closure, and summary
-validation rules. Phase 33 represents exact event producers and local handler records
-as interaction-shaped nodes in `2.0.0`; their assertion edges remain labeled as
+Graph schema `2.0.0` was introduced for early canonical interaction nodes and remains
+readable for compatibility. Current graph-v3 scenes represent outbound HTTP, local
+event, and BullMQ interaction/handler/boundary nodes; assertion edges remain labeled as
 candidate matches rather than delivery.
 
 ## Analysis v3 interaction substrate
@@ -202,7 +222,9 @@ record collections, and `not_run`. Phase 31 publishes `outbound_http` as support
 enabled, with `complete` or `incomplete` extractor state; the remaining kinds stay
 reserved only. Phase 32 does not add another kind; it extends `outbound_http` with
 Nest `HttpService` activation and symbolic targets. Phase 33 activates
-`in_process_event`, application roots, and independent local handler records.
+`in_process_event`, application roots, and independent local handler records. The
+current scanner additionally supports and enables `job_queue`; only
+`microservice_message` remains reserved.
 Integrity requires enabled kinds to be supported, complete
 evidence/reference closure, kind-correct interaction/handler matches, and supporting
 method/application assertions for canonical records.

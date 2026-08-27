@@ -5,7 +5,7 @@ analysis. It does not rescan source, reload the just-created `analysis.json`, or
 an ambiguous all-reports shortcut.
 
 ```powershell
-api-intel scan C:\code\my-nest-app `
+pnpm run cli -- scan C:\code\my-nest-app `
   --with-graph `
   --with-controls `
   --with-openapi C:\code\my-nest-app\openapi.json `

@@ -1,6 +1,6 @@
 # Eager Outbound HTTP Analysis
 
-Phase 31 adds evidence-backed `outbound_http` interaction records for a deliberately
+Eager outbound HTTP analysis adds evidence-backed `outbound_http` interaction records for a deliberately
 small set of calls that initiate a request when the call expression is evaluated. The
 extractor runs during every scan; it never sends a request, imports target modules,
 executes configuration, or reads environment values.

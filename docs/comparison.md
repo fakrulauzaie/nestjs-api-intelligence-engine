@@ -1,6 +1,6 @@
 # Analysis comparison
 
-Phase 13 compares two explicit, validated `analysis.json` snapshots. It does not scan
+The `diff` command compares two explicit, validated `analysis.json` snapshots. It does not scan
 source, discover a baseline, or modify either input. A diff containing changes exits
 successfully; changes are data, not a policy failure.
 

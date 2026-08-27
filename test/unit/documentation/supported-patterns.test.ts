@@ -36,6 +36,23 @@ import {
   REQUEST_FIELD_ORIGIN_RULE_ID,
 } from '../../../src/extractors/request-provenance.js';
 import { REQUEST_INTER_METHOD_INFLUENCE_RULE_ID } from '../../../src/extractors/inter-method-provenance.js';
+import {
+  OUTBOUND_HTTP_AXIOS_RULE_ID,
+  OUTBOUND_HTTP_FETCH_RULE_ID,
+  OUTBOUND_HTTP_UNDICI_RULE_ID,
+} from '../../../src/extractors/outbound-http.js';
+import {
+  NEST_HTTP_AXIOS_REF_RULE_ID,
+  NEST_HTTP_SERVICE_RULE_ID,
+} from '../../../src/extractors/nest-http-service.js';
+import {
+  EVENT_APPLICATION_RULE_ID,
+  EVENT_EMITTER_INTERACTION_RULE_IDS,
+  EVENT_HANDLER_RULE_IDS,
+  EVENT_MATCH_RULE_ID,
+  EVENT_WILDCARD_MATCH_RULE_ID,
+} from '../../../src/extractors/nest-event-emitter.js';
+import { BULLMQ_RULE_IDS } from '../../../src/extractors/nest-bullmq.js';
 import { DIRECT_GUARD_RULE_IDS, GLOBAL_GUARD_RULE_IDS } from '../../../src/model/guard-rules.js';
 
 describe('supported-pattern documentation fidelity', () => {
@@ -64,6 +81,17 @@ describe('supported-pattern documentation fidelity', () => {
       REQUEST_FIELD_ORIGIN_RULE_ID,
       REQUEST_COLUMN_INFLUENCE_RULE_ID,
       REQUEST_INTER_METHOD_INFLUENCE_RULE_ID,
+      OUTBOUND_HTTP_AXIOS_RULE_ID,
+      OUTBOUND_HTTP_FETCH_RULE_ID,
+      OUTBOUND_HTTP_UNDICI_RULE_ID,
+      NEST_HTTP_SERVICE_RULE_ID,
+      NEST_HTTP_AXIOS_REF_RULE_ID,
+      EVENT_APPLICATION_RULE_ID,
+      ...Object.values(EVENT_EMITTER_INTERACTION_RULE_IDS),
+      ...Object.values(EVENT_HANDLER_RULE_IDS),
+      EVENT_MATCH_RULE_ID,
+      EVENT_WILDCARD_MATCH_RULE_ID,
+      ...Object.values(BULLMQ_RULE_IDS),
     ];
     const operationRuleIds = [...TYPEORM_READ_OPERATIONS, ...TYPEORM_WRITE_OPERATIONS].map(
       (operation) => `typeorm.repository.${operation}.v1`,

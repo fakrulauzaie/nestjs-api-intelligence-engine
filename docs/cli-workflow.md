@@ -1,5 +1,9 @@
 # CLI and Reporting Workflow
 
+The synopsis uses the installed binary name `api-intel`. In this private repository,
+build first and replace that prefix with `pnpm run cli --`; for example,
+`pnpm run cli -- graph .api-intel/analysis.json --open`.
+
 The CLI has ten complete commands:
 
 ```text
@@ -20,12 +24,12 @@ api-intel impact <before-analysis.json> <after-analysis.json>
 api-intel check <analysis.json> --config <api-intel.config.json>
   [--baseline <analysis.json>] [--format json|markdown] [--output <directory>]
 api-intel openapi <analysis.json> --document <openapi.json>
-  [--path-prefix <path>] [--include-evidence] [--output <directory>]
+  [--path-prefix <prefix>] [--include-evidence] [--output <directory>]
 api-intel controls <analysis.json>
   [--policy-results <policy-results.json>] [--output <directory>]
 api-intel graph <analysis.json>
-  [--policy-results <policy-results.json>] [--impact-results <impact.json>]
-  [--baseline <before-analysis.json>]
+  [--baseline <before-analysis.json> | --impact-results <impact.json>]
+  [--policy-results <policy-results.json>]
   [--max-nodes <10-500>] [--max-edges <10-1000>] [--output <directory>] [--open]
 ```
 
@@ -39,10 +43,10 @@ Before scanning, `scan` checks only `<repository>/api-intel.config.json`. An exp
 are mutually exclusive. Versions 2 and 3 supply analysis, output, policy-rule, policy,
 graph, controls, and OpenAPI report recipes. Version 3 additionally accepts bounded
 interaction-traversal limits; those values do not enable extractors. The current eager
-and Nest `HttpService` outbound-HTTP extractors plus exact in-process EventEmitter
-analysis are enabled automatically and have no network, environment-value, or runtime
-configuration option. Explicit CLI options take
-precedence.
+and Nest `HttpService` outbound-HTTP extractors, exact/configured-wildcard in-process
+EventEmitter analysis, and bounded BullMQ queue analysis are enabled automatically.
+They have no network, environment-value, broker, or target-runtime configuration
+option. Explicit CLI options take precedence.
 Every requested report uses the same in-memory analysis and standalone renderer;
 `--open` remains invocation-only and is valid only when a graph is effectively
 requested. See
@@ -91,9 +95,11 @@ with only documented Nest `:name` to OpenAPI `{name}` conversion and an optional
 explicit path prefix. The source document is never overwritten. `controls` publishes
 one strict JSON and formula-safe CSV row per canonical endpoint, optionally attaching
 validated policy results for the same analysis snapshot. Both commands derive facts
-only from validated inputs. Analysis v3 outputs separately expose outbound interactions,
-local interactions, and local causal effects without changing synchronous
-`dbReads`/`dbWrites`. See [Structured Evidence Exports](structured-evidence-exports.md).
+only from validated inputs. Analysis v3 outputs separately expose outbound
+interactions, local interactions/effects, and—when BullMQ records exist—distributed
+interactions and distributed-conditional effects without changing synchronous
+`dbReads`/`dbWrites`. See
+[Structured Evidence Exports](structured-evidence-exports.md).
 
 `graph` publishes `api-intel-graph.html`, a single self-contained offline interactive
 report. Its optional policy and impact inputs must contain the current canonical

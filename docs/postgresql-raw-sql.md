@@ -1,11 +1,11 @@
 # Static PostgreSQL Raw-SQL Analysis
 
-Phase 18 extracts physical table reads and writes from static SQL issued through
+The opt-in raw-SQL analyzer extracts physical table reads and writes from static SQL issued through
 checker-proven TypeORM raw-query APIs. Extraction is opt-in and currently supports
 only the exact `postgresql-18` dialect mode backed by `libpg-query@18.1.2`.
 
 ```text
-api-intel scan <repository> --raw-sql-dialect postgresql-18
+pnpm run cli -- scan <repository> --raw-sql-dialect postgresql-18
 ```
 
 The same opt-in may be supplied as `analysis.rawSqlDialect` in a strict version-2 or version-3

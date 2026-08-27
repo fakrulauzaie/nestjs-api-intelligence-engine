@@ -48,27 +48,33 @@ describe('MVP release documentation', () => {
     expect(packageJson.scripts?.demo).toBe('node scripts/demo.mjs');
   });
 
-  it('ships readable sanitized catalogue, read/write traces, and JSON', async () => {
-    const exampleRoot = resolve('docs/examples/official-nestjs-typeorm');
-    const [catalogue, readTrace, writeTrace, analysisExcerptText] = await Promise.all([
+  it('ships readable current-v3 catalogue, read/write traces, and JSON summary', async () => {
+    const exampleRoot = resolve('docs/examples/current');
+    const [catalogue, readTrace, writeTrace, analysisSummaryText] = await Promise.all([
       readFile(resolve(exampleRoot, 'endpoints.md'), 'utf8'),
       readFile(resolve(exampleRoot, 'read-trace.md'), 'utf8'),
       readFile(resolve(exampleRoot, 'write-trace.md'), 'utf8'),
-      readFile(resolve(exampleRoot, 'analysis-excerpt.json'), 'utf8'),
+      readFile(resolve(exampleRoot, 'analysis-summary.json'), 'utf8'),
     ]);
 
-    expect(catalogue).toMatch(/\| GET\s+\| `\/users\/:id` \| UsersController\.findOne \|/u);
-    expect(readTrace).toMatch(/\| UsersService\.findOne \| READ\s+\| user\s+\|/u);
-    expect(writeTrace).toMatch(/\| UsersService\.create \| WRITE\s+\| user\s+\|/u);
+    expect(catalogue).toMatch(/\| GET\s+\| `\/notes` \| NotesController\.findAll \|/u);
+    expect(readTrace).toMatch(/\| NotesService\.findAll \| READ\s+\| note\s+\| synchronous \|/u);
+    expect(writeTrace).toMatch(/\| NotesService\.create \| WRITE\s+\| note\s+\| synchronous \|/u);
     expect(catalogue.toLowerCase()).not.toContain('c:\\users\\');
     expect(readTrace.toLowerCase()).not.toContain('c:\\users\\');
     expect(writeTrace.toLowerCase()).not.toContain('c:\\users\\');
 
-    const excerpt = JSON.parse(analysisExcerptText) as {
+    const summary = JSON.parse(analysisSummaryText) as {
       readonly resultState?: string;
-      readonly source?: { readonly revision?: string };
+      readonly schemaVersion?: string;
+      readonly interactionAnalysis?: { readonly supportedKinds?: readonly string[] };
     };
-    expect(excerpt.resultState).toBe('completed_with_gaps');
-    expect(excerpt.source?.revision).toBe(PINNED_REFERENCE_REVISION);
+    expect(summary.resultState).toBe('completed_with_gaps');
+    expect(summary.schemaVersion).toBe('3.0.0');
+    expect(summary.interactionAnalysis?.supportedKinds).toEqual([
+      'in_process_event',
+      'job_queue',
+      'outbound_http',
+    ]);
   });
 });

@@ -1,6 +1,6 @@
 # In-Process Event Analysis
 
-Phases 33-34 activate and harden the `in_process_event` interaction kind for checker-proven
+In-process event analysis supports the `in_process_event` interaction kind for checker-proven
 `@nestjs/event-emitter` declarations. The analyzer inventories Nest application
 roots, `EventEmitterModule.forRoot()` registrations, injected `EventEmitter2`
 producers, and `@OnEvent()` handlers without importing or bootstrapping the target.

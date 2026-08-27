@@ -1,5 +1,11 @@
 # Real Repository Validation
 
+> **Historical validation record (2026-08-17).** This document and its generated
+> outputs describe the Phase 11 analyzer, not the current report shape or supported
+> feature set. Use [Supported Static-Analysis Patterns](supported-patterns.md) for
+> current capability and [`examples/current/`](examples/current/) for current v3
+> output. The record below is preserved as evidence of what was verified at that time.
+
 ## Target and selection
 
 Phase 11 was validated on the official
@@ -81,7 +87,7 @@ The `DELETE /users/:id` report was also checked. It terminates at
 
 ## Observed limitations and disposition
 
-| Source pattern                                  | Analyzer behavior                                 | Disposition                             |
+| Source pattern                                  | Phase 11 analyzer behavior                        | Historical disposition                  |
 | ----------------------------------------------- | ------------------------------------------------- | --------------------------------------- |
 | No direct guard declarations                    | `none_declared` plus `AUTH_GLOBAL_POLICY_UNKNOWN` | Correct P0 uncertainty; no public claim |
 | `Repository.save(user)` after DTO assignments   | Table write plus `TYPEORM_SAVE_COLUMNS_UNKNOWN`   | Correct table-level precision           |

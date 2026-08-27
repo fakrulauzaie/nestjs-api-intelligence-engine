@@ -1,6 +1,6 @@
 # Potential change-impact analysis
 
-Phase 14 compares exactly two user-supplied, validated `analysis.json` documents and
+The `impact` command compares exactly two user-supplied, validated `analysis.json` documents and
 reports endpoints that may be affected by changed static facts. Potential impact means
 reachability in the supported assertion graph; it does not prove that runtime behavior
 changed.

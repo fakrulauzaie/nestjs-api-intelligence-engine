@@ -1,6 +1,6 @@
 # Bounded TypeORM QueryBuilder Analysis
 
-Phase 17 recognizes common TypeORM QueryBuilder reads and writes without generating or
+The bounded analyzer recognizes common TypeORM QueryBuilder reads and writes without generating or
 parsing SQL. It uses the TypeScript checker to prove the receiver, a small method-local
 state machine to prove builder transitions, and the existing canonical
 `METHOD_READS_TABLE`/`METHOD_WRITES_TABLE` assertions for publication.
