@@ -1,0 +1,68 @@
+import { Injectable, Module } from '@nestjs/common';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+
+enum ReportJob {
+  Generate = 'generate-pdf',
+  Archive = 'archive-pdf',
+  Fail = 'fail-pdf',
+}
+
+@Injectable()
+class ReportWorkService {
+  async received(_id: string): Promise<void> {}
+  async generate(_id: string): Promise<void> {}
+  async archive(_id: string): Promise<void> {}
+  async afterBreak(_id: string): Promise<void> {}
+  async unmatched(_id: string): Promise<void> {}
+  async finalize(_id: string): Promise<void> {}
+}
+
+// B0_CASE:switch-complete
+@Processor('reports')
+class SafeSwitchProcessor extends WorkerHost {
+  constructor(private readonly work: ReportWorkService) {
+    super();
+  }
+
+  async process(job: Job<{ readonly id: string }, unknown, string>): Promise<void> {
+    // B0_BRANCH:common-prelude
+    await this.work.received(job.data.id);
+    try {
+      switch (job.name) {
+        // B0_BRANCH:exact-return
+        case ReportJob.Generate: {
+          await this.work.generate(job.data.id);
+          return;
+        }
+        // B0_BRANCH:grouped-break
+        case ReportJob.Archive:
+        case 'archive-legacy': {
+          await this.work.archive(job.data.id);
+          break;
+        }
+        // B0_BRANCH:exact-throw
+        case ReportJob.Fail: {
+          throw new Error(`Report ${job.data.id} failed`);
+        }
+        // B0_BRANCH:default
+        default: {
+          await this.work.unmatched(job.data.id);
+          return;
+        }
+      }
+      await this.work.afterBreak(job.data.id);
+    } finally {
+      // B0_BRANCH:common-finally
+      await this.work.finalize(job.data.id);
+    }
+  }
+}
+
+@Module({ providers: [ReportWorkService, SafeSwitchProcessor] })
+class SafeSwitchModule {}
+
+const __B0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('B0 BullMQ fixture must never execute: switch-safe');
+})();
+void __B0_EXECUTION_SENTINEL__;

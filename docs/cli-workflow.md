@@ -55,7 +55,7 @@ requested. See
 and identity rules.
 
 Raw-SQL extraction is disabled unless the CLI supplies
-`--raw-sql-dialect postgresql-18` or version-2/version-3 configuration explicitly selects the
+`--raw-sql-dialect postgresql-18` or version-2/version-3/version-4 configuration explicitly selects the
 same dialect. The exact `libpg-query@18.1.2` parser identity and effective byte,
 statement, parse-time, and AST-node limits are then recorded in both artifacts. Other
 CLI dialect values fail as usage errors before scanning; invalid configured values fail
@@ -96,7 +96,7 @@ with only documented Nest `:name` to OpenAPI `{name}` conversion and an optional
 explicit path prefix. The source document is never overwritten. `controls` publishes
 one strict JSON and formula-safe CSV row per canonical endpoint, optionally attaching
 validated policy results for the same analysis snapshot. Both commands derive facts
-only from validated inputs. Analysis v3 outputs separately expose outbound
+only from validated inputs. Analysis v5 outputs separately expose outbound
 interactions, local interactions/effects, and—when BullMQ records exist—distributed
 interactions and distributed-conditional effects without changing synchronous
 `dbReads`/`dbWrites`. See
@@ -108,9 +108,11 @@ snapshot. Node/edge options bound each endpoint-centered scene; omitted counts r
 visible. The file embeds pinned Cytoscape.js, uses hash-authorized scripts plus
 `connect-src 'none'`, and includes an accessible node/edge table. See [Offline
 Interactive Graph Report](offline-graph-report.md).
-Current v3 reports distinguish interaction, handler, boundary, and external-target
-nodes. Interaction edges say `initiates`, `dispatches`, or `matches local handler`;
-they never claim delivery.
+Current v5 reports use graph schema v6 and distinguish interaction, handler, boundary,
+external-target, and BullMQ branch nodes. Interaction edges say `initiates`,
+`dispatches`, `matches local handler`, or identify a branch effect; they never claim
+delivery. Endpoint facts also list redacted authorization requirements and their
+`proven_enforced`, `configured_relationship`, or `enforcement_unknown` state.
 
 `graph --baseline <before-analysis.json>` computes the same validated potential-impact
 overlay in memory with the positional analysis as the current/after side. It is mutually

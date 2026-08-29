@@ -6,6 +6,7 @@ import { createEvidenceForOffsets } from '../evidence/locations.js';
 import { assertValidAnalysisDocument } from '../evidence/validate.js';
 import { extractNestRoutes } from '../extractors/nest-routes.js';
 import { extractNestGuards } from '../extractors/nest-guards.js';
+import { extractNestAuthorization } from '../extractors/nest-authorization.js';
 import { extractNestContracts } from '../extractors/nest-contracts.js';
 import { extractInterMethodRequestProvenance } from '../extractors/inter-method-provenance.js';
 import { extractRequestProvenance } from '../extractors/request-provenance.js';
@@ -51,6 +52,7 @@ import {
   mergeMethodRecords,
 } from './merge-records.js';
 import { deriveAnalysisResultState } from './result-state.js';
+import { projectJobQueueBranchEffects } from './job-queue-branch-effects.js';
 
 export interface ScanRepositoryOptions {
   readonly repositoryRoot: string;
@@ -178,10 +180,26 @@ export async function scanRepository(
   options.signal?.throwIfAborted();
   const startedAt = now();
   const repositoryRoot = resolve(options.repositoryRoot);
-  const configuration = analysisConfigurationSchema.parse({
+  const parsedConfiguration = analysisConfigurationSchema.parse({
     ...DEFAULT_ANALYSIS_CONFIGURATION,
     ...options.configuration,
   });
+  const uniqueAuthorizationEntries = <T>(values: readonly T[]): T[] =>
+    [...new Map(values.map((value) => [JSON.stringify(value), value])).values()].sort(
+      (left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)),
+    );
+  const configuration = {
+    ...parsedConfiguration,
+    authorization: {
+      metadataKeys: [...new Set(parsedConfiguration.authorization.metadataKeys)].sort(),
+      decoratorSymbols: uniqueAuthorizationEntries(
+        parsedConfiguration.authorization.decoratorSymbols,
+      ),
+      enforcementRelationships: uniqueAuthorizationEntries(
+        parsedConfiguration.authorization.enforcementRelationships,
+      ),
+    },
+  };
   const repositoryRevision = await readLocalGitRevision(repositoryRoot);
   options.signal?.throwIfAborted();
   const inventory = await inventoryRepository({
@@ -217,6 +235,22 @@ export async function scanRepository(
     endpointDeclarations: routeExtraction.endpointDeclarations,
     repositoryRevision,
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+  });
+  options.signal?.throwIfAborted();
+  const authorizationExtraction = extractNestAuthorization({
+    sourceIndex,
+    checker: project.checker,
+    endpointDeclarations: routeExtraction.endpointDeclarations,
+    repositoryRevision,
+    evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    configuration: configuration.authorization!,
+    existingClasses: [...guardExtraction.classes, ...moduleExtraction.classes],
+    existingGuards: [...guardExtraction.guards, ...moduleExtraction.guards],
+    existingAssertions: [...guardExtraction.assertions, ...moduleExtraction.assertions],
+    modules: moduleExtraction.modules,
+    moduleAssertions: moduleExtraction.assertions,
+    applicationRootModuleIds: moduleExtraction.applicationRootModuleIds,
+    globalGuardRegistrations: moduleExtraction.globalGuardRegistrations,
   });
   options.signal?.throwIfAborted();
   const contractExtraction = extractNestContracts({
@@ -332,6 +366,7 @@ export async function scanRepository(
   const diagnostics = [
     ...routeExtraction.diagnostics,
     ...guardExtraction.diagnostics,
+    ...authorizationExtraction.diagnostics,
     ...classRelationships.diagnostics,
     ...outboundHttp.diagnostics,
     ...nestHttpService.diagnostics,
@@ -350,6 +385,9 @@ export async function scanRepository(
     routeExtraction.endpoints.length +
     routeExtraction.assertions.length +
     guardExtraction.assertions.length +
+    authorizationExtraction.metadata.length +
+    authorizationExtraction.enforcements.length +
+    authorizationExtraction.assertions.length +
     classRelationships.assertions.length +
     typeOrmPersistence.assertions.length +
     typeOrmPersistence.entities.length +
@@ -374,6 +412,8 @@ export async function scanRepository(
     nestEventEmitter.assertions.length +
     nestBullMq.interactions.length +
     nestBullMq.handlers.length +
+    nestBullMq.handlerDispatches.length +
+    nestBullMq.handlerBranches.length +
     nestBullMq.assertions.length +
     nestMicroservices.applications.length +
     nestMicroservices.interactions.length +
@@ -389,6 +429,53 @@ export async function scanRepository(
     typescriptVersion: tool.typescriptVersion,
     configuration,
   });
+  const assertions = mergeAssertionRecords(
+    routeExtraction.assertions,
+    guardExtraction.assertions,
+    authorizationExtraction.assertions,
+    classRelationships.assertions,
+    outboundHttp.assertions,
+    nestHttpService.assertions,
+    nestEventEmitter.assertions,
+    nestBullMq.assertions,
+    nestMicroservices.assertions,
+    typeOrmPersistence.assertions,
+    typeOrmRawSql.assertions,
+    moduleExtraction.assertions,
+    contractExtraction.assertions,
+    requestProvenance.assertions,
+    interMethodProvenance.assertions,
+  );
+  const evidence = mergeEvidenceRecords(
+    routeExtraction.evidence,
+    guardExtraction.evidence,
+    authorizationExtraction.evidence,
+    classRelationships.evidence,
+    outboundHttp.evidence,
+    nestHttpService.evidence,
+    nestEventEmitter.evidence,
+    nestBullMq.evidence,
+    nestMicroservices.evidence,
+    typeOrmPersistence.evidence,
+    typeOrmRawSql.evidence,
+    compiler.evidence,
+    moduleExtraction.evidence,
+    contractExtraction.evidence,
+    requestProvenance.evidence,
+    interMethodProvenance.evidence,
+  );
+  const interactionHandlers = mergeInteractionHandlerRecords(
+    nestEventEmitter.handlers,
+    nestBullMq.handlers,
+    nestMicroservices.handlers,
+  );
+  const interactionHandlerBranchEffects = projectJobQueueBranchEffects({
+    handlers: interactionHandlers,
+    dispatches: nestBullMq.handlerDispatches,
+    branches: nestBullMq.handlerBranches,
+    assertions,
+    evidence,
+  });
   const analysis = canonicalizeAnalysisDocument({
     schemaVersion: CURRENT_ANALYSIS_SCHEMA_VERSION,
     resultState,
@@ -403,6 +490,7 @@ export async function scanRepository(
     classes: mergeClassRecords(
       routeExtraction.classes,
       guardExtraction.classes,
+      authorizationExtraction.classes,
       classRelationships.classes,
       outboundHttp.classes,
       nestHttpService.classes,
@@ -425,43 +513,16 @@ export async function scanRepository(
       typeOrmRawSql.methods,
     ),
     endpoints: routeExtraction.endpoints,
-    guards: mergeGuardRecords(guardExtraction.guards, moduleExtraction.guards),
+    guards: mergeGuardRecords(
+      guardExtraction.guards,
+      authorizationExtraction.guards,
+      moduleExtraction.guards,
+    ),
     repositoryBindings: typeOrmPersistence.repositoryBindings,
     entities: typeOrmPersistence.entities,
     tables: [...typeOrmPersistence.tables, ...typeOrmRawSql.tables],
-    assertions: mergeAssertionRecords(
-      routeExtraction.assertions,
-      guardExtraction.assertions,
-      classRelationships.assertions,
-      outboundHttp.assertions,
-      nestHttpService.assertions,
-      nestEventEmitter.assertions,
-      nestBullMq.assertions,
-      nestMicroservices.assertions,
-      typeOrmPersistence.assertions,
-      typeOrmRawSql.assertions,
-      moduleExtraction.assertions,
-      contractExtraction.assertions,
-      requestProvenance.assertions,
-      interMethodProvenance.assertions,
-    ),
-    evidence: mergeEvidenceRecords(
-      routeExtraction.evidence,
-      guardExtraction.evidence,
-      classRelationships.evidence,
-      outboundHttp.evidence,
-      nestHttpService.evidence,
-      nestEventEmitter.evidence,
-      nestBullMq.evidence,
-      nestMicroservices.evidence,
-      typeOrmPersistence.evidence,
-      typeOrmRawSql.evidence,
-      compiler.evidence,
-      moduleExtraction.evidence,
-      contractExtraction.evidence,
-      requestProvenance.evidence,
-      interMethodProvenance.evidence,
-    ),
+    assertions,
+    evidence,
     diagnostics,
     modules: moduleExtraction.modules,
     globalGuardRegistrations: moduleExtraction.globalGuardRegistrations,
@@ -494,11 +555,12 @@ export async function scanRepository(
       nestBullMq.interactions,
       nestMicroservices.interactions,
     ),
-    interactionHandlers: mergeInteractionHandlerRecords(
-      nestEventEmitter.handlers,
-      nestBullMq.handlers,
-      nestMicroservices.handlers,
-    ),
+    interactionHandlers,
+    interactionHandlerDispatches: nestBullMq.handlerDispatches,
+    interactionHandlerBranches: nestBullMq.handlerBranches,
+    interactionHandlerBranchEffects,
+    authorizationMetadata: authorizationExtraction.metadata,
+    authorizationEnforcements: authorizationExtraction.enforcements,
     interactionAnalysis: {
       schemaKinds: [...INTERACTION_KINDS],
       supportedKinds: [...SUPPORTED_INTERACTION_KINDS],

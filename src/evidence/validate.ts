@@ -1,4 +1,9 @@
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
 import type { AssertionPredicate } from '../model/assertions.js';
 import type { ClassRole } from '../model/entities.js';
 import {
@@ -9,7 +14,7 @@ import {
   microserviceMessageTargetsMatch,
 } from '../model/interactions.js';
 import { canonicalStringify } from '../model/ordering.js';
-import { analysisDocumentSchema } from '../model/schemas.js';
+import { analysisDocumentSchema, jobQueueBranchContractSchema } from '../model/schemas.js';
 
 export const INTEGRITY_ISSUE_CODES = [
   'SCHEMA_INVALID',
@@ -31,6 +36,7 @@ export const INTEGRITY_ISSUE_CODES = [
   'APPLICATION_STATE_MISMATCH',
   'INTERACTION_ASSERTION_MISMATCH',
   'INTERACTION_CAPABILITY_MISMATCH',
+  'AUTHORIZATION_RELATIONSHIP_MISMATCH',
 ] as const;
 export type IntegrityIssueCode = (typeof INTEGRITY_ISSUE_CODES)[number];
 
@@ -69,7 +75,12 @@ type CanonicalRecordKind =
   | 'column_influence'
   | 'application'
   | 'interaction'
-  | 'interaction_handler';
+  | 'interaction_handler'
+  | 'interaction_handler_dispatch'
+  | 'interaction_handler_branch'
+  | 'interaction_handler_branch_effect'
+  | 'authorization_metadata'
+  | 'authorization_enforcement';
 
 interface RecordEnvelope {
   readonly id: string;
@@ -149,11 +160,27 @@ function allRecords(analysis: AnalysisDocument): RecordEnvelope[] {
           ...envelope('column_influence', analysis.columnInfluences),
         ]
       : []),
-    ...(analysis.schemaVersion === '3.0.0'
+    ...(analysisHasInteractionFacts(analysis)
       ? [
           ...envelope('application', analysis.applications),
           ...envelope('interaction', analysis.interactions),
           ...envelope('interaction_handler', analysis.interactionHandlers),
+        ]
+      : []),
+    ...(analysisHasJobQueueBranchFacts(analysis)
+      ? [
+          ...envelope('interaction_handler_dispatch', analysis.interactionHandlerDispatches),
+          ...envelope('interaction_handler_branch', analysis.interactionHandlerBranches),
+          ...envelope(
+            'interaction_handler_branch_effect',
+            analysis.interactionHandlerBranchEffects,
+          ),
+        ]
+      : []),
+    ...(analysisHasAuthorizationFacts(analysis)
+      ? [
+          ...envelope('authorization_metadata', analysis.authorizationMetadata),
+          ...envelope('authorization_enforcement', analysis.authorizationEnforcements),
         ]
       : []),
   ];
@@ -609,7 +636,7 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
     }
   }
 
-  if (analysis.schemaVersion === '3.0.0') {
+  if (analysisHasInteractionFacts(analysis)) {
     const interactionAnalysis = analysis.interactionAnalysis;
     addDuplicateReferenceIssues(
       analysis.analysisRun.id,
@@ -639,7 +666,8 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
       issues.push({
         code: 'INTERACTION_CAPABILITY_MISMATCH',
         path: 'interactionAnalysis.schemaKinds',
-        message: 'Interaction schema kinds do not match the kinds representable by analysis v3.',
+        message:
+          'Interaction schema kinds do not match the kinds representable by this analysis version.',
       });
     }
     for (const kind of interactionAnalysis.supportedKinds) {
@@ -910,6 +938,176 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
         code: 'INTERACTION_ASSERTION_MISMATCH',
         recordId: handler.id,
         message: `Interaction handler ${handler.id} has no implementation assertion.`,
+      });
+    }
+
+    if (analysisHasJobQueueBranchFacts(analysis)) {
+      const contractResult = jobQueueBranchContractSchema.safeParse({
+        dispatches: analysis.interactionHandlerDispatches,
+        branches: analysis.interactionHandlerBranches,
+        effects: analysis.interactionHandlerBranchEffects,
+      });
+      if (!contractResult.success) {
+        for (const issue of contractResult.error.issues) {
+          issues.push({
+            code: 'SCHEMA_INVALID',
+            path: issue.path.join('.'),
+            message: issue.message,
+          });
+        }
+      }
+      for (const dispatch of analysis.interactionHandlerDispatches) {
+        requireReference(dispatch.id, 'handlerId', dispatch.handlerId, 'interaction_handler');
+        addDuplicateReferenceIssues(dispatch.id, 'branchIds', dispatch.branchIds, issues);
+        addDuplicateReferenceIssues(dispatch.id, 'evidenceIds', dispatch.evidenceIds, issues);
+        for (const branchId of dispatch.branchIds) {
+          requireReference(dispatch.id, 'branchIds', branchId, 'interaction_handler_branch');
+        }
+        for (const evidenceId of dispatch.evidenceIds) {
+          requireReference(dispatch.id, 'evidenceIds', evidenceId, 'evidence');
+        }
+        const handler = handlerById.get(dispatch.handlerId);
+        if (handler !== undefined && handler.kind !== 'job_queue') {
+          issues.push({
+            code: 'INTERACTION_ASSERTION_MISMATCH',
+            recordId: dispatch.id,
+            path: 'handlerId',
+            message: `Job-queue dispatch ${dispatch.id} references a non-job-queue handler.`,
+          });
+        }
+      }
+      for (const branch of analysis.interactionHandlerBranches) {
+        requireReference(
+          branch.id,
+          'dispatchId',
+          branch.dispatchId,
+          'interaction_handler_dispatch',
+        );
+        addDuplicateReferenceIssues(branch.id, 'evidenceIds', branch.evidenceIds, issues);
+        for (const evidenceId of branch.evidenceIds) {
+          requireReference(branch.id, 'evidenceIds', evidenceId, 'evidence');
+        }
+      }
+      for (const effect of analysis.interactionHandlerBranchEffects) {
+        requireReference(effect.id, 'branchId', effect.branchId, 'interaction_handler_branch');
+        requireReference(effect.id, 'sourceAssertionId', effect.sourceAssertionId, 'assertion');
+        const targetKind =
+          effect.kind === 'calls_method'
+            ? 'method'
+            : effect.kind === 'initiates_interaction'
+              ? 'interaction'
+              : 'table';
+        requireReference(effect.id, 'targetId', effect.targetId, targetKind);
+        addDuplicateReferenceIssues(effect.id, 'evidenceIds', effect.evidenceIds, issues);
+        for (const evidenceId of effect.evidenceIds) {
+          requireReference(effect.id, 'evidenceIds', evidenceId, 'evidence');
+        }
+        const sourceAssertion = analysis.assertions.find(
+          ({ id }) => id === effect.sourceAssertionId,
+        );
+        if (
+          sourceAssertion !== undefined &&
+          (sourceAssertion.objectId !== effect.targetId ||
+            sourceAssertion.status !== effect.status ||
+            (effect.kind === 'calls_method' &&
+              sourceAssertion.predicate !== 'METHOD_CALLS_METHOD') ||
+            (effect.kind === 'reads_table' && sourceAssertion.predicate !== 'METHOD_READS_TABLE') ||
+            (effect.kind === 'writes_table' &&
+              sourceAssertion.predicate !== 'METHOD_WRITES_TABLE') ||
+            (effect.kind === 'initiates_interaction' &&
+              sourceAssertion.predicate !== 'METHOD_INITIATES_INTERACTION'))
+        ) {
+          issues.push({
+            code: 'INTERACTION_ASSERTION_MISMATCH',
+            recordId: effect.id,
+            path: 'sourceAssertionId',
+            message: `Branch effect ${effect.id} does not preserve its source assertion semantics.`,
+          });
+        }
+      }
+    }
+  }
+
+  if (analysisHasAuthorizationFacts(analysis)) {
+    const metadataById = new Map(
+      analysis.authorizationMetadata.map((record) => [record.id, record]),
+    );
+    const enforcementCounts = new Map<string, number>();
+    for (const metadata of analysis.authorizationMetadata) {
+      requireReference(metadata.id, 'endpointId', metadata.endpointId, 'endpoint');
+      if (metadata.decorator.sourceFileId !== null) {
+        requireReference(
+          metadata.id,
+          'decorator.sourceFileId',
+          metadata.decorator.sourceFileId,
+          'source',
+        );
+      }
+      addDuplicateReferenceIssues(metadata.id, 'evidenceIds', metadata.evidenceIds, issues);
+      for (const evidenceId of metadata.evidenceIds) {
+        requireReference(metadata.id, 'evidenceIds', evidenceId, 'evidence');
+      }
+    }
+    for (const enforcement of analysis.authorizationEnforcements) {
+      enforcementCounts.set(
+        enforcement.metadataId,
+        (enforcementCounts.get(enforcement.metadataId) ?? 0) + 1,
+      );
+      requireReference(
+        enforcement.id,
+        'metadataId',
+        enforcement.metadataId,
+        'authorization_metadata',
+      );
+      requireReference(enforcement.id, 'endpointId', enforcement.endpointId, 'endpoint');
+      addDuplicateReferenceIssues(enforcement.id, 'evidenceIds', enforcement.evidenceIds, issues);
+      for (const evidenceId of enforcement.evidenceIds) {
+        requireReference(enforcement.id, 'evidenceIds', evidenceId, 'evidence');
+      }
+      const metadata = metadataById.get(enforcement.metadataId);
+      if (metadata !== undefined && metadata.endpointId !== enforcement.endpointId) {
+        issues.push({
+          code: 'AUTHORIZATION_RELATIONSHIP_MISMATCH',
+          recordId: enforcement.id,
+          path: 'endpointId',
+          message: `Authorization enforcement ${enforcement.id} does not share its metadata endpoint.`,
+        });
+      }
+      if (enforcement.guardId === null || enforcement.guardAssertionId === null) continue;
+      requireReference(enforcement.id, 'guardId', enforcement.guardId, 'guard');
+      requireReference(
+        enforcement.id,
+        'guardAssertionId',
+        enforcement.guardAssertionId,
+        'assertion',
+      );
+      const assertion = analysis.assertions.find(({ id }) => id === enforcement.guardAssertionId);
+      const isEndpointGuardAssertion =
+        assertion?.predicate === 'ENDPOINT_USES_GUARD' &&
+        assertion.subjectId === enforcement.endpointId;
+      const isGlobalGuardAssertion = analysis.globalGuardRegistrations.some(
+        ({ assertionId }) => assertionId === assertion?.id,
+      );
+      if (
+        assertion !== undefined &&
+        ((!isEndpointGuardAssertion && !isGlobalGuardAssertion) ||
+          assertion.objectId !== enforcement.guardId ||
+          assertion.status !== 'resolved')
+      ) {
+        issues.push({
+          code: 'AUTHORIZATION_RELATIONSHIP_MISMATCH',
+          recordId: enforcement.id,
+          path: 'guardAssertionId',
+          message: `Authorization enforcement ${enforcement.id} does not match a resolved direct/composite/global guard assertion.`,
+        });
+      }
+    }
+    for (const metadata of analysis.authorizationMetadata) {
+      if ((enforcementCounts.get(metadata.id) ?? 0) > 0) continue;
+      issues.push({
+        code: 'AUTHORIZATION_RELATIONSHIP_MISMATCH',
+        recordId: metadata.id,
+        message: `Authorization metadata ${metadata.id} has no explicit enforcement relationship.`,
       });
     }
   }

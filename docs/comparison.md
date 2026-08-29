@@ -38,8 +38,9 @@ in different files do not collide.
 
 ## Diff document
 
-`DiffDocument` uses independent schema `1.0.0` for v1/v2-only comparisons and
-`2.0.0` when either input is analysis v3. The shared fields store:
+`DiffDocument` uses independent schema `1.0.0` for v1/v2-only comparisons,
+`2.0.0` when either input is analysis v3, and `3.0.0` when either input is analysis
+v4. The shared fields store:
 
 - input analysis IDs, schema versions, result states, configurations, and fact availability;
 - added, removed, and modified endpoints;
@@ -60,6 +61,13 @@ The same projection applies to Phase 35 `job_queue` records. Queue or job identi
 changes are add/remove changes; worker registration and rule changes are handler
 modifications. Comparison does not interpret a local queue candidate as delivered.
 
+Schema `3.0.0` additionally compares BullMQ dispatches, branches, and branch effects.
+Their semantic keys are structural: handler plus dispatch rule; dispatch plus
+canonical selector and control-flow kind; and branch plus effect kind, semantic
+target, and source assertion. Selector/control-flow identity changes are add/remove;
+state, status, or rule changes are explicit modifications. V1-v3 inputs expose branch
+capability as unavailable rather than as an empty branch set.
+
 Phase 36 `microservice_message` records use the same projection. Mode, canonical
 pattern, client token, transport, and application context participate in semantic
 identity. Activation/boundary/rule changes remain modifications. A local pattern
@@ -73,7 +81,7 @@ canonically ordered before JSON publication. Markdown is rendered only after the
 
 Analysis v1 proves direct guard declarations but does not model effective global
 guards. The diff therefore records direct guards as `available` and effective guards
-as `unavailable`. Analysis v2 and v3 record effective guards as `available`, including
+as `unavailable`. Analysis v2-v4 record effective guards as `available`, including
 proven application-global registrations. It never treats unavailable as an empty
 proven set.
 
@@ -88,12 +96,17 @@ can match while changed evidence content remains visible.
 
 ## Current compatibility boundary
 
-The normalization boundary accepts analysis schemas `1.0.0`, `2.0.0`, and `3.0.0`.
+The normalization boundary accepts analysis schemas `1.0.0` through `5.0.0`.
 V1 module and effective-global-guard facts normalize to explicit unavailable/unknown
-state; v2 and v3 facts remain evidence-backed and available. Interaction families are
-explicitly unavailable in v1/v2 and available, possibly empty, in v3. Unknown analysis
-or diff schema versions are rejected rather than interpreted best-effort. Frozen
-schema `1.0.0` bytes remain unchanged for comparisons that contain no v3 input.
+state; v2-v5 facts remain evidence-backed and available. Interaction families are
+explicitly unavailable in v1/v2 and available, possibly empty, in v3-v5. Branch
+families are unavailable in v1-v3 and available in v4/v5. Authorization families are
+unavailable in v1-v4 and available, possibly empty, only in v5. Authorization metadata,
+redacted value shape, and enforcement-state changes are endpoint modification reasons.
+Unknown
+analysis or diff schema versions are rejected rather than interpreted best-effort.
+Frozen schema `1.0.0` bytes remain unchanged for comparisons that contain no v3-v5
+input.
 
 ## Exit behavior
 

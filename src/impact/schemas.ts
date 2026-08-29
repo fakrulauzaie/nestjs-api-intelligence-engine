@@ -12,7 +12,9 @@ import {
   IMPACT_CATEGORIES,
   IMPACT_GRAPH_SIDES,
   IMPACT_REASON_CODES,
+  IMPACT_REASON_CODES_V1,
   IMPACT_SCHEMA_VERSION,
+  IMPACT_SCHEMA_V2_VERSION,
   SOURCE_CHANGE_KINDS,
   UNREACHABLE_REASON_CODES,
   type ImpactDocument,
@@ -117,7 +119,7 @@ const categoryCountsSchema = z
 
 export const impactDocumentSchema: z.ZodType<ImpactDocument> = z
   .object({
-    schemaVersion: z.literal(IMPACT_SCHEMA_VERSION),
+    schemaVersion: z.enum([IMPACT_SCHEMA_VERSION, IMPACT_SCHEMA_V2_VERSION]),
     before: diffInputSnapshotSchema,
     after: diffInputSnapshotSchema,
     summary: z
@@ -136,4 +138,20 @@ export const impactDocumentSchema: z.ZodType<ImpactDocument> = z
     impactedEndpoints: z.array(impactedEndpointSchema),
     unreachableSourceChanges: z.array(unreachableSchema),
   })
-  .strict() as z.ZodType<ImpactDocument>;
+  .strict()
+  .superRefine((document, context) => {
+    if (
+      document.schemaVersion === IMPACT_SCHEMA_VERSION &&
+      document.impactedEndpoints.some(({ reasons }) =>
+        reasons.some(
+          ({ reasonCode }) => !(IMPACT_REASON_CODES_V1 as readonly string[]).includes(reasonCode),
+        ),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['impactedEndpoints'],
+        message: 'Impact schema v1 cannot contain Phase 40 branch reason codes.',
+      });
+    }
+  }) as z.ZodType<ImpactDocument>;

@@ -30,6 +30,7 @@ export const policyRuleSettingsSchema = z
     'forbid-dynamic-interaction-target': setting(unknownOptionsSchema).optional(),
     'require-proven-interaction-activation': setting(unknownOptionsSchema).optional(),
     'require-local-in-process-event-handler': setting(unknownOptionsSchema).optional(),
+    'require-proven-authorization-enforcement': setting(unknownOptionsSchema).optional(),
   })
   .strict()
   .refine((rules) => Object.keys(rules).length > 0, 'At least one policy rule is required.')

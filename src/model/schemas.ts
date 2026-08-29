@@ -4,6 +4,8 @@ import {
   ANALYSIS_SCHEMA_V1_VERSION,
   ANALYSIS_SCHEMA_V2_VERSION,
   ANALYSIS_SCHEMA_V3_VERSION,
+  ANALYSIS_SCHEMA_V4_VERSION,
+  ANALYSIS_SCHEMA_V5_VERSION,
   DIRECT_GUARD_STATES,
   EFFECTIVE_GUARD_STATES,
   GLOBAL_ANALYSIS_COMPLETENESS_STATES,
@@ -27,6 +29,8 @@ import {
   DIAGNOSTIC_CODES,
   DIAGNOSTIC_CODES_V1,
   DIAGNOSTIC_CODES_V2,
+  DIAGNOSTIC_CODES_V3,
+  DIAGNOSTIC_CODES_V4,
   DIAGNOSTIC_SEVERITIES,
 } from './diagnostics.js';
 import {
@@ -72,6 +76,16 @@ import {
   TEXT_TARGET_RESOLUTIONS,
   validInProcessEventPattern,
 } from './interactions.js';
+import {
+  JOB_QUEUE_BRANCH_CONTROL_FLOWS,
+  JOB_QUEUE_BRANCH_EFFECT_KINDS,
+  JOB_QUEUE_HANDLER_DISPATCH_STATES,
+} from './job-queue-branches.js';
+import {
+  AUTHORIZATION_ENFORCEMENT_STATES,
+  AUTHORIZATION_METADATA_SOURCES,
+  AUTHORIZATION_SCALAR_TYPES,
+} from './authorization.js';
 import { isNormalizedRepositoryRelativePath } from './paths.js';
 import { normalizedPolicyRuleConfigurationSchema } from '../policy/rule-config.js';
 
@@ -131,8 +145,53 @@ export const interactionTraversalConfigurationSchema = z
   })
   .strict();
 
-export const analysisConfigurationSchema = analysisConfigurationV2Schema.extend({
+const analysisConfigurationV3Schema = analysisConfigurationV2Schema.extend({
   interactions: interactionTraversalConfigurationSchema,
+});
+
+const authorizationPackageSymbolSchema = z
+  .object({
+    kind: z.literal('package_export'),
+    moduleSpecifier: nonEmptyStringSchema,
+    exportedName: nonEmptyStringSchema,
+  })
+  .strict();
+
+const authorizationRepositorySymbolSchema = z
+  .object({
+    kind: z.literal('repository_export'),
+    sourceFile: repositoryRelativePathSchema,
+    exportedName: nonEmptyStringSchema,
+  })
+  .strict();
+
+export const authorizationAnalysisConfigurationSchema = z
+  .object({
+    metadataKeys: z.array(nonEmptyStringSchema),
+    decoratorSymbols: z.array(
+      z
+        .object({
+          symbol: z.discriminatedUnion('kind', [
+            authorizationPackageSymbolSchema,
+            authorizationRepositorySymbolSchema,
+          ]),
+          metadataKey: nonEmptyStringSchema,
+        })
+        .strict(),
+    ),
+    enforcementRelationships: z.array(
+      z
+        .object({
+          metadataKey: nonEmptyStringSchema,
+          guard: authorizationRepositorySymbolSchema,
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export const analysisConfigurationSchema = analysisConfigurationV3Schema.extend({
+  authorization: authorizationAnalysisConfigurationSchema,
 });
 
 const analysisRunRecordV1Schema = z
@@ -155,7 +214,11 @@ const analysisRunRecordV2Schema = z
   })
   .strict();
 
-export const analysisRunRecordSchema = analysisRunRecordV2Schema.extend({
+const analysisRunRecordV3Schema = analysisRunRecordV2Schema.extend({
+  configuration: analysisConfigurationV3Schema,
+});
+
+export const analysisRunRecordSchema = analysisRunRecordV3Schema.extend({
   configuration: analysisConfigurationSchema,
 });
 
@@ -288,6 +351,14 @@ const diagnosticRecordV1Schema = diagnosticRecordSchema.extend({
 
 const diagnosticRecordV2Schema = diagnosticRecordSchema.extend({
   code: z.enum(DIAGNOSTIC_CODES_V2),
+});
+
+const diagnosticRecordV3Schema = diagnosticRecordSchema.extend({
+  code: z.enum(DIAGNOSTIC_CODES_V3),
+});
+
+const diagnosticRecordV4Schema = diagnosticRecordSchema.extend({
+  code: z.enum(DIAGNOSTIC_CODES_V4),
 });
 
 export const moduleRecordSchema = z
@@ -626,6 +697,263 @@ export const interactionHandlerRecordSchema = z.discriminatedUnion('kind', [
     .strict(),
 ]);
 
+function kindPrefixedStableIdSchema(kind: string) {
+  return stableIdSchema.refine((value) => value.startsWith(`${kind}:`), {
+    message: `Expected a ${kind}-prefixed stable ID.`,
+  });
+}
+
+function uniqueNonEmptyStringsSchema() {
+  return z
+    .array(nonEmptyStringSchema)
+    .min(1)
+    .superRefine((values, context) => {
+      if (new Set(values).size !== values.length) {
+        context.addIssue({ code: 'custom', message: 'Expected unique string values.' });
+      }
+    });
+}
+
+function uniqueStableIdsSchema(kind: string) {
+  return z
+    .array(kindPrefixedStableIdSchema(kind))
+    .min(1)
+    .superRefine((values, context) => {
+      if (new Set(values).size !== values.length) {
+        context.addIssue({ code: 'custom', message: 'Expected unique stable ID references.' });
+      }
+    });
+}
+
+export const jobQueueBranchSelectorSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('exact_jobs'), jobs: uniqueNonEmptyStringsSchema() }).strict(),
+  z.object({ kind: z.literal('all_jobs') }).strict(),
+  z
+    .object({ kind: z.literal('unmatched_jobs'), excludedJobs: uniqueNonEmptyStringsSchema() })
+    .strict(),
+  z.object({ kind: z.literal('unknown') }).strict(),
+]);
+
+export const jobQueueHandlerDispatchRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('interaction_handler_dispatch'),
+    handlerId: kindPrefixedStableIdSchema('interaction_handler'),
+    state: z.enum(JOB_QUEUE_HANDLER_DISPATCH_STATES),
+    branchIds: uniqueStableIdsSchema('interaction_handler_branch'),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence'),
+  })
+  .strict();
+
+export const jobQueueHandlerBranchRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('interaction_handler_branch'),
+    dispatchId: kindPrefixedStableIdSchema('interaction_handler_dispatch'),
+    selector: jobQueueBranchSelectorSchema,
+    controlFlow: z.enum(JOB_QUEUE_BRANCH_CONTROL_FLOWS),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence'),
+  })
+  .strict()
+  .superRefine((branch, context) => {
+    const compatible =
+      (branch.selector.kind === 'exact_jobs' &&
+        (branch.controlFlow === 'switch_case' || branch.controlFlow === 'if_branch')) ||
+      (branch.selector.kind === 'all_jobs' &&
+        (branch.controlFlow === 'common_prelude' || branch.controlFlow === 'common_finally')) ||
+      (branch.selector.kind === 'unmatched_jobs' &&
+        (branch.controlFlow === 'default_branch' ||
+          branch.controlFlow === 'unmatched_fallthrough')) ||
+      (branch.selector.kind === 'unknown' && branch.controlFlow === 'unsupported_region');
+    if (!compatible) {
+      context.addIssue({
+        code: 'custom',
+        path: ['controlFlow'],
+        message: 'Branch selector and control-flow classifications are incompatible.',
+      });
+    }
+  });
+
+export const jobQueueHandlerBranchEffectRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('interaction_handler_branch_effect'),
+    branchId: kindPrefixedStableIdSchema('interaction_handler_branch'),
+    kind: z.enum(JOB_QUEUE_BRANCH_EFFECT_KINDS),
+    targetId: stableIdSchema,
+    sourceAssertionId: kindPrefixedStableIdSchema('assertion'),
+    status: z.enum(['resolved', 'ambiguous']),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence'),
+  })
+  .strict()
+  .superRefine((effect, context) => {
+    const targetKind =
+      effect.kind === 'calls_method'
+        ? 'method'
+        : effect.kind === 'initiates_interaction'
+          ? 'interaction'
+          : 'table';
+    if (!effect.targetId.startsWith(`${targetKind}:`)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['targetId'],
+        message: `Effect ${effect.kind} requires a ${targetKind}-prefixed target.`,
+      });
+    }
+  });
+
+export const jobQueueBranchContractSchema = z
+  .object({
+    dispatches: z.array(jobQueueHandlerDispatchRecordSchema),
+    branches: z.array(jobQueueHandlerBranchRecordSchema),
+    effects: z.array(jobQueueHandlerBranchEffectRecordSchema),
+  })
+  .strict()
+  .superRefine((contract, context) => {
+    const allIds = [
+      ...contract.dispatches.map(({ id }) => id),
+      ...contract.branches.map(({ id }) => id),
+      ...contract.effects.map(({ id }) => id),
+    ];
+    if (new Set(allIds).size !== allIds.length) {
+      context.addIssue({ code: 'custom', message: 'Branch contract record IDs must be unique.' });
+    }
+
+    const dispatchById = new Map(contract.dispatches.map((record) => [record.id, record]));
+    const branchById = new Map(contract.branches.map((record) => [record.id, record]));
+    for (const [dispatchIndex, dispatch] of contract.dispatches.entries()) {
+      const actualBranchIds = contract.branches
+        .filter(({ dispatchId }) => dispatchId === dispatch.id)
+        .map(({ id }) => id)
+        .sort();
+      const declaredBranchIds = [...dispatch.branchIds].sort();
+      if (JSON.stringify(actualBranchIds) !== JSON.stringify(declaredBranchIds)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dispatches', dispatchIndex, 'branchIds'],
+          message: 'Dispatch branchIds must exactly enumerate its branch records.',
+        });
+      }
+      const selectors = actualBranchIds.map((id) => branchById.get(id)!.selector.kind);
+      const unknownCount = selectors.filter((kind) => kind === 'unknown').length;
+      if (dispatch.state === 'complete' && unknownCount > 0) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dispatches', dispatchIndex, 'state'],
+          message: 'A complete dispatch cannot contain an unknown branch.',
+        });
+      }
+      if (
+        dispatch.state === 'partial' &&
+        (unknownCount === 0 || unknownCount === selectors.length)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dispatches', dispatchIndex, 'state'],
+          message: 'A partial dispatch requires both supported and unknown branches.',
+        });
+      }
+      if (dispatch.state === 'unsupported' && unknownCount !== selectors.length) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dispatches', dispatchIndex, 'state'],
+          message: 'An unsupported dispatch may contain only unknown branches.',
+        });
+      }
+    }
+    for (const [branchIndex, branch] of contract.branches.entries()) {
+      if (!dispatchById.has(branch.dispatchId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['branches', branchIndex, 'dispatchId'],
+          message: 'Branch references an unknown dispatch.',
+        });
+      }
+    }
+    for (const [effectIndex, effect] of contract.effects.entries()) {
+      if (!branchById.has(effect.branchId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['effects', effectIndex, 'branchId'],
+          message: 'Branch effect references an unknown branch.',
+        });
+      }
+    }
+  });
+
+export const authorizationValueShapeSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('scalar'),
+      scalarType: z.enum(AUTHORIZATION_SCALAR_TYPES),
+      redacted: z.literal(true),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('array'),
+      itemCount: nonNegativeIntegerSchema,
+      itemTypes: z.array(z.enum(AUTHORIZATION_SCALAR_TYPES)),
+      dynamicItems: z.boolean(),
+      redacted: z.literal(true),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('object'),
+      keys: z.array(nonEmptyStringSchema),
+      dynamicKeys: z.boolean(),
+      redacted: z.literal(true),
+    })
+    .strict(),
+  z.object({ kind: z.literal('unknown'), redacted: z.literal(true) }).strict(),
+]);
+
+export const authorizationMetadataRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('authorization_metadata'),
+    endpointId: kindPrefixedStableIdSchema('endpoint'),
+    scope: z.enum(['controller', 'method']),
+    metadataKey: nonEmptyStringSchema,
+    source: z.enum(AUTHORIZATION_METADATA_SOURCES),
+    decorator: z
+      .object({
+        kind: z.enum(['direct_set_metadata', 'repository_symbol', 'configured_symbol']),
+        moduleSpecifier: nonEmptyStringSchema.nullable(),
+        exportedName: nonEmptyStringSchema,
+        sourceFileId: kindPrefixedStableIdSchema('source').nullable(),
+      })
+      .strict(),
+    valueShape: authorizationValueShapeSchema,
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence'),
+  })
+  .strict();
+
+export const authorizationEnforcementRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('authorization_enforcement'),
+    metadataId: kindPrefixedStableIdSchema('authorization_metadata'),
+    endpointId: kindPrefixedStableIdSchema('endpoint'),
+    state: z.enum(AUTHORIZATION_ENFORCEMENT_STATES),
+    guardId: kindPrefixedStableIdSchema('guard').nullable(),
+    guardAssertionId: kindPrefixedStableIdSchema('assertion').nullable(),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence'),
+  })
+  .strict()
+  .superRefine((record, context) => {
+    const hasGuard = record.guardId !== null && record.guardAssertionId !== null;
+    if (hasGuard !== (record.state !== 'enforcement_unknown')) {
+      context.addIssue({
+        code: 'custom',
+        path: ['state'],
+        message:
+          'Proven/configured enforcement requires guard references; unknown enforcement forbids them.',
+      });
+    }
+  });
+
 export const interactionAnalysisMetadataSchema = z
   .object({
     schemaKinds: z.array(z.enum(INTERACTION_KINDS)),
@@ -689,11 +1017,11 @@ export const analysisDocumentV3Schema = z
   .object({
     schemaVersion: z.literal(ANALYSIS_SCHEMA_V3_VERSION),
     ...commonAnalysisShape,
-    analysisRun: analysisRunRecordSchema,
+    analysisRun: analysisRunRecordV3Schema,
     classes: z.array(classRecordSchema),
     tables: z.array(tableRecordSchema),
     assertions: z.array(assertionRecordSchema),
-    diagnostics: z.array(diagnosticRecordSchema),
+    diagnostics: z.array(diagnosticRecordV3Schema),
     modules: z.array(moduleRecordSchema),
     globalGuardRegistrations: z.array(globalGuardRegistrationRecordSchema),
     contractTypes: z.array(contractTypeRecordSchema),
@@ -716,9 +1044,31 @@ export const analysisDocumentV3Schema = z
   })
   .strict();
 
+export const analysisDocumentV4Schema = analysisDocumentV3Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V4_VERSION),
+  diagnostics: z.array(diagnosticRecordV4Schema),
+  interactionHandlerDispatches: z.array(jobQueueHandlerDispatchRecordSchema),
+  interactionHandlerBranches: z.array(jobQueueHandlerBranchRecordSchema),
+  interactionHandlerBranchEffects: z.array(jobQueueHandlerBranchEffectRecordSchema),
+});
+
+export const analysisDocumentV5Schema = analysisDocumentV4Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V5_VERSION),
+  analysisRun: analysisRunRecordSchema,
+  diagnostics: z.array(diagnosticRecordSchema),
+  authorizationMetadata: z.array(authorizationMetadataRecordSchema),
+  authorizationEnforcements: z.array(authorizationEnforcementRecordSchema),
+});
+
 export const analysisDocumentSchema: z.ZodType<AnalysisDocument> = z.discriminatedUnion(
   'schemaVersion',
-  [analysisDocumentV1Schema, analysisDocumentV2Schema, analysisDocumentV3Schema],
+  [
+    analysisDocumentV1Schema,
+    analysisDocumentV2Schema,
+    analysisDocumentV3Schema,
+    analysisDocumentV4Schema,
+    analysisDocumentV5Schema,
+  ],
 ) as z.ZodType<AnalysisDocument>;
 
 function isIsoTimestamp(value: string): boolean {
@@ -815,6 +1165,33 @@ const effectiveProjectConfigurationV3Schema = effectiveProjectConfigurationV2Sch
     .strict(),
 });
 
+const effectiveProjectConfigurationV4Schema = effectiveProjectConfigurationV3Schema.extend({
+  source: z.union([
+    z
+      .object({
+        kind: z.literal('none'),
+        path: z.null(),
+        fileVersion: z.null(),
+      })
+      .strict(),
+    z
+      .object({
+        kind: z.enum(PROJECT_CONFIGURATION_SOURCE_KINDS).exclude(['none']),
+        path: nonEmptyStringSchema,
+        fileVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+      })
+      .strict(),
+  ]),
+  analysis: z
+    .object({
+      maxCallDepth: z.number().int().min(1).max(3),
+      rawSqlDialect: z.enum(RAW_SQL_DIALECTS).nullable(),
+      interactions: interactionTraversalConfigurationSchema,
+      authorization: authorizationAnalysisConfigurationSchema,
+    })
+    .strict(),
+});
+
 const runDocumentV1Schema = z
   .object({
     schemaVersion: z.literal(ANALYSIS_SCHEMA_V1_VERSION),
@@ -838,16 +1215,30 @@ const runDocumentV3Schema = z
   .object({
     schemaVersion: z.literal(ANALYSIS_SCHEMA_V3_VERSION),
     ...commonRunShape,
-    configuration: analysisConfigurationSchema,
+    configuration: analysisConfigurationV3Schema,
     projectConfiguration: effectiveProjectConfigurationV3Schema.optional(),
-    diagnostics: z.array(diagnosticRecordSchema),
+    diagnostics: z.array(diagnosticRecordV3Schema),
   })
   .strict();
+
+const runDocumentV4Schema = runDocumentV3Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V4_VERSION),
+  diagnostics: z.array(diagnosticRecordV4Schema),
+});
+
+const runDocumentV5Schema = runDocumentV4Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V5_VERSION),
+  configuration: analysisConfigurationSchema,
+  projectConfiguration: effectiveProjectConfigurationV4Schema.optional(),
+  diagnostics: z.array(diagnosticRecordSchema),
+});
 
 export const runDocumentSchema: z.ZodType<RunDocument> = z.discriminatedUnion('schemaVersion', [
   runDocumentV1Schema,
   runDocumentV2Schema,
   runDocumentV3Schema,
+  runDocumentV4Schema,
+  runDocumentV5Schema,
 ]) as z.ZodType<RunDocument>;
 
 const endpointTraceGuardSchema = z
@@ -887,6 +1278,8 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
       ANALYSIS_SCHEMA_V1_VERSION,
       ANALYSIS_SCHEMA_V2_VERSION,
       ANALYSIS_SCHEMA_V3_VERSION,
+      ANALYSIS_SCHEMA_V4_VERSION,
+      ANALYSIS_SCHEMA_V5_VERSION,
     ]),
     analysisId: stableIdSchema,
     endpoint: z
@@ -911,6 +1304,9 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
         outboundInteractionIds: z.array(stableIdSchema),
         localInteractionIds: z.array(stableIdSchema),
         distributedInteractionIds: z.array(stableIdSchema).optional(),
+        jobQueueBranchIds: z
+          .array(kindPrefixedStableIdSchema('interaction_handler_branch'))
+          .optional(),
         completeness: z
           .object({
             state: z.enum(['complete', 'incomplete']),
@@ -924,13 +1320,19 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
   .strict()
   .superRefine((trace, context) => {
     if (
-      (trace.schemaVersion === ANALYSIS_SCHEMA_V3_VERSION) !==
+      (
+        [
+          ANALYSIS_SCHEMA_V3_VERSION,
+          ANALYSIS_SCHEMA_V4_VERSION,
+          ANALYSIS_SCHEMA_V5_VERSION,
+        ] as const
+      ).includes(trace.schemaVersion as typeof ANALYSIS_SCHEMA_V3_VERSION) !==
       (trace.causalSummary !== undefined)
     ) {
       context.addIssue({
         code: 'custom',
         path: ['causalSummary'],
-        message: 'Only v3 endpoint traces must carry an explicit causal summary.',
+        message: 'Only v3-v5 endpoint traces must carry an explicit causal summary.',
       });
     }
   });
@@ -941,6 +1343,8 @@ export const interactionHandlerTraceViewSchema: z.ZodType<InteractionHandlerTrac
       ANALYSIS_SCHEMA_V1_VERSION,
       ANALYSIS_SCHEMA_V2_VERSION,
       ANALYSIS_SCHEMA_V3_VERSION,
+      ANALYSIS_SCHEMA_V4_VERSION,
+      ANALYSIS_SCHEMA_V5_VERSION,
     ]),
     analysisId: stableIdSchema,
     handler: interactionHandlerRecordSchema,

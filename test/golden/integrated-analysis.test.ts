@@ -70,7 +70,9 @@ function reverseDiscoveryOrder(analysis: AnalysisDocument): AnalysisDocument {
           })),
         }
       : {}),
-    ...(analysis.schemaVersion === '3.0.0'
+    ...(analysis.schemaVersion === '3.0.0' ||
+    analysis.schemaVersion === '4.0.0' ||
+    analysis.schemaVersion === '5.0.0'
       ? {
           applications: analysis.applications.toReversed(),
           interactions: analysis.interactions.toReversed().map((record) => ({
@@ -86,11 +88,57 @@ function reverseDiscoveryOrder(analysis: AnalysisDocument): AnalysisDocument {
           },
         }
       : {}),
+    ...(analysis.schemaVersion === '4.0.0' || analysis.schemaVersion === '5.0.0'
+      ? {
+          interactionHandlerDispatches: analysis.interactionHandlerDispatches
+            .toReversed()
+            .map((record) => ({
+              ...record,
+              branchIds: record.branchIds.toReversed(),
+              evidenceIds: record.evidenceIds.toReversed(),
+            })),
+          interactionHandlerBranches: analysis.interactionHandlerBranches
+            .toReversed()
+            .map((record) => ({
+              ...record,
+              evidenceIds: record.evidenceIds.toReversed(),
+              selector:
+                record.selector.kind === 'exact_jobs'
+                  ? { ...record.selector, jobs: record.selector.jobs.toReversed() }
+                  : record.selector.kind === 'unmatched_jobs'
+                    ? {
+                        ...record.selector,
+                        excludedJobs: record.selector.excludedJobs.toReversed(),
+                      }
+                    : record.selector,
+            })),
+          interactionHandlerBranchEffects: analysis.interactionHandlerBranchEffects
+            .toReversed()
+            .map((record) => ({
+              ...record,
+              evidenceIds: record.evidenceIds.toReversed(),
+            })),
+        }
+      : {}),
+    ...(analysis.schemaVersion === '5.0.0'
+      ? {
+          authorizationMetadata: analysis.authorizationMetadata.toReversed().map((record) => ({
+            ...record,
+            evidenceIds: record.evidenceIds.toReversed(),
+          })),
+          authorizationEnforcements: analysis.authorizationEnforcements
+            .toReversed()
+            .map((record) => ({
+              ...record,
+              evidenceIds: record.evidenceIds.toReversed(),
+            })),
+        }
+      : {}),
   };
 }
 
-describe('complete integrated analysis v3 determinism and frozen v2 golden', () => {
-  it('keeps v2 byte-stable and v3 scans identical across discovery order', async () => {
+describe('complete integrated analysis v5 determinism and frozen v2 golden', () => {
+  it('keeps v2 byte-stable and v5 scans identical across discovery order', async () => {
     const repositoryRoot = resolve('example-nestjs-app');
     const goldenPath = resolve('test/golden/example-nestjs-app/analysis-v2.json');
     const startedAt = performance.now();
@@ -103,7 +151,7 @@ describe('complete integrated analysis v3 determinism and frozen v2 golden', () 
     const frozenV2 = assertValidAnalysisDocument(JSON.parse(golden) as unknown);
 
     expect(serializeCanonicalAnalysis(frozenV2)).toBe(golden);
-    expect(first.analysis.schemaVersion).toBe('3.0.0');
+    expect(first.analysis.schemaVersion).toBe('5.0.0');
     expect(serializeCanonicalAnalysis(second.analysis)).toBe(
       serializeCanonicalAnalysis(first.analysis),
     );

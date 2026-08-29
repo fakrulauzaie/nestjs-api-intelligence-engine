@@ -1,5 +1,11 @@
-import type { AnalysisDocument, EndpointTraceView } from '../model/analysis.js';
+import {
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+  type EndpointTraceView,
+} from '../model/analysis.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
+import { buildEndpointAuthorization } from '../authorization/endpoint-authorization.js';
 import {
   inProcessEventTargetLabel,
   jobQueueTargetLabel,
@@ -21,7 +27,7 @@ function recordLabel(analysis: AnalysisDocument, id: string | null): string {
   if (table !== undefined) return table.name;
   const guard = analysis.guards.find((record) => record.id === id);
   if (guard !== undefined) return guard.displayName;
-  if (analysis.schemaVersion === '3.0.0') {
+  if (analysisHasInteractionFacts(analysis)) {
     const interaction = analysis.interactions.find((record) => record.id === id);
     if (interaction?.kind === 'outbound_http') {
       return outboundHttpTargetLabel(interaction.target);
@@ -114,6 +120,23 @@ export function renderEndpointTraceMarkdown(input: {
     );
   }
 
+  const authorization = buildEndpointAuthorization(analysis, trace.endpoint.id);
+  lines.push('', '## Authorization metadata', '');
+  if (authorization.availability === 'unavailable') {
+    lines.push('Authorization metadata facts are unavailable in this analysis schema.');
+  } else if (authorization.requirements.length === 0) {
+    lines.push('No supported authorization metadata declaration was proven.');
+  } else {
+    lines.push(
+      '| Metadata key | Scope | Source | Value shape | Enforcement | Guard | Evidence |',
+      '|---|---|---|---|---|---|---|',
+      ...authorization.requirements.map(
+        (requirement) =>
+          `| ${escapeTableCell(requirement.metadataKey)} | ${requirement.scope} | ${requirement.source} | ${requirement.valueShape.kind} (redacted) | ${requirement.enforcementState} | ${escapeTableCell(requirement.guardName ?? 'unknown')} | ${escapeTableCell(evidenceReferences(analysis, requirement.evidenceIds).join('<br>'))} |`,
+      ),
+    );
+  }
+
   lines.push('', '## Trace steps', '');
   if (trace.steps.length === 0) {
     lines.push('No trace steps were resolved.');
@@ -128,7 +151,7 @@ export function renderEndpointTraceMarkdown(input: {
     );
   }
 
-  if (analysis.schemaVersion === '3.0.0') {
+  if (analysisHasInteractionFacts(analysis)) {
     const interactionById = new Map(analysis.interactions.map((record) => [record.id, record]));
     const outbound = trace.steps.flatMap((step) => {
       if (step.relation !== 'METHOD_INITIATES_INTERACTION' || step.toId === null) return [];
@@ -262,13 +285,41 @@ export function renderEndpointTraceMarkdown(input: {
             : ` (${trace.causalSummary.completeness.diagnosticCodes.join(', ')})`
         }`,
       );
+      if (
+        analysisHasJobQueueBranchFacts(analysis) &&
+        trace.causalSummary.jobQueueBranchIds !== undefined &&
+        (trace.causalSummary.distributedInteractionIds ?? []).some(
+          (interactionId) =>
+            analysis.interactions.find(({ id }) => id === interactionId)?.kind === 'job_queue',
+        )
+      ) {
+        const branches = trace.causalSummary.jobQueueBranchIds.flatMap((branchId) => {
+          const branch = analysis.interactionHandlerBranches.find(({ id }) => id === branchId);
+          return branch === undefined ? [] : [branch];
+        });
+        lines.push(
+          '',
+          '### Selected job-queue branches',
+          '',
+          ...(branches.length === 0
+            ? ['No exact or common local worker branch was selected.']
+            : [
+                '| Selector | Control flow | Evidence |',
+                '|---|---|---|',
+                ...branches.map(
+                  (branch) =>
+                    `| ${escapeTableCell(JSON.stringify(branch.selector))} | ${branch.controlFlow} | ${escapeTableCell(evidenceReferences(analysis, branch.evidenceIds).join('<br>'))} |`,
+                ),
+              ]),
+        );
+      }
     }
   }
 
   lines.push('', '## Table access', '');
   if (trace.terminals.length === 0) {
     lines.push('No supported table access was reached.');
-  } else if (analysis.schemaVersion === '3.0.0') {
+  } else if (analysisHasInteractionFacts(analysis)) {
     lines.push(
       '| Method | Direction | Table | Causal class |',
       '|---|---|---|---|',

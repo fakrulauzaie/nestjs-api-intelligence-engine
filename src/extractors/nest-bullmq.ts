@@ -6,6 +6,10 @@ import type { AssertionRecord } from '../model/assertions.js';
 import type { DiagnosticCode, DiagnosticRecord } from '../model/diagnostics.js';
 import type { ClassRecord, ClassRole, MethodRecord } from '../model/entities.js';
 import type { EvidenceRecord } from '../model/evidence.js';
+import type {
+  JobQueueHandlerBranchRecord,
+  JobQueueHandlerDispatchRecord,
+} from '../model/job-queue-branches.js';
 import {
   interactionTargetKey,
   jobQueueTargetsMatch,
@@ -40,6 +44,7 @@ import {
   isPackageExpression,
 } from './package-symbols.js';
 import { resolveImportedExpressionIdentity } from '../ts-index/decorators.js';
+import { extractBullMqHandlerBranches } from './bullmq-branches.js';
 
 export const BULLMQ_RULE_IDS = {
   producer: 'queue.bullmq.queue-add.v1',
@@ -73,6 +78,8 @@ export interface NestBullMqExtraction {
   readonly methods: readonly MethodRecord[];
   readonly interactions: readonly JobQueueInteractionRecord[];
   readonly handlers: readonly JobQueueHandlerRecord[];
+  readonly handlerDispatches: readonly JobQueueHandlerDispatchRecord[];
+  readonly handlerBranches: readonly JobQueueHandlerBranchRecord[];
   readonly assertions: readonly AssertionRecord[];
   readonly evidence: readonly EvidenceRecord[];
   readonly diagnostics: readonly DiagnosticRecord[];
@@ -230,55 +237,6 @@ function nestedFunctionBoundary(node: ts.Node, root: ts.MethodDeclaration): bool
   return node !== root && ts.isFunctionLike(node);
 }
 
-function jobNameControlFlow(method: IndexedMethod): ts.Node | null {
-  const parameter = method.node.parameters[0];
-  if (
-    parameter === undefined ||
-    !ts.isIdentifier(parameter.name) ||
-    method.node.body === undefined
-  ) {
-    return null;
-  }
-  const parameterName = parameter.name.text;
-  let found: ts.Node | null = null;
-  const isJobName = (node: ts.Expression): boolean => {
-    const current = unwrapExpression(node);
-    const receiver = ts.isPropertyAccessExpression(current)
-      ? unwrapExpression(current.expression)
-      : null;
-    return (
-      ts.isPropertyAccessExpression(current) &&
-      receiver !== null &&
-      ts.isIdentifier(receiver) &&
-      receiver.text === parameterName &&
-      current.name.text === 'name'
-    );
-  };
-  const visit = (node: ts.Node): void => {
-    if (found !== null || nestedFunctionBoundary(node, method.node)) return;
-    if (ts.isSwitchStatement(node) && isJobName(node.expression)) {
-      found = node.expression;
-      return;
-    }
-    if (
-      ts.isBinaryExpression(node) &&
-      [
-        ts.SyntaxKind.EqualsEqualsEqualsToken,
-        ts.SyntaxKind.EqualsEqualsToken,
-        ts.SyntaxKind.ExclamationEqualsEqualsToken,
-        ts.SyntaxKind.ExclamationEqualsToken,
-      ].includes(node.operatorToken.kind) &&
-      (isJobName(node.left) || isJobName(node.right))
-    ) {
-      found = node;
-      return;
-    }
-    ts.forEachChild(node, visit);
-  };
-  ts.forEachChild(method.node.body, visit);
-  return found;
-}
-
 export function extractNestBullMq(input: {
   readonly sourceIndex: SourceIndex;
   readonly checker: ts.TypeChecker;
@@ -297,6 +255,8 @@ export function extractNestBullMq(input: {
   const methodById = new Map<string, MethodRecord>();
   const interactionById = new Map<string, JobQueueInteractionRecord>();
   const handlerById = new Map<string, JobQueueHandlerRecord>();
+  const dispatchById = new Map<string, JobQueueHandlerDispatchRecord>();
+  const branchById = new Map<string, JobQueueHandlerBranchRecord>();
   const assertionById = new Map<string, AssertionRecord>();
   const evidenceById = new Map<string, EvidenceRecord>();
   const diagnosticById = new Map<string, DiagnosticRecord>();
@@ -465,16 +425,24 @@ export function extractNestBullMq(input: {
           evidenceIds: [handlerEvidenceId],
         });
       }
-      const filterNode = jobNameControlFlow(located.method);
-      if (filterNode !== null) {
-        const filterEvidenceId = evidenceForNode(filterNode, 'resolution_basis', true);
+      const branchExtraction = extractBullMqHandlerBranches({
+        method: located.method,
+        handlerId: handler.id,
+        checker: input.checker,
+        evidenceForNode,
+      });
+      if (branchExtraction.dispatch !== null) {
+        dispatchById.set(branchExtraction.dispatch.id, branchExtraction.dispatch);
+        for (const branch of branchExtraction.branches) branchById.set(branch.id, branch);
+      }
+      if (branchExtraction.state === 'partial' || branchExtraction.state === 'unsupported') {
         addDiagnostic({
-          code: 'JOB_QUEUE_FILTER_UNPROVEN',
+          code:
+            branchExtraction.state === 'partial'
+              ? 'JOB_QUEUE_FILTER_PARTIAL'
+              : 'JOB_QUEUE_FILTER_UNPROVEN',
           subjectId: handler.id,
-          evidenceIds: [
-            handlerEvidenceId,
-            ...(filterEvidenceId === null ? [] : [filterEvidenceId]),
-          ],
+          evidenceIds: [handlerEvidenceId, ...(branchExtraction.dispatch?.evidenceIds ?? [])],
         });
       }
     }
@@ -647,6 +615,8 @@ export function extractNestBullMq(input: {
     methods: [...methodById.values()],
     interactions: [...interactionById.values()],
     handlers: [...handlerById.values()],
+    handlerDispatches: [...dispatchById.values()],
+    handlerBranches: [...branchById.values()],
     assertions: [...assertionById.values()],
     evidence: [...evidenceById.values()],
     diagnostics: [...diagnosticById.values()],

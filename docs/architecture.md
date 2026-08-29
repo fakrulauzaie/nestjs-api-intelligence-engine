@@ -228,7 +228,7 @@ phases.
 New facts should enter through a deterministic
 extractor and the same canonical validation boundary before any reporter consumes them.
 
-### Analysis v3 interaction boundary
+### Analysis v5 interaction, branch, and authorization boundary
 
 The current scanner supports `outbound_http`, `in_process_event`, `job_queue`, and
 `microservice_message`. The chronology below
@@ -293,7 +293,22 @@ activates only `job_queue`: package-proven `@InjectQueue()`/`Queue.add()` calls 
 same-queue `@Processor()` classes extending `WorkerHost` as local queue-wide
 candidates. Crossing that edge always yields `distributed_conditional` effects across
 a broker/worker boundary. Producer-only and consumer-only topologies are normal;
-delivery, exact job-branch effects, and remote consumers are not inferred.
+delivery and remote consumers are not inferred.
+
+Phase 40 preserves the queue-wide handler candidate while adding separate analysis-v4
+dispatch, branch-selector, and branch-effect records. Exact producer jobs select only
+compatible exact/common/unmatched effects. Unsupported control flow retains effects
+under an unknown residual selector. Comparison, impact, Markdown, structured exports,
+and graph views consume those records through independently versioned schemas; no
+derived view upgrades a candidate edge into broker delivery.
+
+Phase 41 preserves the v4 branch substrate and adds two orthogonal analysis-v5
+collections: authorization metadata and metadata-to-guard enforcement relationships.
+Extraction runs after direct guard/module facts so a composite wrapper can contribute
+an exact guard declaration while a configured mapping can reference an already proven
+endpoint or application-global guard. Metadata values are reduced to redacted shape.
+The report, comparison, policy, and graph layers consume the relationship state without
+turning metadata into a guard or claiming runtime authorization.
 
 Phase 36 activates `microservice_message`. It inventories direct microservice and
 bounded hybrid roots, static TCP/Redis/RMQ/Kafka transports, checker-proven

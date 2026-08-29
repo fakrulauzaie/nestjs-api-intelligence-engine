@@ -1,4 +1,4 @@
-import type { AnalysisDocument } from '../model/analysis.js';
+import { analysisHasInteractionFacts, type AnalysisDocument } from '../model/analysis.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
 import {
@@ -18,6 +18,7 @@ import type {
   EndpointInteractionSummary,
   EndpointDistributedCausalEffect,
   EndpointLocalCausalEffect,
+  EndpointAuthorizationSummary,
   MutationClassification,
 } from './model.js';
 
@@ -30,6 +31,8 @@ export interface EndpointExportFacts {
   readonly localCausalEffects: readonly EndpointLocalCausalEffect[];
   readonly distributedInteractions: readonly EndpointInteractionSummary[];
   readonly distributedConditionalEffects: readonly EndpointDistributedCausalEffect[];
+  readonly jobQueueBranchIds: readonly string[];
+  readonly authorizationRequirements: readonly EndpointAuthorizationSummary[];
   readonly diagnostics: readonly DiagnosticRecord[];
   readonly incompletenessCodes: readonly string[];
   readonly mutationClassification: MutationClassification;
@@ -169,12 +172,12 @@ export function buildEndpointExportFacts(input: {
         .map(({ tableName }) => tableName),
     );
     const interactionById = new Map(
-      input.analysis.schemaVersion === '3.0.0'
+      analysisHasInteractionFacts(input.analysis)
         ? input.analysis.interactions.map((interaction) => [interaction.id, interaction])
         : [],
     );
     const handlerById = new Map(
-      input.analysis.schemaVersion === '3.0.0'
+      analysisHasInteractionFacts(input.analysis)
         ? input.analysis.interactionHandlers.map((handler) => [handler.id, handler])
         : [],
     );
@@ -256,6 +259,16 @@ export function buildEndpointExportFacts(input: {
         ),
       }),
     );
+    const jobQueueBranchIds = sortedUnique(trace?.causalSummary?.jobQueueBranchIds ?? []);
+    const authorizationRequirements = endpoint.authorizationRequirements.map((requirement) => ({
+      metadataKey: requirement.metadataKey,
+      scope: requirement.scope,
+      source: requirement.source,
+      valueShape: requirement.valueShape,
+      enforcementState: requirement.enforcementState,
+      guardName: requirement.guardName,
+      evidenceIds: sortedUnique(requirement.evidenceIds),
+    }));
     const incompletenessCodes = sortedUnique(diagnostics.map(({ code }) => code));
     const mutationClassification: MutationClassification =
       dbWrites.length > 0
@@ -286,6 +299,8 @@ export function buildEndpointExportFacts(input: {
       localCausalEffects,
       distributedInteractions,
       distributedConditionalEffects,
+      jobQueueBranchIds,
+      authorizationRequirements,
       diagnostics,
       incompletenessCodes,
       mutationClassification,

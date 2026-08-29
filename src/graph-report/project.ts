@@ -1,4 +1,10 @@
-import type { AnalysisDocument, EndpointTraceStep } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+  type EndpointTraceStep,
+} from '../model/analysis.js';
 import type { AssertionRecord, AssertionStatus } from '../model/assertions.js';
 import type { ImpactDocument, ImpactGraphSide, ImpactedEndpoint } from '../impact/model.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
@@ -9,6 +15,8 @@ import {
   DEFAULT_GRAPH_NODE_LIMIT,
   GRAPH_REPORT_SCHEMA_VERSION,
   GRAPH_REPORT_SCHEMA_V4_VERSION,
+  GRAPH_REPORT_SCHEMA_V5_VERSION,
+  GRAPH_REPORT_SCHEMA_V6_VERSION,
   MAX_GRAPH_EDGE_LIMIT,
   MAX_GRAPH_NODE_LIMIT,
   MIN_GRAPH_DISPLAY_LIMIT,
@@ -664,14 +672,12 @@ export function buildGraphReportDocument(input: {
         assertion,
       ]),
     ),
-    interactions:
-      analysis.schemaVersion === '3.0.0'
-        ? new Map(analysis.interactions.map((record) => [record.id, record]))
-        : new Map(),
-    interactionHandlers:
-      analysis.schemaVersion === '3.0.0'
-        ? new Map(analysis.interactionHandlers.map((record) => [record.id, record]))
-        : new Map(),
+    interactions: analysisHasInteractionFacts(analysis)
+      ? new Map(analysis.interactions.map((record) => [record.id, record]))
+      : new Map(),
+    interactionHandlers: analysisHasInteractionFacts(analysis)
+      ? new Map(analysis.interactionHandlers.map((record) => [record.id, record]))
+      : new Map(),
   };
 
   const endpoints: GraphReportEndpoint[] = [];
@@ -772,6 +778,7 @@ export function buildGraphReportDocument(input: {
         ...policyOutcomes.flatMap(({ evidenceIds }) => evidenceIds),
         ...endpointFacts.localCausalEffects.flatMap(({ evidenceIds }) => evidenceIds),
         ...endpointFacts.distributedConditionalEffects.flatMap(({ evidenceIds }) => evidenceIds),
+        ...endpointFacts.authorizationRequirements.flatMap(({ evidenceIds }) => evidenceIds),
       ],
       analysis,
       maxNodes,
@@ -792,7 +799,7 @@ export function buildGraphReportDocument(input: {
       mutationClassification: endpointFacts.mutationClassification,
       dbReads: endpointFacts.dbReads,
       dbWrites: endpointFacts.dbWrites,
-      ...(analysis.schemaVersion === '3.0.0'
+      ...(analysisHasInteractionFacts(analysis)
         ? {
             localCausalEffects: endpointFacts.localCausalEffects.map((effect) => ({
               ...effect,
@@ -808,6 +815,19 @@ export function buildGraphReportDocument(input: {
                     }),
                   ),
                 }),
+          }
+        : {}),
+      ...(analysisHasJobQueueBranchFacts(analysis)
+        ? { jobQueueBranchIds: endpointFacts.jobQueueBranchIds }
+        : {}),
+      ...(analysisHasAuthorizationFacts(analysis)
+        ? {
+            authorizationRequirements: endpointFacts.authorizationRequirements.map(
+              (requirement) => ({
+                ...requirement,
+                evidenceIds: requirement.evidenceIds.filter((id) => retainedEvidence.has(id)),
+              }),
+            ),
           }
         : {}),
       diagnostics: diagnostics.map((diagnostic) => ({
@@ -831,7 +851,7 @@ export function buildGraphReportDocument(input: {
   }
 
   const interactionHandlers: GraphReportInteractionHandler[] = [];
-  if (analysis.schemaVersion === '3.0.0') {
+  if (analysisHasInteractionFacts(analysis)) {
     for (const handler of analysis.interactionHandlers) {
       const trace = buildInteractionHandlerTrace(analysis, handler.id);
       if (trace.status !== 'resolved') {
@@ -882,6 +902,67 @@ export function buildGraphReportDocument(input: {
         message: diagnostic.message,
         evidenceIds: diagnostic.evidenceIds,
       }));
+      let jobQueueDispatch: GraphReportInteractionHandler['jobQueueDispatch'] = null;
+      if (analysisHasJobQueueBranchFacts(analysis)) {
+        const dispatch = analysis.interactionHandlerDispatches.find(
+          ({ handlerId }) => handlerId === handler.id,
+        );
+        if (dispatch !== undefined) {
+          const branches = dispatch.branchIds.flatMap((branchId) => {
+            const branch = analysis.interactionHandlerBranches.find(({ id }) => id === branchId);
+            if (branch === undefined) return [];
+            const branchEffects = analysis.interactionHandlerBranchEffects.filter(
+              ({ branchId: effectBranchId }) => effectBranchId === branch.id,
+            );
+            addNode(nodes, {
+              id: branch.id,
+              label: `${branch.controlFlow}: ${JSON.stringify(branch.selector)}`,
+              kind: 'interaction_branch',
+              uncertainty: branch.selector.kind === 'unknown' ? 'unknown' : 'resolved',
+              impact: 'none',
+              evidenceIds: branch.evidenceIds,
+            });
+            edges.push({
+              id: `branch-link:${branch.id}`,
+              source: handler.id,
+              target: branch.id,
+              label: 'dispatch branch',
+              kind: 'interaction',
+              relation: 'JOB_QUEUE_DISPATCH_BRANCH',
+              uncertainty: branch.selector.kind === 'unknown' ? 'unknown' : 'resolved',
+              impact: 'none',
+              evidenceIds: branch.evidenceIds,
+            });
+            for (const effect of branchEffects) {
+              addNode(nodes, canonicalNode(effect.targetId, indexes, 'none'));
+              edges.push({
+                id: effect.id,
+                source: branch.id,
+                target: effect.targetId,
+                label: effect.kind.replaceAll('_', ' '),
+                kind: 'interaction',
+                relation: `JOB_QUEUE_BRANCH_${effect.kind.toUpperCase()}`,
+                uncertainty: graphUncertaintyFromAssertion(effect.status),
+                impact: 'none',
+                evidenceIds: effect.evidenceIds,
+              });
+            }
+            return [
+              {
+                branchId: branch.id,
+                selector: branch.selector,
+                controlFlow: branch.controlFlow,
+                effects: branchEffects.map((effect) => ({
+                  effectId: effect.id,
+                  kind: effect.kind,
+                  targetId: effect.targetId,
+                })),
+              },
+            ];
+          });
+          jobQueueDispatch = { state: dispatch.state, branches };
+        }
+      }
       const scene = selectScene({
         rootId: handler.id,
         nodes,
@@ -924,6 +1005,7 @@ export function buildGraphReportDocument(input: {
           evidenceIds: diagnostic.evidenceIds.filter((id) => retainedEvidence.has(id)),
         })),
         producerInteractionIds,
+        ...(analysisHasJobQueueBranchFacts(analysis) ? { jobQueueDispatch } : {}),
         scene,
       });
     }
@@ -935,10 +1017,13 @@ export function buildGraphReportDocument(input: {
     maxEvidencePerEndpoint: maxEvidence,
   };
   const document = canonicalizeGraphReportDocument({
-    schemaVersion:
-      analysis.schemaVersion === '3.0.0'
-        ? GRAPH_REPORT_SCHEMA_V4_VERSION
-        : GRAPH_REPORT_SCHEMA_VERSION,
+    schemaVersion: analysisHasAuthorizationFacts(analysis)
+      ? GRAPH_REPORT_SCHEMA_V6_VERSION
+      : analysisHasJobQueueBranchFacts(analysis)
+        ? GRAPH_REPORT_SCHEMA_V5_VERSION
+        : analysisHasInteractionFacts(analysis)
+          ? GRAPH_REPORT_SCHEMA_V4_VERSION
+          : GRAPH_REPORT_SCHEMA_VERSION,
     analysis: {
       id: analysis.analysisRun.id,
       schemaVersion: analysis.schemaVersion,
@@ -976,7 +1061,7 @@ export function buildGraphReportDocument(input: {
         (total, view) => total + view.scene.omitted.evidence,
         0,
       ),
-      ...(analysis.schemaVersion === '3.0.0'
+      ...(analysisHasInteractionFacts(analysis)
         ? {
             interactionHandlers: interactionHandlers.length,
             handlersWithDiagnostics: interactionHandlers.filter(
@@ -988,7 +1073,7 @@ export function buildGraphReportDocument(input: {
         : {}),
     },
     endpoints,
-    ...(analysis.schemaVersion === '3.0.0' ? { interactionHandlers } : {}),
+    ...(analysisHasInteractionFacts(analysis) ? { interactionHandlers } : {}),
   });
   return assertValidGraphReportDocument({
     document,

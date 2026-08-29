@@ -9,7 +9,11 @@ import {
 } from '../model/analysis.js';
 import { ASSERTION_STATUSES } from '../model/assertions.js';
 import { COLUMN_INFLUENCE_STATES, HTTP_METHODS } from '../model/entities.js';
-import { stableIdSchema } from '../model/schemas.js';
+import {
+  AUTHORIZATION_ENFORCEMENT_STATES,
+  AUTHORIZATION_METADATA_SOURCES,
+} from '../model/authorization.js';
+import { authorizationValueShapeSchema, stableIdSchema } from '../model/schemas.js';
 import {
   HANDLER_REGISTRATION_STATES,
   INTERACTION_ACTIVATION_STATES,
@@ -26,10 +30,14 @@ import {
   CONTROL_EVIDENCE_SCHEMA_VERSION,
   CONTROL_EVIDENCE_SCHEMA_V2_VERSION,
   CONTROL_EVIDENCE_SCHEMA_V3_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V4_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V5_VERSION,
   MUTATION_CLASSIFICATIONS,
   OPENAPI_ENRICHMENT_SCHEMA_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
   OPENAPI_MATCH_RESOLUTIONS,
   type ControlEvidenceDocument,
   type OpenApiEnrichmentResultDocument,
@@ -70,12 +78,26 @@ const distributedCausalEffectSchema = z
   })
   .strict();
 
+const authorizationSummarySchema = z
+  .object({
+    metadataKey: nonEmptyString,
+    scope: z.enum(['controller', 'method']),
+    source: z.enum(AUTHORIZATION_METADATA_SOURCES),
+    valueShape: authorizationValueShapeSchema,
+    enforcementState: z.enum(AUTHORIZATION_ENFORCEMENT_STATES),
+    guardName: nonEmptyString.nullable(),
+    evidenceIds: z.array(stableIdSchema),
+  })
+  .strict();
+
 const resolvedExtensionSchema = z
   .object({
     schemaVersion: z.enum([
       OPENAPI_ENRICHMENT_SCHEMA_VERSION,
       OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION,
       OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+      OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION,
+      OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
     ]),
     resolution: z.literal('resolved'),
     analysisId: stableIdSchema,
@@ -98,6 +120,8 @@ const resolvedExtensionSchema = z
     localCausalEffects: z.array(localCausalEffectSchema).optional(),
     distributedInteractions: z.array(interactionSummarySchema).optional(),
     distributedConditionalEffects: z.array(distributedCausalEffectSchema).optional(),
+    jobQueueBranchIds: z.array(stableIdSchema).optional(),
+    authorizationRequirements: z.array(authorizationSummarySchema).optional(),
   })
   .strict()
   .superRefine((extension, context) => {
@@ -121,13 +145,37 @@ const resolvedExtensionSchema = z
       extension.distributedConditionalEffects,
     ];
     if (
-      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
+      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION ||
+      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION ||
+      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
         ? distributedFields.some((value) => value === undefined)
         : distributedFields.some((value) => value !== undefined)
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Resolved OpenAPI schema v3 requires distributed summaries; v1/v2 must omit them.',
+        message:
+          'Resolved OpenAPI schema v3/v4 requires distributed summaries; v1/v2 must omit them.',
+      });
+    }
+    if (
+      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION ||
+      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
+        ? extension.jobQueueBranchIds === undefined
+        : extension.jobQueueBranchIds !== undefined
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Resolved OpenAPI schema v4 requires selected job-queue branch IDs.',
+      });
+    }
+    if (
+      extension.schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
+        ? extension.authorizationRequirements === undefined
+        : extension.authorizationRequirements !== undefined
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Resolved OpenAPI schema v5 requires authorization requirements.',
       });
     }
   });
@@ -138,6 +186,8 @@ const nonResolvedExtensionSchema = z
       OPENAPI_ENRICHMENT_SCHEMA_VERSION,
       OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION,
       OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+      OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION,
+      OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
     ]),
     resolution: z.enum(['ambiguous', 'unresolved', 'unmatched']),
     analysisId: stableIdSchema,
@@ -158,6 +208,8 @@ export const openApiEnrichmentResultSchema: z.ZodType<OpenApiEnrichmentResultDoc
       OPENAPI_ENRICHMENT_SCHEMA_VERSION,
       OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION,
       OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+      OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION,
+      OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
     ]),
     analysisId: stableIdSchema,
     analysisSchemaVersion: nonEmptyString,
@@ -214,6 +266,8 @@ export const controlEvidenceDocumentSchema: z.ZodType<ControlEvidenceDocument> =
       CONTROL_EVIDENCE_SCHEMA_VERSION,
       CONTROL_EVIDENCE_SCHEMA_V2_VERSION,
       CONTROL_EVIDENCE_SCHEMA_V3_VERSION,
+      CONTROL_EVIDENCE_SCHEMA_V4_VERSION,
+      CONTROL_EVIDENCE_SCHEMA_V5_VERSION,
     ]),
     analysis: z
       .object({
@@ -257,6 +311,8 @@ export const controlEvidenceDocumentSchema: z.ZodType<ControlEvidenceDocument> =
           localCausalEffects: z.array(localCausalEffectSchema).optional(),
           distributedInteractions: z.array(interactionSummarySchema).optional(),
           distributedConditionalEffects: z.array(distributedCausalEffectSchema).optional(),
+          jobQueueBranchIds: z.array(stableIdSchema).optional(),
+          authorizationRequirements: z.array(authorizationSummarySchema).optional(),
           requestColumnInfluences: z.array(
             z
               .object({
@@ -306,14 +362,39 @@ export const controlEvidenceDocumentSchema: z.ZodType<ControlEvidenceDocument> =
       }
       const distributedFields = [row.distributedInteractions, row.distributedConditionalEffects];
       if (
-        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V3_VERSION
+        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V3_VERSION ||
+        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V4_VERSION ||
+        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V5_VERSION
           ? distributedFields.some((value) => value === undefined)
           : distributedFields.some((value) => value !== undefined)
       ) {
         context.addIssue({
           code: 'custom',
           path: ['rows', index],
-          message: 'Control evidence v3 requires distributed summaries; v1/v2 must omit them.',
+          message: 'Control evidence v3/v4 requires distributed summaries; v1/v2 must omit them.',
+        });
+      }
+      if (
+        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V4_VERSION ||
+        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V5_VERSION
+          ? row.jobQueueBranchIds === undefined
+          : row.jobQueueBranchIds !== undefined
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['rows', index, 'jobQueueBranchIds'],
+          message: 'Control evidence v4 requires selected job-queue branch IDs.',
+        });
+      }
+      if (
+        document.schemaVersion === CONTROL_EVIDENCE_SCHEMA_V5_VERSION
+          ? row.authorizationRequirements === undefined
+          : row.authorizationRequirements !== undefined
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['rows', index, 'authorizationRequirements'],
+          message: 'Control evidence v5 requires authorization requirements.',
         });
       }
     }

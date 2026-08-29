@@ -13,6 +13,12 @@ import type {
   InteractionBoundaryState,
   InteractionKind,
 } from '../model/interactions.js';
+import type {
+  JobQueueBranchControlFlow,
+  JobQueueBranchEffectKind,
+  JobQueueBranchSelector,
+  JobQueueHandlerDispatchState,
+} from '../model/job-queue-branches.js';
 import type { ImpactCategory, ImpactGraphSide, ImpactReasonCode } from '../impact/model.js';
 import type {
   PolicyOutcome,
@@ -22,6 +28,7 @@ import type {
 } from '../policy/model.js';
 import type {
   EndpointDistributedCausalEffect,
+  EndpointAuthorizationSummary,
   EndpointLocalCausalEffect,
   MutationClassification,
 } from '../structured-exports/model.js';
@@ -30,11 +37,15 @@ export const GRAPH_REPORT_SCHEMA_VERSION = '1.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V2_VERSION = '2.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V3_VERSION = '3.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V4_VERSION = '4.0.0' as const;
+export const GRAPH_REPORT_SCHEMA_V5_VERSION = '5.0.0' as const;
+export const GRAPH_REPORT_SCHEMA_V6_VERSION = '6.0.0' as const;
 export type GraphReportSchemaVersion =
   | typeof GRAPH_REPORT_SCHEMA_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V2_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V3_VERSION
-  | typeof GRAPH_REPORT_SCHEMA_V4_VERSION;
+  | typeof GRAPH_REPORT_SCHEMA_V4_VERSION
+  | typeof GRAPH_REPORT_SCHEMA_V5_VERSION
+  | typeof GRAPH_REPORT_SCHEMA_V6_VERSION;
 export const DEFAULT_GRAPH_NODE_LIMIT = 120;
 export const DEFAULT_GRAPH_EDGE_LIMIT = 180;
 export const MIN_GRAPH_DISPLAY_LIMIT = 10;
@@ -57,6 +68,7 @@ export const GRAPH_NODE_KINDS = [
   'interaction_handler',
   'external_target',
   'boundary',
+  'interaction_branch',
 ] as const;
 export type GraphNodeKind = (typeof GRAPH_NODE_KINDS)[number];
 
@@ -163,6 +175,8 @@ export interface GraphReportEndpoint {
   readonly dbWrites: readonly string[];
   readonly localCausalEffects?: readonly EndpointLocalCausalEffect[] | undefined;
   readonly distributedConditionalEffects?: readonly EndpointDistributedCausalEffect[] | undefined;
+  readonly jobQueueBranchIds?: readonly string[] | undefined;
+  readonly authorizationRequirements?: readonly EndpointAuthorizationSummary[] | undefined;
   readonly diagnostics: readonly GraphReportDiagnostic[];
   readonly policyOutcomes: readonly GraphReportPolicyOutcome[];
   readonly impact: GraphImpactState;
@@ -186,7 +200,22 @@ export interface GraphReportInteractionHandler {
   readonly dbWrites: readonly string[];
   readonly diagnostics: readonly GraphReportDiagnostic[];
   readonly producerInteractionIds: readonly string[];
+  readonly jobQueueDispatch?: GraphReportJobQueueDispatch | null | undefined;
   readonly scene: GraphReportScene;
+}
+
+export interface GraphReportJobQueueDispatch {
+  readonly state: JobQueueHandlerDispatchState;
+  readonly branches: readonly {
+    readonly branchId: string;
+    readonly selector: JobQueueBranchSelector;
+    readonly controlFlow: JobQueueBranchControlFlow;
+    readonly effects: readonly {
+      readonly effectId: string;
+      readonly kind: JobQueueBranchEffectKind;
+      readonly targetId: string;
+    }[];
+  }[];
 }
 
 export interface GraphReportDocument {

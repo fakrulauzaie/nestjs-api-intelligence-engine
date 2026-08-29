@@ -69,6 +69,8 @@ export interface NestModuleExtraction {
   readonly assertions: readonly AssertionRecord[];
   readonly evidence: readonly EvidenceRecord[];
   readonly diagnostics: readonly DiagnosticRecord[];
+  /** Internal scan context used to scope application-global facts. */
+  readonly applicationRootModuleIds: readonly string[];
 }
 
 function unwrapExpression(expression: ts.Expression): ts.Expression {
@@ -338,6 +340,7 @@ export function extractNestModules(input: {
   const diagnosticsById = new Map<string, DiagnosticRecord>();
   const pendingRegistrations: PendingRegistration[] = [];
   const moduleLocations: ModuleLocation[] = [];
+  const applicationRootModuleIds = new Set<string>();
   let globalComplete = true;
 
   const addEvidence = (record: EvidenceRecord): string => {
@@ -833,6 +836,8 @@ export function extractNestModules(input: {
         return;
       }
 
+      applicationRootModuleIds.add(rootModule.moduleId);
+
       const boundary = node.parent.parent.parent;
       let escaped = false;
       const inspectReference = (candidate: ts.Node): void => {
@@ -944,5 +949,6 @@ export function extractNestModules(input: {
     assertions: [...assertionsById.values()],
     evidence: [...evidenceById.values()],
     diagnostics: [...diagnosticsById.values()],
+    applicationRootModuleIds: [...applicationRootModuleIds].sort(),
   };
 }

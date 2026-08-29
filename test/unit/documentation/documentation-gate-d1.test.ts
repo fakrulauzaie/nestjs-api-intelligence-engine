@@ -12,16 +12,16 @@ import { openApiCommand } from '../../../src/cli/commands/openapi.js';
 import { reportCommand } from '../../../src/cli/commands/report.js';
 import { scanCommand } from '../../../src/cli/commands/scan.js';
 import { traceCommand } from '../../../src/cli/commands/trace.js';
-import { DIFF_SCHEMA_V2_VERSION } from '../../../src/comparison/model.js';
-import { GRAPH_REPORT_SCHEMA_V4_VERSION } from '../../../src/graph-report/model.js';
-import { IMPACT_SCHEMA_VERSION } from '../../../src/impact/model.js';
+import { DIFF_SCHEMA_V4_VERSION } from '../../../src/comparison/model.js';
+import { GRAPH_REPORT_SCHEMA_V6_VERSION } from '../../../src/graph-report/model.js';
+import { IMPACT_SCHEMA_V2_VERSION } from '../../../src/impact/model.js';
 import { CURRENT_ANALYSIS_SCHEMA_VERSION } from '../../../src/model/analysis.js';
 import { INTERACTION_KINDS } from '../../../src/model/interactions.js';
 import { BUNDLE_MANIFEST_SCHEMA_VERSION } from '../../../src/output/artifact-plan.js';
 import { POLICY_RESULTS_SCHEMA_VERSION } from '../../../src/policy/model.js';
 import {
-  CONTROL_EVIDENCE_SCHEMA_V3_VERSION,
-  OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V5_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
 } from '../../../src/structured-exports/model.js';
 
 const COMMANDS = [
@@ -76,15 +76,15 @@ describe('Documentation Gate D1 conformance', () => {
     expect(index).toContain('Source-of-truth hierarchy');
     const normalizedModel = normalizeWhitespace(model);
     expect(normalizedModel).toContain(`analysis.json\` | \`${CURRENT_ANALYSIS_SCHEMA_VERSION}`);
-    expect(normalizedModel).toContain(`diff.json\` | \`${DIFF_SCHEMA_V2_VERSION}`);
-    expect(normalizedModel).toContain(`impact.json\` | \`${IMPACT_SCHEMA_VERSION}`);
+    expect(normalizedModel).toContain(`diff.json\` | \`${DIFF_SCHEMA_V4_VERSION}`);
+    expect(normalizedModel).toContain(`impact.json\` | \`${IMPACT_SCHEMA_V2_VERSION}`);
     expect(normalizedModel).toContain(`policy-results.json\` | \`${POLICY_RESULTS_SCHEMA_VERSION}`);
-    expect(normalizedModel).toContain(`graph view | \`${GRAPH_REPORT_SCHEMA_V4_VERSION}`);
+    expect(normalizedModel).toContain(`graph view | \`${GRAPH_REPORT_SCHEMA_V6_VERSION}`);
     expect(normalizedModel).toContain(
-      `OpenAPI enrichment sidecar | \`${OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION}`,
+      `OpenAPI enrichment sidecar | \`${OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION}`,
     );
     expect(normalizedModel).toContain(
-      `control-evidence JSON/CSV | \`${CONTROL_EVIDENCE_SCHEMA_V3_VERSION}`,
+      `control-evidence JSON/CSV | \`${CONTROL_EVIDENCE_SCHEMA_V5_VERSION}`,
     );
     expect(normalizedModel).toContain(`bundle.json\` | \`${BUNDLE_MANIFEST_SCHEMA_VERSION}`);
 

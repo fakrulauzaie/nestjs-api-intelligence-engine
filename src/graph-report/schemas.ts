@@ -10,10 +10,20 @@ import { DIAGNOSTIC_SEVERITIES } from '../model/diagnostics.js';
 import { EVIDENCE_ROLES } from '../model/evidence.js';
 import { HTTP_METHODS } from '../model/entities.js';
 import {
+  AUTHORIZATION_ENFORCEMENT_STATES,
+  AUTHORIZATION_METADATA_SOURCES,
+} from '../model/authorization.js';
+import {
   HANDLER_REGISTRATION_STATES,
   INTERACTION_BOUNDARY_STATES,
   INTERACTION_KINDS,
 } from '../model/interactions.js';
+import {
+  JOB_QUEUE_BRANCH_CONTROL_FLOWS,
+  JOB_QUEUE_BRANCH_EFFECT_KINDS,
+  JOB_QUEUE_HANDLER_DISPATCH_STATES,
+} from '../model/job-queue-branches.js';
+import { authorizationValueShapeSchema, jobQueueBranchSelectorSchema } from '../model/schemas.js';
 import { IMPACT_CATEGORIES, IMPACT_GRAPH_SIDES, IMPACT_REASON_CODES } from '../impact/model.js';
 import {
   POLICY_OUTCOMES,
@@ -33,6 +43,8 @@ import {
   GRAPH_REPORT_SCHEMA_V2_VERSION,
   GRAPH_REPORT_SCHEMA_V3_VERSION,
   GRAPH_REPORT_SCHEMA_V4_VERSION,
+  GRAPH_REPORT_SCHEMA_V5_VERSION,
+  GRAPH_REPORT_SCHEMA_V6_VERSION,
   GRAPH_UNCERTAINTY_STATES,
   type GraphReportDocument,
 } from './model.js';
@@ -40,6 +52,30 @@ import {
 const nonEmpty = z.string().min(1);
 const nonNegativeInteger = z.number().int().nonnegative();
 const positiveInteger = z.number().int().positive();
+
+const jobQueueDispatchSchema = z
+  .object({
+    state: z.enum(JOB_QUEUE_HANDLER_DISPATCH_STATES),
+    branches: z.array(
+      z
+        .object({
+          branchId: nonEmpty,
+          selector: jobQueueBranchSelectorSchema,
+          controlFlow: z.enum(JOB_QUEUE_BRANCH_CONTROL_FLOWS),
+          effects: z.array(
+            z
+              .object({
+                effectId: nonEmpty,
+                kind: z.enum(JOB_QUEUE_BRANCH_EFFECT_KINDS),
+                targetId: nonEmpty,
+              })
+              .strict(),
+          ),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
 
 const nodeSchema = z
   .object({
@@ -126,6 +162,18 @@ const distributedCausalEffectSchema = z
   })
   .strict();
 
+const authorizationSummarySchema = z
+  .object({
+    metadataKey: nonEmpty,
+    scope: z.enum(['controller', 'method']),
+    source: z.enum(AUTHORIZATION_METADATA_SOURCES),
+    valueShape: authorizationValueShapeSchema,
+    enforcementState: z.enum(AUTHORIZATION_ENFORCEMENT_STATES),
+    guardName: nonEmpty.nullable(),
+    evidenceIds: z.array(nonEmpty),
+  })
+  .strict();
+
 const sceneSchema = z
   .object({
     nodes: z.array(nodeSchema),
@@ -148,6 +196,8 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
       GRAPH_REPORT_SCHEMA_V2_VERSION,
       GRAPH_REPORT_SCHEMA_V3_VERSION,
       GRAPH_REPORT_SCHEMA_V4_VERSION,
+      GRAPH_REPORT_SCHEMA_V5_VERSION,
+      GRAPH_REPORT_SCHEMA_V6_VERSION,
     ]),
     analysis: z
       .object({
@@ -213,6 +263,8 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
           dbWrites: z.array(nonEmpty),
           localCausalEffects: z.array(localCausalEffectSchema).optional(),
           distributedConditionalEffects: z.array(distributedCausalEffectSchema).optional(),
+          jobQueueBranchIds: z.array(nonEmpty).optional(),
+          authorizationRequirements: z.array(authorizationSummarySchema).optional(),
           diagnostics: z.array(diagnosticSchema),
           policyOutcomes: z.array(policyOutcomeSchema),
           impact: z.enum(GRAPH_IMPACT_STATES),
@@ -241,6 +293,7 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
             dbWrites: z.array(nonEmpty),
             diagnostics: z.array(diagnosticSchema),
             producerInteractionIds: z.array(nonEmpty),
+            jobQueueDispatch: jobQueueDispatchSchema.nullable().optional(),
             scene: sceneSchema,
           })
           .strict(),
@@ -288,7 +341,9 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
     for (const [index, endpoint] of document.endpoints.entries()) {
       const expectsLocalEffects =
         document.schemaVersion === GRAPH_REPORT_SCHEMA_V3_VERSION ||
-        document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION;
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION;
       if (expectsLocalEffects !== (endpoint.localCausalEffects !== undefined)) {
         context.addIssue({
           code: 'custom',
@@ -297,12 +352,67 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
         });
       }
     }
-    const expectsHandlerScenes = document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION;
+    const expectsHandlerScenes =
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION;
     if (expectsHandlerScenes !== (document.interactionHandlers !== undefined)) {
       context.addIssue({
         code: 'custom',
         path: ['interactionHandlers'],
         message: 'Graph v4 requires handler scenes; graph v1-v3 must omit them.',
+      });
+    }
+    for (const [index, endpoint] of document.endpoints.entries()) {
+      if (
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+          ? endpoint.jobQueueBranchIds === undefined
+          : endpoint.jobQueueBranchIds !== undefined
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['endpoints', index, 'jobQueueBranchIds'],
+          message: 'Graph v5 requires selected job-queue branch IDs; v1-v4 must omit them.',
+        });
+      }
+      if (
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+          ? endpoint.authorizationRequirements === undefined
+          : endpoint.authorizationRequirements !== undefined
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['endpoints', index, 'authorizationRequirements'],
+          message: 'Graph v6 requires authorization requirements; graph v1-v5 must omit them.',
+        });
+      }
+    }
+    for (const [index, handler] of (document.interactionHandlers ?? []).entries()) {
+      if (
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+          ? handler.jobQueueDispatch === undefined
+          : handler.jobQueueDispatch !== undefined
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['interactionHandlers', index, 'jobQueueDispatch'],
+          message: 'Graph v5 requires branch capability on handler views; graph v4 must omit it.',
+        });
+      }
+    }
+    if (
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V5_VERSION &&
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V6_VERSION &&
+      [...document.endpoints, ...(document.interactionHandlers ?? [])].some((view) =>
+        view.scene.nodes.some(({ kind }) => kind === 'interaction_branch'),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['endpoints'],
+        message: 'Only graph v5 may contain interaction-branch nodes.',
       });
     }
     for (const field of [

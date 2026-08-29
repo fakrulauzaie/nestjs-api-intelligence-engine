@@ -52,7 +52,7 @@ async function scanFixture(name: string) {
 }
 
 function microserviceRecords(analysis: Awaited<ReturnType<typeof scanRepository>>['analysis']) {
-  if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+  if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
   return {
     interactions: analysis.interactions.filter(
       (record): record is MicroserviceMessageInteractionRecord =>
@@ -73,8 +73,8 @@ describe('Nest microservices extraction', () => {
       const { interactions, handlers } = microserviceRecords(analysis);
       expect(interactions).toHaveLength(2);
       expect(handlers).toHaveLength(2);
-      expect(analysis.schemaVersion).toBe('3.0.0');
-      if (analysis.schemaVersion !== '3.0.0') return;
+      expect(analysis.schemaVersion).toBe('5.0.0');
+      if (analysis.schemaVersion !== '5.0.0') return;
       expect(analysis.applications).toEqual([
         expect.objectContaining({ kind: 'microservice', transport: 'rmq' }),
       ]);
@@ -130,7 +130,7 @@ describe('Nest microservices extraction', () => {
       }
       const graph = buildGraphReportDocument({ analysis });
       expect(graph.endpoints).toEqual([]);
-      expect(graph.schemaVersion).toBe('4.0.0');
+      expect(graph.schemaVersion).toBe('6.0.0');
       expect(graph.interactionHandlers).toHaveLength(2);
       expect(graph.interactionHandlers).toEqual(
         expect.arrayContaining([
@@ -255,7 +255,7 @@ describe('Nest microservices extraction', () => {
       }
 
       const controls = buildControlEvidenceDocument({ analysis: result.analysis });
-      expect(controls.schemaVersion).toBe('3.0.0');
+      expect(controls.schemaVersion).toBe('5.0.0');
       expect(controls.rows[0]?.distributedInteractions).toEqual([
         expect.objectContaining({ kind: 'microservice_message' }),
       ]);
@@ -267,7 +267,7 @@ describe('Nest microservices extraction', () => {
           paths: { '/inventory/lookup': { post: {} } },
         },
       });
-      expect(enriched.result.schemaVersion).toBe('3.0.0');
+      expect(enriched.result.schemaVersion).toBe('5.0.0');
       expect(
         (
           enriched.enrichedDocument.paths as Record<
@@ -329,7 +329,7 @@ describe('Nest microservices extraction', () => {
     try {
       const { analysis } = result;
       const { interactions, handlers } = microserviceRecords(analysis);
-      if (analysis.schemaVersion !== '3.0.0') return;
+      if (analysis.schemaVersion !== '5.0.0') return;
       expect(analysis.applications.map(({ transport }) => transport).sort()).toEqual([
         'kafka',
         'redis',
@@ -464,7 +464,7 @@ describe('Nest microservices extraction', () => {
       );
       await writeBasicTsconfig(project);
       const result = await scanRepository({ repositoryRoot: project.path });
-      if (result.analysis.schemaVersion !== '3.0.0') return;
+      if (result.analysis.schemaVersion !== '5.0.0') return;
       expect(result.analysis.applications).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

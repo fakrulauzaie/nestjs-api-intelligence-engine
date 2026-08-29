@@ -20,6 +20,7 @@ describe('Phase 13 comparison documentation', () => {
     expect(comparison).toMatch(/A diff containing changes exits\s+successfully/u);
     expect(comparison).toContain('`1.0.0` for v1/v2-only comparisons');
     expect(comparison).toContain('`2.0.0` when either input is analysis v3');
+    expect(comparison).toContain('`3.0.0` when either input is analysis');
     expect(architecture).toContain('semantic projection');
     expect(architecture).toContain('validated diff.json');
     expect(workflow).toContain('ten complete commands');

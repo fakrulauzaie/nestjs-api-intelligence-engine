@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "1.0.0",
+  "compatibilityTarget": {
+    "verifiedOn": "2026-08-28",
+    "packages": [
+      {
+        "name": "@nestjs/bullmq",
+        "version": "11.0.5"
+      },
+      {
+        "name": "@nestjs/common",
+        "version": "11.2.1"
+      },
+      {
+        "name": "bullmq",
+        "version": "6.2.1"
+      }
+    ]
+  },
+  "schemaDecision": {
+    "currentAnalysisVersion": "3.0.0",
+    "targetAnalysisVersion": "4.0.0",
+    "v3Frozen": true,
+    "phase39PublishesBranchFacts": false
+  },
+  "globalMustNotInfer": [
+    "aliased_discriminant_trusted",
+    "branch_write_overattribution",
+    "broker_delivery_guaranteed",
+    "common_effect_omitted",
+    "compound_predicate_sliced",
+    "default_effect_applied_to_excluded_job",
+    "dynamic_case_resolved",
+    "exact_job_implies_worker_execution",
+    "fallthrough_treated_as_grouped_label",
+    "finally_completion_guaranteed",
+    "mutated_discriminant_trusted",
+    "unsupported_effect_dropped"
+  ],
+  "cases": [
+    {
+      "caseId": "b0-alias-unsupported",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["B0_CASE:alias-unsupported", "B0_NEGATIVE:aliased-discriminant"],
+      "dispatchState": "unsupported",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "unknown"
+          },
+          "controlFlow": "unsupported_region",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.run"
+            }
+          ]
+        }
+      ],
+      "mustEmit": ["branch_selector.unknown", "dispatch_state.unsupported"],
+      "mustNotEmit": ["branch_selector.exact_jobs"],
+      "mustNotInfer": ["aliased_discriminant_trusted", "unsupported_effect_dropped"],
+      "counterpartCaseIds": ["b0-if-complete", "b0-switch-complete"],
+      "rationale": "A local alias of job.name is intentionally outside the bounded B0 branch grammar and retains every discovered effect in an unknown residual branch."
+    },
+    {
+      "caseId": "b0-compound-unsupported",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["B0_CASE:compound-unsupported", "B0_NEGATIVE:compound-predicate"],
+      "dispatchState": "unsupported",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "unknown"
+          },
+          "controlFlow": "unsupported_region",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.run"
+            }
+          ]
+        }
+      ],
+      "mustEmit": ["branch_selector.unknown", "dispatch_state.unsupported"],
+      "mustNotEmit": ["branch_selector.exact_jobs"],
+      "mustNotInfer": ["compound_predicate_sliced", "unsupported_effect_dropped"],
+      "counterpartCaseIds": ["b0-if-complete"],
+      "rationale": "A compound predicate mixes the job discriminant with payload state, so B0 records an unknown residual instead of inventing path-sensitive certainty."
+    },
+    {
+      "caseId": "b0-dynamic-case-partial",
+      "fixture": "unsupported.ts.txt",
+      "classification": "partial",
+      "sourceMarkers": [
+        "B0_BRANCH:dynamic-case-safe-exact",
+        "B0_CASE:dynamic-case-partial",
+        "B0_NEGATIVE:dynamic-case-label"
+      ],
+      "dispatchState": "partial",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["safe"]
+          },
+          "controlFlow": "switch_case",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.safe"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "unknown"
+          },
+          "controlFlow": "unsupported_region",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.other"
+            }
+          ]
+        }
+      ],
+      "mustEmit": [
+        "branch_selector.exact_jobs",
+        "branch_selector.unknown",
+        "dispatch_state.partial"
+      ],
+      "mustNotEmit": ["branch_selector.unmatched_jobs"],
+      "mustNotInfer": ["dynamic_case_resolved", "unsupported_effect_dropped"],
+      "counterpartCaseIds": ["b0-switch-complete"],
+      "rationale": "The static case remains usable while the runtime-computed label and its effects are preserved as an explicit unknown residual branch."
+    },
+    {
+      "caseId": "b0-fallthrough-partial",
+      "fixture": "unsupported.ts.txt",
+      "classification": "partial",
+      "sourceMarkers": [
+        "B0_BRANCH:fallthrough-safe-exact",
+        "B0_CASE:fallthrough-partial",
+        "B0_NEGATIVE:nonempty-fallthrough"
+      ],
+      "dispatchState": "partial",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["safe"]
+          },
+          "controlFlow": "switch_case",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.safe"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "unknown"
+          },
+          "controlFlow": "unsupported_region",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.other"
+            },
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.prepare"
+            }
+          ]
+        }
+      ],
+      "mustEmit": [
+        "branch_selector.exact_jobs",
+        "branch_selector.unknown",
+        "dispatch_state.partial"
+      ],
+      "mustNotEmit": ["branch_selector.exact_jobs.prepare"],
+      "mustNotInfer": ["fallthrough_treated_as_grouped_label", "unsupported_effect_dropped"],
+      "counterpartCaseIds": ["b0-switch-complete"],
+      "rationale": "A non-empty fallthrough is not equivalent to grouped empty labels; supported exact cases survive while the fallthrough region stays unknown."
+    },
+    {
+      "caseId": "b0-if-complete",
+      "fixture": "if-safe.ts.txt",
+      "classification": "positive",
+      "sourceMarkers": [
+        "B0_BRANCH:if-left-exact",
+        "B0_BRANCH:if-right-exact",
+        "B0_BRANCH:if-unmatched-fallthrough",
+        "B0_CASE:if-complete"
+      ],
+      "dispatchState": "complete",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["cleanup-report"]
+          },
+          "controlFlow": "if_branch",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "IfWorkService.cleanup"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["sync-report"]
+          },
+          "controlFlow": "if_branch",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "IfWorkService.sync"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "unmatched_jobs",
+            "excludedJobs": ["cleanup-report", "sync-report"]
+          },
+          "controlFlow": "unmatched_fallthrough",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "IfWorkService.unmatched"
+            }
+          ]
+        }
+      ],
+      "mustEmit": [
+        "branch_selector.exact_jobs",
+        "branch_selector.unmatched_jobs",
+        "dispatch_state.complete"
+      ],
+      "mustNotEmit": ["branch_selector.unknown"],
+      "mustNotInfer": ["broker_delivery_guaranteed", "exact_job_implies_worker_execution"],
+      "counterpartCaseIds": [
+        "b0-alias-unsupported",
+        "b0-compound-unsupported",
+        "b0-mutation-unsupported"
+      ],
+      "rationale": "Direct strict equality checks in either operand order form a bounded if-chain with an explicit unmatched residual and no unknown region."
+    },
+    {
+      "caseId": "b0-mutation-unsupported",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["B0_CASE:mutation-unsupported", "B0_NEGATIVE:mutated-discriminant"],
+      "dispatchState": "unsupported",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "unknown"
+          },
+          "controlFlow": "unsupported_region",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "UnsupportedWorkService.run"
+            }
+          ]
+        }
+      ],
+      "mustEmit": ["branch_selector.unknown", "dispatch_state.unsupported"],
+      "mustNotEmit": ["branch_selector.exact_jobs"],
+      "mustNotInfer": ["mutated_discriminant_trusted", "unsupported_effect_dropped"],
+      "counterpartCaseIds": ["b0-if-complete"],
+      "rationale": "Mutation of the job-name discriminant invalidates exact branch reasoning, so the whole handler remains an explicit unsupported region."
+    },
+    {
+      "caseId": "b0-switch-complete",
+      "fixture": "switch-safe.ts.txt",
+      "classification": "positive",
+      "sourceMarkers": [
+        "B0_BRANCH:common-finally",
+        "B0_BRANCH:common-prelude",
+        "B0_BRANCH:default",
+        "B0_BRANCH:exact-return",
+        "B0_BRANCH:exact-throw",
+        "B0_BRANCH:grouped-break",
+        "B0_CASE:switch-complete"
+      ],
+      "dispatchState": "complete",
+      "expectedBranches": [
+        {
+          "selector": {
+            "kind": "all_jobs"
+          },
+          "controlFlow": "common_finally",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "ReportWorkService.finalize"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "all_jobs"
+          },
+          "controlFlow": "common_prelude",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "ReportWorkService.received"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["archive-legacy", "archive-pdf"]
+          },
+          "controlFlow": "switch_case",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "ReportWorkService.afterBreak"
+            },
+            {
+              "kind": "calls_method",
+              "target": "ReportWorkService.archive"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["fail-pdf"]
+          },
+          "controlFlow": "switch_case",
+          "effects": []
+        },
+        {
+          "selector": {
+            "kind": "exact_jobs",
+            "jobs": ["generate-pdf"]
+          },
+          "controlFlow": "switch_case",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "ReportWorkService.generate"
+            }
+          ]
+        },
+        {
+          "selector": {
+            "kind": "unmatched_jobs",
+            "excludedJobs": ["archive-legacy", "archive-pdf", "fail-pdf", "generate-pdf"]
+          },
+          "controlFlow": "default_branch",
+          "effects": [
+            {
+              "kind": "calls_method",
+              "target": "ReportWorkService.unmatched"
+            }
+          ]
+        }
+      ],
+      "mustEmit": [
+        "branch_selector.all_jobs",
+        "branch_selector.exact_jobs",
+        "branch_selector.unmatched_jobs",
+        "dispatch_state.complete"
+      ],
+      "mustNotEmit": ["branch_selector.unknown"],
+      "mustNotInfer": [
+        "branch_write_overattribution",
+        "broker_delivery_guaranteed",
+        "common_effect_omitted",
+        "default_effect_applied_to_excluded_job",
+        "exact_job_implies_worker_execution",
+        "finally_completion_guaranteed"
+      ],
+      "counterpartCaseIds": ["b0-dynamic-case-partial", "b0-fallthrough-partial"],
+      "rationale": "A direct job.name switch supports exact, grouped-label, default, common-prelude, and common-finally projections while preserving termination behavior."
+    }
+  ],
+  "review": {
+    "semanticStatus": "approved",
+    "reviewedOn": "2026-08-28",
+    "extractorImplementationPresent": false,
+    "phaseRecommendation": "eligible_after_b0",
+    "decisions": [
+      "Branch effects project existing assertions and do not create a competing call or database fact model.",
+      "Phase 39 freezes analysis schema v3 and reserves published branch facts for an explicit v4 migration.",
+      "Unsupported control flow retains effects under unknown selectors instead of dropping or over-attributing them."
+    ],
+    "rationale": "The bounded contract and close-negative corpus are sufficient to begin Phase 40 extraction without changing v3 output or implying broker delivery."
+  }
+}

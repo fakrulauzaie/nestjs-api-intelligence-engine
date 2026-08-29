@@ -26,11 +26,14 @@ describe('canonical repository scan assembly', () => {
 
       const result = await scanRepository({ repositoryRoot: project.path });
 
-      expect(result.analysis.schemaVersion).toBe('3.0.0');
-      if (result.analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      expect(result.analysis.schemaVersion).toBe('5.0.0');
+      if (result.analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       expect(result.analysis.applications).toEqual([]);
       expect(result.analysis.interactions).toEqual([]);
       expect(result.analysis.interactionHandlers).toEqual([]);
+      expect(result.analysis.interactionHandlerDispatches).toEqual([]);
+      expect(result.analysis.interactionHandlerBranches).toEqual([]);
+      expect(result.analysis.interactionHandlerBranchEffects).toEqual([]);
       expect(result.analysis.interactionAnalysis).toEqual({
         schemaKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],
         supportedKinds: ['in_process_event', 'job_queue', 'microservice_message', 'outbound_http'],

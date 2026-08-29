@@ -10,6 +10,10 @@ Effective guard state: `unknown`
 
 No supported effective guard declaration was found. This is not proof that the endpoint is public or unprotected.
 
+## Authorization metadata
+
+No supported authorization metadata declaration was proven.
+
 ## Trace steps
 
 | From | Relation | To | Status | Evidence |

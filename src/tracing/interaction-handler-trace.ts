@@ -7,6 +7,7 @@ import type {
   InteractionHandlerTraceView,
   TraceCausalClass,
 } from '../model/analysis.js';
+import { analysisHasInteractionFacts } from '../model/analysis.js';
 import type { AssertionRecord } from '../model/assertions.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
 import { canonicalizeInteractionHandlerTrace } from '../model/ordering.js';
@@ -59,7 +60,7 @@ export function buildInteractionHandlerTrace(
   if (analysis.resultState === 'failed' || analysis.resultState === 'canceled') {
     return { status: 'analysis_failure', resultState: analysis.resultState };
   }
-  if (analysis.schemaVersion !== '3.0.0') return { status: 'not_found', handlerId };
+  if (!analysisHasInteractionFacts(analysis)) return { status: 'not_found', handlerId };
   const handler = analysis.interactionHandlers.find(({ id }) => id === handlerId);
   if (handler === undefined) return { status: 'not_found', handlerId };
 

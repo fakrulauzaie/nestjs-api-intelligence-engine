@@ -45,7 +45,7 @@ describe('Phase 34 integrated bounded-local interaction report', () => {
       const outbound = graph.endpoints.find(({ path }) => path === '/gateway/direct')!;
       const event = graph.endpoints.find(({ path }) => path === '/wildcards/dot-created')!;
 
-      expect(graph.schemaVersion).toBe('4.0.0');
+      expect(graph.schemaVersion).toBe('6.0.0');
       expect(outbound.scene.nodes.some(({ kind }) => kind === 'external_target')).toBe(true);
       expect(outbound.scene.nodes.some(({ kind }) => kind === 'boundary')).toBe(true);
       expect(event.scene.nodes.filter(({ kind }) => kind === 'interaction_handler')).toHaveLength(

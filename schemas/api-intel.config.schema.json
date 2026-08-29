@@ -188,6 +188,31 @@
                   "maxItems": 2
                 }
               ]
+            },
+            "require-proven-authorization-enforcement": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -380,6 +405,31 @@
               ]
             },
             "require-local-in-process-event-handler": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-authorization-enforcement": {
               "anyOf": [
                 { "type": "string", "enum": ["warn", "error"] },
                 {
@@ -679,6 +729,439 @@
               ]
             },
             "require-local-in-process-event-handler": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-authorization-enforcement": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "reports": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "object",
+              "properties": { "enabled": { "type": "boolean" } },
+              "required": ["enabled"],
+              "additionalProperties": false
+            },
+            "graph": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "maxNodesPerEndpoint": {
+                  "type": "integer",
+                  "minimum": 10,
+                  "maximum": 500
+                },
+                "maxEdgesPerEndpoint": {
+                  "type": "integer",
+                  "minimum": 10,
+                  "maximum": 1000
+                }
+              },
+              "required": ["enabled"],
+              "additionalProperties": false
+            },
+            "controls": {
+              "type": "object",
+              "properties": { "enabled": { "type": "boolean" } },
+              "required": ["enabled"],
+              "additionalProperties": false
+            },
+            "openapi": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean", "const": false }
+                  },
+                  "required": ["enabled"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean", "const": true },
+                    "document": {
+                      "minLength": 1,
+                      "pattern": "^(?=.*\\S)[^\\u0000]+$",
+                      "type": "string"
+                    },
+                    "pathPrefix": { "type": "string" },
+                    "includeEvidence": { "type": "boolean" }
+                  },
+                  "required": ["enabled", "document"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["version"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": { "type": "string", "minLength": 1 },
+        "version": { "type": "number", "const": 4 },
+        "analysis": {
+          "type": "object",
+          "properties": {
+            "maxCallDepth": { "type": "integer", "minimum": 1, "maximum": 3 },
+            "rawSqlDialect": { "type": "string", "enum": ["postgresql-18"] },
+            "interactions": {
+              "type": "object",
+              "properties": {
+                "maxInteractionHops": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "maxFanOutPerInteraction": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000
+                },
+                "maxInteractionTraceStates": {
+                  "type": "integer",
+                  "minimum": 10,
+                  "maximum": 10000
+                }
+              },
+              "additionalProperties": false
+            },
+            "authorization": {
+              "type": "object",
+              "properties": {
+                "metadataKeys": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "decoratorSymbols": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "symbol": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "package_export"
+                              },
+                              "moduleSpecifier": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "exportedName": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["kind", "moduleSpecifier", "exportedName"],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "repository_export"
+                              },
+                              "sourceFile": { "type": "string" },
+                              "exportedName": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["kind", "sourceFile", "exportedName"],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "metadataKey": { "type": "string", "minLength": 1 }
+                    },
+                    "required": ["symbol", "metadataKey"],
+                    "additionalProperties": false
+                  }
+                },
+                "enforcementRelationships": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "metadataKey": { "type": "string", "minLength": 1 },
+                      "guard": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "repository_export"
+                          },
+                          "sourceFile": { "type": "string" },
+                          "exportedName": { "type": "string", "minLength": 1 }
+                        },
+                        "required": ["kind", "sourceFile", "exportedName"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["metadataKey", "guard"],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "directory": {
+              "minLength": 1,
+              "pattern": "^(?=.*\\S)[^\\u0000]+$",
+              "type": "string"
+            }
+          },
+          "required": ["directory"],
+          "additionalProperties": false
+        },
+        "rules": {
+          "minProperties": 1,
+          "type": "object",
+          "properties": {
+            "no-repository-access-in-controller": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-guard-on-write-endpoint": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-complete-write-trace": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "no-new-diagnostics": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "minimumSeverity": {
+                          "type": "string",
+                          "enum": ["info", "warning", "error"]
+                        },
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["minimumSeverity"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "forbid-dynamic-interaction-target": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-interaction-activation": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-local-in-process-event-handler": {
+              "anyOf": [
+                { "type": "string", "enum": ["warn", "error"] },
+                {
+                  "type": "array",
+                  "prefixItems": [
+                    { "type": "string", "enum": ["warn", "error"] },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "onUnknown": {
+                          "type": "string",
+                          "enum": ["warn", "error"]
+                        }
+                      },
+                      "required": ["onUnknown"],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              ]
+            },
+            "require-proven-authorization-enforcement": {
               "anyOf": [
                 { "type": "string", "enum": ["warn", "error"] },
                 {

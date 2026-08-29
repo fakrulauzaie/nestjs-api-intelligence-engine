@@ -61,6 +61,35 @@ export function canonicalizeControlEvidenceDocument(
           .sort((left, right) => left.name.localeCompare(right.name)),
         dbReads: sortedUnique(row.dbReads),
         dbWrites: sortedUnique(row.dbWrites),
+        ...(row.jobQueueBranchIds === undefined
+          ? {}
+          : { jobQueueBranchIds: sortedUnique(row.jobQueueBranchIds) }),
+        ...(row.authorizationRequirements === undefined
+          ? {}
+          : {
+              authorizationRequirements: [...row.authorizationRequirements]
+                .map((requirement) => ({
+                  ...requirement,
+                  valueShape:
+                    requirement.valueShape.kind === 'array'
+                      ? {
+                          ...requirement.valueShape,
+                          itemTypes: [...new Set(requirement.valueShape.itemTypes)].sort(),
+                        }
+                      : requirement.valueShape.kind === 'object'
+                        ? {
+                            ...requirement.valueShape,
+                            keys: sortedUnique(requirement.valueShape.keys),
+                          }
+                        : requirement.valueShape,
+                  evidenceIds: sortedUnique(requirement.evidenceIds),
+                }))
+                .sort((left, right) =>
+                  `${left.metadataKey}:${left.scope}:${left.enforcementState}:${left.guardName ?? ''}`.localeCompare(
+                    `${right.metadataKey}:${right.scope}:${right.enforcementState}:${right.guardName ?? ''}`,
+                  ),
+                ),
+            }),
         ...(row.outboundInteractions === undefined
           ? {}
           : {

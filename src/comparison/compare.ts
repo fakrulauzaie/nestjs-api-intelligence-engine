@@ -2,6 +2,8 @@ import { canonicalStringify } from '../model/ordering.js';
 import {
   DIFF_SCHEMA_VERSION,
   DIFF_SCHEMA_V2_VERSION,
+  DIFF_SCHEMA_V3_VERSION,
+  DIFF_SCHEMA_V4_VERSION,
   type AssertionSnapshot,
   type AssertionStatusChange,
   type DiagnosticChange,
@@ -20,6 +22,10 @@ import {
   type InteractionHandlerChange,
   type InteractionHandlerChangeReason,
   type InteractionHandlerSnapshot,
+  type JobQueueBranchEffectChange,
+  type JobQueueBranchFactChangeReason,
+  type JobQueueBranchChange,
+  type JobQueueDispatchChange,
 } from './model.js';
 import {
   buildAnalysisSemanticProjection,
@@ -121,6 +127,21 @@ function terminalProjection(terminals: readonly EndpointTerminalFact[]): unknown
   return terminals.map(({ key, status }) => ({ key: key.encoded, status }));
 }
 
+function authorizationProjection(snapshot: EndpointSnapshot): unknown {
+  return {
+    availability: snapshot.authorization?.availability ?? 'unavailable',
+    requirements: (snapshot.authorization?.requirements ?? []).map((requirement) => ({
+      metadataKey: requirement.metadataKey,
+      scope: requirement.scope,
+      source: requirement.source,
+      valueShape: requirement.valueShape,
+      enforcementState: requirement.enforcementState,
+      guardKey: requirement.guardKey?.encoded ?? null,
+      ruleId: requirement.ruleId,
+    })),
+  };
+}
+
 function endpointModificationReasons(
   before: EndpointSnapshot,
   after: EndpointSnapshot,
@@ -154,7 +175,21 @@ function endpointModificationReasons(
   ) {
     reasons.push('terminals');
   }
+  if (
+    canonicalStringify(authorizationProjection(before)) !==
+    canonicalStringify(authorizationProjection(after))
+  ) {
+    reasons.push('authorization');
+  }
   return reasons;
+}
+
+function withAuthorizationAvailability(snapshot: EndpointSnapshot | null): EndpointSnapshot | null {
+  if (snapshot === null || snapshot.authorization !== undefined) return snapshot;
+  return {
+    ...snapshot,
+    authorization: { availability: 'unavailable', requirements: [] },
+  };
 }
 
 function compareEndpoints(input: {
@@ -570,6 +605,86 @@ function compareInteractionHandlerSnapshots(input: {
   );
 }
 
+interface JobQueueFactSnapshot {
+  readonly key: SemanticKey;
+}
+
+interface JobQueueFactChange<T extends JobQueueFactSnapshot> {
+  readonly change: 'added' | 'removed' | 'modified';
+  readonly key: SemanticKey;
+  readonly reasons: readonly JobQueueBranchFactChangeReason[];
+  readonly before: T | null;
+  readonly after: T | null;
+}
+
+function compareJobQueueFactSnapshots<T extends JobQueueFactSnapshot>(input: {
+  readonly before: readonly T[];
+  readonly after: readonly T[];
+  readonly ambiguityByKey: Map<string, DiffAmbiguity>;
+  readonly recordKind: string;
+  readonly idOf: (snapshot: T) => string;
+  readonly modifiedReasons: (before: T, after: T) => readonly JobQueueBranchFactChangeReason[];
+}): JobQueueFactChange<T>[] {
+  const beforeGroups = groupsByKey(input.before, ({ key }) => key);
+  const afterGroups = groupsByKey(input.after, ({ key }) => key);
+  const changes: JobQueueFactChange<T>[] = [];
+  for (const encoded of [...new Set([...beforeGroups.keys(), ...afterGroups.keys()])].sort(
+    compareStrings,
+  )) {
+    const beforeGroup = beforeGroups.get(encoded) ?? [];
+    const afterGroup = afterGroups.get(encoded) ?? [];
+    if (beforeGroup.length > 1 || afterGroup.length > 1) {
+      addAmbiguity(input.ambiguityByKey, {
+        kind: 'semantic_key',
+        side:
+          beforeGroup.length > 1 && afterGroup.length > 1
+            ? 'both'
+            : beforeGroup.length > 1
+              ? 'before'
+              : 'after',
+        recordKind: input.recordKind,
+        key: (beforeGroup[0] ?? afterGroup[0])!.key,
+        beforeCandidateIds: beforeGroup.map(input.idOf),
+        afterCandidateIds: afterGroup.map(input.idOf),
+      });
+      continue;
+    }
+    if (beforeGroup.length === 0) {
+      changes.push({
+        change: 'added',
+        key: afterGroup[0]!.key,
+        reasons: ['record_added'],
+        before: null,
+        after: afterGroup[0]!,
+      });
+      continue;
+    }
+    if (afterGroup.length === 0) {
+      changes.push({
+        change: 'removed',
+        key: beforeGroup[0]!.key,
+        reasons: ['record_removed'],
+        before: beforeGroup[0]!,
+        after: null,
+      });
+      continue;
+    }
+    const reasons = input.modifiedReasons(beforeGroup[0]!, afterGroup[0]!);
+    if (reasons.length > 0) {
+      changes.push({
+        change: 'modified',
+        key: beforeGroup[0]!.key,
+        reasons,
+        before: beforeGroup[0]!,
+        after: afterGroup[0]!,
+      });
+    }
+  }
+  return changes.sort((left, right) =>
+    `${left.key.encoded}:${left.change}`.localeCompare(`${right.key.encoded}:${right.change}`),
+  );
+}
+
 export function compareAnalysisDocuments(
   beforeAnalysis: AnalysisDocument,
   afterAnalysis: AnalysisDocument,
@@ -588,17 +703,74 @@ export function compareAnalysisDocuments(
     after,
     ambiguityByKey,
   });
+  const jobQueueDispatchChanges: JobQueueDispatchChange[] = compareJobQueueFactSnapshots({
+    before: before.jobQueueDispatches,
+    after: after.jobQueueDispatches,
+    ambiguityByKey,
+    recordKind: 'interaction_handler_dispatch',
+    idOf: ({ dispatchId }) => dispatchId,
+    modifiedReasons: (oldSnapshot, newSnapshot) => [
+      ...(oldSnapshot.state === newSnapshot.state ? [] : (['state'] as const)),
+      ...(oldSnapshot.ruleId === newSnapshot.ruleId ? [] : (['rule'] as const)),
+    ],
+  });
+  const jobQueueBranchChanges: JobQueueBranchChange[] = compareJobQueueFactSnapshots({
+    before: before.jobQueueBranches,
+    after: after.jobQueueBranches,
+    ambiguityByKey,
+    recordKind: 'interaction_handler_branch',
+    idOf: ({ branchId }) => branchId,
+    modifiedReasons: (oldSnapshot, newSnapshot) =>
+      oldSnapshot.ruleId === newSnapshot.ruleId ? [] : ['rule'],
+  });
+  const jobQueueBranchEffectChanges: JobQueueBranchEffectChange[] = compareJobQueueFactSnapshots({
+    before: before.jobQueueBranchEffects,
+    after: after.jobQueueBranchEffects,
+    ambiguityByKey,
+    recordKind: 'interaction_handler_branch_effect',
+    idOf: ({ effectId }) => effectId,
+    modifiedReasons: (oldSnapshot, newSnapshot) => [
+      ...(oldSnapshot.status === newSnapshot.status ? [] : (['status'] as const)),
+      ...(oldSnapshot.ruleId === newSnapshot.ruleId ? [] : (['rule'] as const)),
+    ],
+  });
   const ambiguities = [...ambiguityByKey.values()].sort((left, right) =>
     `${left.kind}:${left.recordKind}:${left.key.encoded}`.localeCompare(
       `${right.kind}:${right.recordKind}:${right.key.encoded}`,
     ),
   );
 
-  const v2 = beforeAnalysis.schemaVersion === '3.0.0' || afterAnalysis.schemaVersion === '3.0.0';
+  const v4 = beforeAnalysis.schemaVersion === '5.0.0' || afterAnalysis.schemaVersion === '5.0.0';
+  const v3 =
+    v4 || beforeAnalysis.schemaVersion === '4.0.0' || afterAnalysis.schemaVersion === '4.0.0';
+  const v2 =
+    v3 || beforeAnalysis.schemaVersion === '3.0.0' || afterAnalysis.schemaVersion === '3.0.0';
   return assertValidDiffDocument({
-    schemaVersion: v2 ? DIFF_SCHEMA_V2_VERSION : DIFF_SCHEMA_VERSION,
-    before: before.input,
-    after: after.input,
+    schemaVersion: v4
+      ? DIFF_SCHEMA_V4_VERSION
+      : v3
+        ? DIFF_SCHEMA_V3_VERSION
+        : v2
+          ? DIFF_SCHEMA_V2_VERSION
+          : DIFF_SCHEMA_VERSION,
+    before: v4
+      ? {
+          ...before.input,
+          facts: {
+            ...before.input.facts,
+            authorization: before.input.facts.authorization ?? 'unavailable',
+          },
+        }
+      : before.input,
+    after: v4
+      ? {
+          ...after.input,
+          facts: {
+            ...after.input.facts,
+            authorization: after.input.facts.authorization ?? 'unavailable',
+          },
+        }
+      : after.input,
     summary: {
       endpointsAdded: endpointChanges.filter(({ change }) => change === 'added').length,
       endpointsRemoved: endpointChanges.filter(({ change }) => change === 'removed').length,
@@ -624,13 +796,61 @@ export function compareAnalysisDocuments(
             interactionHandlersModified: interactionHandlerChanges.filter(
               ({ change }) => change === 'modified',
             ).length,
+            ...(v3
+              ? {
+                  jobQueueDispatchesAdded: jobQueueDispatchChanges.filter(
+                    ({ change }) => change === 'added',
+                  ).length,
+                  jobQueueDispatchesRemoved: jobQueueDispatchChanges.filter(
+                    ({ change }) => change === 'removed',
+                  ).length,
+                  jobQueueDispatchesModified: jobQueueDispatchChanges.filter(
+                    ({ change }) => change === 'modified',
+                  ).length,
+                  jobQueueBranchesAdded: jobQueueBranchChanges.filter(
+                    ({ change }) => change === 'added',
+                  ).length,
+                  jobQueueBranchesRemoved: jobQueueBranchChanges.filter(
+                    ({ change }) => change === 'removed',
+                  ).length,
+                  jobQueueBranchesModified: jobQueueBranchChanges.filter(
+                    ({ change }) => change === 'modified',
+                  ).length,
+                  jobQueueBranchEffectsAdded: jobQueueBranchEffectChanges.filter(
+                    ({ change }) => change === 'added',
+                  ).length,
+                  jobQueueBranchEffectsRemoved: jobQueueBranchEffectChanges.filter(
+                    ({ change }) => change === 'removed',
+                  ).length,
+                  jobQueueBranchEffectsModified: jobQueueBranchEffectChanges.filter(
+                    ({ change }) => change === 'modified',
+                  ).length,
+                }
+              : {}),
           }
         : {}),
     },
-    endpointChanges,
+    endpointChanges: v4
+      ? endpointChanges.map((change) => ({
+          ...change,
+          before: withAuthorizationAvailability(change.before),
+          after: withAuthorizationAvailability(change.after),
+        }))
+      : endpointChanges.map((change) => ({
+          ...change,
+          before:
+            change.before === null
+              ? null
+              : (({ authorization: _authorization, ...snapshot }) => snapshot)(change.before),
+          after:
+            change.after === null
+              ? null
+              : (({ authorization: _authorization, ...snapshot }) => snapshot)(change.after),
+        })),
     assertionStatusChanges,
     diagnosticChanges,
     ...(v2 ? { interactionChanges, interactionHandlerChanges } : {}),
+    ...(v3 ? { jobQueueDispatchChanges, jobQueueBranchChanges, jobQueueBranchEffectChanges } : {}),
     ambiguities,
   });
 }

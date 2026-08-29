@@ -10,11 +10,28 @@ import type {
   InteractionDispatchTiming,
   InteractionKind,
 } from '../model/interactions.js';
+import type {
+  JobQueueBranchControlFlow,
+  JobQueueBranchEffectKind,
+  JobQueueBranchSelector,
+  JobQueueHandlerDispatchState,
+} from '../model/job-queue-branches.js';
+import type {
+  AuthorizationEnforcementState,
+  AuthorizationMetadataSource,
+  AuthorizationValueShape,
+} from '../model/authorization.js';
 import type { SemanticKey } from './semantic-key.js';
 
 export const DIFF_SCHEMA_VERSION = '1.0.0' as const;
 export const DIFF_SCHEMA_V2_VERSION = '2.0.0' as const;
-export type DiffSchemaVersion = typeof DIFF_SCHEMA_VERSION | typeof DIFF_SCHEMA_V2_VERSION;
+export const DIFF_SCHEMA_V3_VERSION = '3.0.0' as const;
+export const DIFF_SCHEMA_V4_VERSION = '4.0.0' as const;
+export type DiffSchemaVersion =
+  | typeof DIFF_SCHEMA_VERSION
+  | typeof DIFF_SCHEMA_V2_VERSION
+  | typeof DIFF_SCHEMA_V3_VERSION
+  | typeof DIFF_SCHEMA_V4_VERSION;
 export const FACT_AVAILABILITY_STATES = ['available', 'unavailable'] as const;
 export type FactAvailability = (typeof FACT_AVAILABILITY_STATES)[number];
 
@@ -27,6 +44,7 @@ export const ENDPOINT_CHANGE_REASONS = [
   'direct_guards',
   'effective_guards',
   'terminals',
+  'authorization',
 ] as const;
 export type EndpointChangeReason = (typeof ENDPOINT_CHANGE_REASONS)[number];
 
@@ -67,6 +85,7 @@ export interface DiffInputSnapshot {
     readonly terminals: FactAvailability;
     readonly assertions: FactAvailability;
     readonly diagnostics: FactAvailability;
+    readonly authorization?: FactAvailability | undefined;
   };
 }
 
@@ -129,6 +148,25 @@ export interface EndpointSnapshot {
     readonly availability: FactAvailability;
     readonly values: readonly EndpointTerminalFact[];
   };
+  readonly authorization?:
+    | {
+        readonly availability: FactAvailability;
+        readonly requirements: readonly EndpointAuthorizationFact[];
+      }
+    | undefined;
+}
+
+export interface EndpointAuthorizationFact {
+  readonly metadataId: string;
+  readonly enforcementId: string;
+  readonly metadataKey: string;
+  readonly scope: Extract<GuardScope, 'controller' | 'method'>;
+  readonly source: AuthorizationMetadataSource;
+  readonly valueShape: AuthorizationValueShape;
+  readonly enforcementState: AuthorizationEnforcementState;
+  readonly guardKey: SemanticKey | null;
+  readonly ruleId: string;
+  readonly evidenceIds: readonly string[];
 }
 
 export interface EndpointChange {
@@ -236,6 +274,70 @@ export interface InteractionHandlerChange {
   readonly after: InteractionHandlerSnapshot | null;
 }
 
+export const JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS = [
+  'record_added',
+  'record_removed',
+  'state',
+  'status',
+  'rule',
+] as const;
+export type JobQueueBranchFactChangeReason = (typeof JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS)[number];
+
+export interface JobQueueDispatchSnapshot {
+  readonly dispatchId: string;
+  readonly key: SemanticKey;
+  readonly handlerKey: SemanticKey;
+  readonly state: JobQueueHandlerDispatchState;
+  readonly ruleId: string;
+  readonly evidenceIds: readonly string[];
+}
+
+export interface JobQueueBranchSnapshot {
+  readonly branchId: string;
+  readonly key: SemanticKey;
+  readonly dispatchKey: SemanticKey;
+  readonly selector: JobQueueBranchSelector;
+  readonly controlFlow: JobQueueBranchControlFlow;
+  readonly ruleId: string;
+  readonly evidenceIds: readonly string[];
+}
+
+export interface JobQueueBranchEffectSnapshot {
+  readonly effectId: string;
+  readonly key: SemanticKey;
+  readonly branchKey: SemanticKey;
+  readonly kind: JobQueueBranchEffectKind;
+  readonly targetKey: SemanticKey;
+  readonly sourceAssertionKey: SemanticKey;
+  readonly status: Extract<AssertionStatus, 'resolved' | 'ambiguous'>;
+  readonly ruleId: string;
+  readonly evidenceIds: readonly string[];
+}
+
+export interface JobQueueDispatchChange {
+  readonly change: InteractionChangeKind;
+  readonly key: SemanticKey;
+  readonly reasons: readonly JobQueueBranchFactChangeReason[];
+  readonly before: JobQueueDispatchSnapshot | null;
+  readonly after: JobQueueDispatchSnapshot | null;
+}
+
+export interface JobQueueBranchChange {
+  readonly change: InteractionChangeKind;
+  readonly key: SemanticKey;
+  readonly reasons: readonly JobQueueBranchFactChangeReason[];
+  readonly before: JobQueueBranchSnapshot | null;
+  readonly after: JobQueueBranchSnapshot | null;
+}
+
+export interface JobQueueBranchEffectChange {
+  readonly change: InteractionChangeKind;
+  readonly key: SemanticKey;
+  readonly reasons: readonly JobQueueBranchFactChangeReason[];
+  readonly before: JobQueueBranchEffectSnapshot | null;
+  readonly after: JobQueueBranchEffectSnapshot | null;
+}
+
 export interface DiffAmbiguity {
   readonly kind: DiffAmbiguityKind;
   readonly side: DiffAmbiguitySide;
@@ -260,6 +362,15 @@ export interface DiffSummary {
   readonly interactionHandlersAdded?: number | undefined;
   readonly interactionHandlersRemoved?: number | undefined;
   readonly interactionHandlersModified?: number | undefined;
+  readonly jobQueueDispatchesAdded?: number | undefined;
+  readonly jobQueueDispatchesRemoved?: number | undefined;
+  readonly jobQueueDispatchesModified?: number | undefined;
+  readonly jobQueueBranchesAdded?: number | undefined;
+  readonly jobQueueBranchesRemoved?: number | undefined;
+  readonly jobQueueBranchesModified?: number | undefined;
+  readonly jobQueueBranchEffectsAdded?: number | undefined;
+  readonly jobQueueBranchEffectsRemoved?: number | undefined;
+  readonly jobQueueBranchEffectsModified?: number | undefined;
 }
 
 export interface DiffDocument {
@@ -272,5 +383,8 @@ export interface DiffDocument {
   readonly diagnosticChanges: readonly DiagnosticChange[];
   readonly interactionChanges?: readonly InteractionChange[] | undefined;
   readonly interactionHandlerChanges?: readonly InteractionHandlerChange[] | undefined;
+  readonly jobQueueDispatchChanges?: readonly JobQueueDispatchChange[] | undefined;
+  readonly jobQueueBranchChanges?: readonly JobQueueBranchChange[] | undefined;
+  readonly jobQueueBranchEffectChanges?: readonly JobQueueBranchEffectChange[] | undefined;
   readonly ambiguities: readonly DiffAmbiguity[];
 }

@@ -35,6 +35,8 @@ export async function writeFakeNestCommon(
       'export declare function Query(property?: string): ParameterDecorator;',
       'export declare function Res(): ParameterDecorator;',
       'export declare function UseGuards(...guards: unknown[]): ClassDecorator & MethodDecorator;',
+      'export declare function SetMetadata<T = unknown>(key: string, value: T): ClassDecorator & MethodDecorator;',
+      'export declare function applyDecorators(...decorators: (ClassDecorator | MethodDecorator)[]): ClassDecorator & MethodDecorator;',
       'export declare function Module(metadata: unknown): ClassDecorator;',
       'export declare function Global(): ClassDecorator;',
       'export declare function forwardRef(callback: () => unknown): unknown;',

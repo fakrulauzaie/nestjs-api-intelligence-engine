@@ -10,6 +10,7 @@ import type {
   EndpointTraceView,
   TraceCausalClass,
 } from '../model/analysis.js';
+import { analysisHasInteractionFacts, analysisHasJobQueueBranchFacts } from '../model/analysis.js';
 import type { AssertionRecord } from '../model/assertions.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
 import type { EndpointRecord, HttpMethod } from '../model/entities.js';
@@ -17,6 +18,7 @@ import { canonicalizeEndpointTrace } from '../model/ordering.js';
 import { endpointTraceViewSchema } from '../model/schemas.js';
 import { buildTraceAssertionIndexes } from './assertion-indexes.js';
 import { buildInteractionAssertionIndexes } from './interaction-indexes.js';
+import { selectJobQueueBranches } from './job-queue-branch-selection.js';
 
 export interface EndpointSelector {
   readonly httpMethod: HttpMethod;
@@ -121,27 +123,26 @@ export function buildEndpointTrace(
   const indexes = buildTraceAssertionIndexes(analysis.assertions);
   const interactionIndexes = buildInteractionAssertionIndexes(analysis);
   const interactionById = new Map(
-    analysis.schemaVersion === '3.0.0'
+    analysisHasInteractionFacts(analysis)
       ? analysis.interactions.map((interaction) => [interaction.id, interaction])
       : [],
   );
   const handlerById = new Map(
-    analysis.schemaVersion === '3.0.0'
+    analysisHasInteractionFacts(analysis)
       ? analysis.interactionHandlers.map((handler) => [handler.id, handler])
       : [],
   );
-  const interactionConfiguration =
-    analysis.schemaVersion === '3.0.0'
-      ? (analysis.analysisRun.configuration.interactions ?? {
-          maxInteractionHops: 2,
-          maxFanOutPerInteraction: 50,
-          maxInteractionTraceStates: 1_000,
-        })
-      : {
-          maxInteractionHops: 0,
-          maxFanOutPerInteraction: Number.MAX_SAFE_INTEGER,
-          maxInteractionTraceStates: Number.MAX_SAFE_INTEGER,
-        };
+  const interactionConfiguration = analysisHasInteractionFacts(analysis)
+    ? (analysis.analysisRun.configuration.interactions ?? {
+        maxInteractionHops: 2,
+        maxFanOutPerInteraction: 50,
+        maxInteractionTraceStates: 1_000,
+      })
+    : {
+        maxInteractionHops: 0,
+        maxFanOutPerInteraction: Number.MAX_SAFE_INTEGER,
+        maxInteractionTraceStates: Number.MAX_SAFE_INTEGER,
+      };
   const tablesById = new Map(analysis.tables.map((table) => [table.id, table]));
   const guardView = buildEffectiveEndpointGuards(analysis, selection.endpoint.id);
   const guards: EndpointTraceGuard[] = guardView.effectiveGuards.map((guard) => ({
@@ -156,6 +157,7 @@ export function buildEndpointTrace(
   const reachedMethodIds = new Set<string>();
   const relevantSubjectIds = new Set([selection.endpoint.id]);
   const initiatedInteractionIds = new Set<string>();
+  const selectedJobQueueBranchIds = new Set<string>();
   const generatedDiagnostics: DiagnosticRecord[] = [];
   const seenStates = new Set<string>();
   interface TraceState {
@@ -164,11 +166,15 @@ export function buildEndpointTrace(
     readonly interactionHop: number;
     readonly causalClass: TraceCausalClass;
     readonly pathMethodIds: ReadonlySet<string>;
+    /** Restricts only the current method's direct assertions; downstream calls reset it. */
+    readonly directAssertionIds: ReadonlySet<string> | null;
   }
   const queue: TraceState[] = [];
   let traceStateLimitReported = false;
   const enqueue = (state: TraceState, evidenceIds: readonly string[]): void => {
-    const key = `${state.methodId}:${state.depth}:${state.interactionHop}:${state.causalClass}`;
+    const filterKey =
+      state.directAssertionIds === null ? '*' : [...state.directAssertionIds].sort().join(',');
+    const key = `${state.methodId}:${state.depth}:${state.interactionHop}:${state.causalClass}:${filterKey}`;
     if (seenStates.has(key)) return;
     if (seenStates.size >= interactionConfiguration.maxInteractionTraceStates) {
       if (!traceStateLimitReported) {
@@ -202,6 +208,7 @@ export function buildEndpointTrace(
         interactionHop: 0,
         causalClass: 'synchronous',
         pathMethodIds: new Set([methodId]),
+        directAssertionIds: null,
       },
       assertion.evidenceIds,
     );
@@ -212,7 +219,11 @@ export function buildEndpointTrace(
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
     const state = queue[cursor]!;
     const { methodId, depth, interactionHop, causalClass } = state;
-    for (const assertion of indexes.interactionsByMethod.get(methodId) ?? []) {
+    const appliesDirectly = (assertion: AssertionRecord): boolean =>
+      state.directAssertionIds === null || state.directAssertionIds.has(assertion.id);
+    for (const assertion of (indexes.interactionsByMethod.get(methodId) ?? []).filter(
+      appliesDirectly,
+    )) {
       stepByAssertionId.set(assertion.id, assertionStep(assertion));
       if (!traversable(assertion)) continue;
       const interactionId = assertion.objectId!;
@@ -289,6 +300,18 @@ export function buildEndpointTrace(
                   ? 'local_interaction_synchronous'
                   : null;
           if (nextCausalClass === null) continue;
+          const branchSelection =
+            analysisHasJobQueueBranchFacts(analysis) && interaction.kind === 'job_queue'
+              ? selectJobQueueBranches({
+                  analysis,
+                  handlerId,
+                  producerJob: interaction.target.job,
+                })
+              : null;
+          for (const branchId of branchSelection?.branchIds ?? []) {
+            selectedJobQueueBranchIds.add(branchId);
+            relevantSubjectIds.add(branchId);
+          }
           enqueue(
             {
               methodId: targetMethodId,
@@ -296,13 +319,16 @@ export function buildEndpointTrace(
               interactionHop: interactionHop + 1,
               causalClass: nextCausalClass,
               pathMethodIds: new Set([...state.pathMethodIds, targetMethodId]),
+              directAssertionIds: branchSelection?.sourceAssertionIds ?? null,
             },
             [...match.evidenceIds, ...implementation.evidenceIds],
           );
         }
       }
     }
-    for (const assertion of indexes.tableAccessByMethod.get(methodId) ?? []) {
+    for (const assertion of (indexes.tableAccessByMethod.get(methodId) ?? []).filter(
+      appliesDirectly,
+    )) {
       stepByAssertionId.set(assertion.id, assertionStep(assertion));
       if (!traversable(assertion)) continue;
       const table = tablesById.get(assertion.objectId!);
@@ -313,7 +339,7 @@ export function buildEndpointTrace(
         direction,
         tableId: table.id,
         tableName: table.name,
-        ...(analysis.schemaVersion === '3.0.0' ? { causalClass } : {}),
+        ...(analysisHasInteractionFacts(analysis) ? { causalClass } : {}),
       };
       terminalByKey.set(
         `${methodId}:${direction}:${table.id}:${terminal.causalClass ?? ''}`,
@@ -321,7 +347,7 @@ export function buildEndpointTrace(
       );
     }
 
-    const calls = indexes.callsByMethod.get(methodId) ?? [];
+    const calls = (indexes.callsByMethod.get(methodId) ?? []).filter(appliesDirectly);
     if (depth >= maximumDepth) {
       const evidenceIds = calls.filter(traversable).flatMap((assertion) => assertion.evidenceIds);
       if (evidenceIds.length > 0) {
@@ -344,6 +370,7 @@ export function buildEndpointTrace(
           interactionHop,
           causalClass,
           pathMethodIds: new Set([...state.pathMethodIds, targetId]),
+          directAssertionIds: null,
         },
         assertion.evidenceIds,
       );
@@ -395,7 +422,7 @@ export function buildEndpointTrace(
       steps: [...stepByAssertionId.values()],
       terminals: terminalValues,
       diagnosticIds: diagnostics.map((diagnostic) => diagnostic.id),
-      ...(analysis.schemaVersion !== '3.0.0'
+      ...(!analysisHasInteractionFacts(analysis)
         ? {}
         : {
             causalSummary: {
@@ -417,6 +444,9 @@ export function buildEndpointTrace(
                 .filter(({ kind }) => kind === 'in_process_event')
                 .map(({ id }) => id),
               ...(distributedInteractionIds.length === 0 ? {} : { distributedInteractionIds }),
+              ...(!analysisHasJobQueueBranchFacts(analysis) || selectedJobQueueBranchIds.size === 0
+                ? {}
+                : { jobQueueBranchIds: [...selectedJobQueueBranchIds] }),
               completeness: {
                 state: diagnostics.length === 0 ? ('complete' as const) : ('incomplete' as const),
                 diagnosticCodes: [...new Set(diagnostics.map(({ code }) => code))],

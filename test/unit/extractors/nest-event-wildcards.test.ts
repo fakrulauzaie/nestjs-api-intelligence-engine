@@ -70,7 +70,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       const methodNames = new Map(
         analysis.methods.map(({ id, qualifiedName }) => [id, qualifiedName]),
       );
@@ -185,7 +185,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
         ),
       });
       const modifiedDiff = compareAnalysisDocuments(analysis, modified);
-      expect(modifiedDiff.schemaVersion).toBe('2.0.0');
+      expect(modifiedDiff.schemaVersion).toBe('4.0.0');
       expect(modifiedDiff.summary).toMatchObject({
         interactionsModified: 1,
         interactionHandlersModified: 1,
@@ -262,7 +262,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
 
       const controls = buildControlEvidenceDocument({ analysis, policyResults });
       const createdControl = controls.rows.find(({ path }) => path === '/wildcards/dot-created')!;
-      expect(controls.schemaVersion).toBe('2.0.0');
+      expect(controls.schemaVersion).toBe('5.0.0');
       expect(createdControl.dbWrites).toEqual([]);
       expect(createdControl.localInteractions).toHaveLength(1);
       expect(createdControl.localCausalEffects).toHaveLength(5);
@@ -288,7 +288,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
       const extension = (
         openApi.enrichedDocument.paths as Record<string, Record<string, Record<string, unknown>>>
       )['/wildcards/dot-created']!.post!['x-api-intel'] as Record<string, unknown>;
-      expect(extension).toMatchObject({ schemaVersion: '2.0.0', dbWrites: [] });
+      expect(extension).toMatchObject({ schemaVersion: '5.0.0', dbWrites: [] });
       expect(extension.localCausalEffects).toHaveLength(5);
       const repeatedOpenApi = enrichOpenApiDocument({
         analysis,
@@ -304,7 +304,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
 
       const graph = buildGraphReportDocument({ analysis });
       const createdGraph = graph.endpoints.find(({ path }) => path === '/wildcards/dot-created')!;
-      expect(graph.schemaVersion).toBe('4.0.0');
+      expect(graph.schemaVersion).toBe('6.0.0');
       expect(createdGraph.dbWrites).toEqual([]);
       expect(createdGraph.localCausalEffects).toHaveLength(5);
       expect(

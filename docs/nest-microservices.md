@@ -31,10 +31,13 @@ not broker acceptance, acknowledgement, delivery, handler execution, or completi
 ## Patterns and handlers
 
 Supported patterns are bounded JSON-safe values: scalar strings/numbers/booleans,
-`null`, arrays, and plain object literals. Immutable one-hop constants are resolved.
-Object keys are sorted into canonical JSON, so `{ scope: 'admin', cmd: 'get_user' }`
-matches `{ cmd: 'get_user', scope: 'admin' }`. Spreads, calls, functions, computed
-keys, cycles, and depth/size limit breaches remain dynamic.
+`null`, arrays, and plain object literals. Whole JSON values retain the extractor's
+bounded immutable-constant rules; string components additionally use the Phase 38
+shared resolver for immutable chains, string/`const enum` members, and `as const`
+property paths. Object keys are sorted into canonical JSON, so
+`{ scope: 'admin', cmd: 'get_user' }` matches
+`{ cmd: 'get_user', scope: 'admin' }`. Spreads, calls, functions, computed keys,
+cycles, and depth/size limit breaches remain dynamic.
 
 Package-proven controller methods decorated with `@MessagePattern()` or
 `@EventPattern()` become independent handler records. Consumer-only repositories

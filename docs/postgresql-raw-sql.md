@@ -8,7 +8,8 @@ only the exact `postgresql-18` dialect mode backed by `libpg-query@18.1.2`.
 pnpm run cli -- scan <repository> --raw-sql-dialect postgresql-18
 ```
 
-The same opt-in may be supplied as `analysis.rawSqlDialect` in a strict version-2 or version-3
+The same opt-in may be supplied as `analysis.rawSqlDialect` in a strict version-2,
+version-3, or version-4
 [`api-intel.config.json`](project-configuration.md). Without an explicit CLI or config
 selection, a proven TypeORM raw-SQL call produces
 `TYPEORM_RAW_SQL_DIALECT_UNSELECTED` and no raw-SQL table fact. A different dialect

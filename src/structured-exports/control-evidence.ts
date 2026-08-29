@@ -1,11 +1,18 @@
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
 import { buildEndpointExportFacts } from './endpoint-facts.js';
 import {
   CONTROL_EVIDENCE_SCHEMA_VERSION,
   CONTROL_EVIDENCE_SCHEMA_V2_VERSION,
   CONTROL_EVIDENCE_SCHEMA_V3_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V4_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V5_VERSION,
   type ControlEvidenceDocument,
   type ControlEvidenceGuard,
 } from './model.js';
@@ -46,17 +53,21 @@ export function buildControlEvidenceDocument(input: {
     ...(policyResults === undefined ? {} : { policyResults }),
   });
   const hasDistributedInteractionRecords =
-    analysis.schemaVersion === '3.0.0' &&
+    analysisHasInteractionFacts(analysis) &&
     (analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
       analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
       analysis.interactionHandlers.some(
         ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
       ));
-  const schemaVersion = hasDistributedInteractionRecords
-    ? CONTROL_EVIDENCE_SCHEMA_V3_VERSION
-    : analysis.schemaVersion === '3.0.0'
-      ? CONTROL_EVIDENCE_SCHEMA_V2_VERSION
-      : CONTROL_EVIDENCE_SCHEMA_VERSION;
+  const schemaVersion = analysisHasAuthorizationFacts(analysis)
+    ? CONTROL_EVIDENCE_SCHEMA_V5_VERSION
+    : analysisHasJobQueueBranchFacts(analysis)
+      ? CONTROL_EVIDENCE_SCHEMA_V4_VERSION
+      : hasDistributedInteractionRecords
+        ? CONTROL_EVIDENCE_SCHEMA_V3_VERSION
+        : analysisHasInteractionFacts(analysis)
+          ? CONTROL_EVIDENCE_SCHEMA_V2_VERSION
+          : CONTROL_EVIDENCE_SCHEMA_VERSION;
   const rows = [...facts.values()].map((record) => {
     const guardView = buildEffectiveEndpointGuards(analysis, record.endpoint.endpointId);
     const mapGuard = (guard: (typeof guardView.effectiveGuards)[number]): ControlEvidenceGuard => ({
@@ -101,18 +112,27 @@ export function buildControlEvidenceDocument(input: {
       mutationClassification: record.mutationClassification,
       dbReads: record.dbReads,
       dbWrites: record.dbWrites,
-      ...(analysis.schemaVersion === '3.0.0'
+      ...(analysisHasInteractionFacts(analysis)
         ? {
             outboundInteractions: record.outboundInteractions,
             localInteractions: record.localInteractions,
             localCausalEffects: record.localCausalEffects,
-            ...(schemaVersion === CONTROL_EVIDENCE_SCHEMA_V3_VERSION
+            ...(schemaVersion === CONTROL_EVIDENCE_SCHEMA_V3_VERSION ||
+            schemaVersion === CONTROL_EVIDENCE_SCHEMA_V4_VERSION ||
+            schemaVersion === CONTROL_EVIDENCE_SCHEMA_V5_VERSION
               ? {
                   distributedInteractions: record.distributedInteractions,
                   distributedConditionalEffects: record.distributedConditionalEffects,
                 }
               : {}),
+            ...(schemaVersion === CONTROL_EVIDENCE_SCHEMA_V4_VERSION ||
+            schemaVersion === CONTROL_EVIDENCE_SCHEMA_V5_VERSION
+              ? { jobQueueBranchIds: record.jobQueueBranchIds }
+              : {}),
           }
+        : {}),
+      ...(schemaVersion === CONTROL_EVIDENCE_SCHEMA_V5_VERSION
+        ? { authorizationRequirements: record.authorizationRequirements }
         : {}),
       requestColumnInfluences: record.requestColumnInfluences,
       diagnosticCodes: record.diagnostics.map(({ code }) => code),

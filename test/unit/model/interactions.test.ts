@@ -22,6 +22,7 @@ import {
   createMinimalAnalysisDocument,
   createMinimalAnalysisDocumentV2,
   createMinimalAnalysisDocumentV3,
+  createMinimalAnalysisDocumentV4,
 } from '../../helpers/minimal-analysis.js';
 
 function withOutboundInteraction() {
@@ -112,13 +113,36 @@ describe('analysis v3 interaction substrate', () => {
     const v1 = normalizeAnalysisDocument(createMinimalAnalysisDocument());
     const v2 = normalizeAnalysisDocument(createMinimalAnalysisDocumentV2());
     const v3 = normalizeAnalysisDocument(createMinimalAnalysisDocumentV3());
+    const v4 = normalizeAnalysisDocument(createMinimalAnalysisDocumentV4());
 
-    expect(v1.facts).toEqual({ v2Families: 'unavailable', interactionFamilies: 'unavailable' });
+    expect(v1.facts).toEqual({
+      v2Families: 'unavailable',
+      interactionFamilies: 'unavailable',
+      jobQueueBranchFamilies: 'unavailable',
+      authorizationFamilies: 'unavailable',
+    });
     expect(v1.v2).toBeNull();
-    expect(v2.facts).toEqual({ v2Families: 'available', interactionFamilies: 'unavailable' });
+    expect(v2.facts).toEqual({
+      v2Families: 'available',
+      interactionFamilies: 'unavailable',
+      jobQueueBranchFamilies: 'unavailable',
+      authorizationFamilies: 'unavailable',
+    });
     expect(v2.v3).toBeNull();
-    expect(v3.facts).toEqual({ v2Families: 'available', interactionFamilies: 'available' });
+    expect(v3.facts).toEqual({
+      v2Families: 'available',
+      interactionFamilies: 'available',
+      jobQueueBranchFamilies: 'unavailable',
+      authorizationFamilies: 'unavailable',
+    });
     expect(v3.v3?.interactions).toEqual([]);
+    expect(v4.facts).toEqual({
+      v2Families: 'available',
+      interactionFamilies: 'available',
+      jobQueueBranchFamilies: 'available',
+      authorizationFamilies: 'unavailable',
+    });
+    expect(v4.v4?.interactionHandlerBranches).toEqual([]);
   });
 
   it('accepts a linked outbound interaction and builds generic deterministic adjacency', () => {

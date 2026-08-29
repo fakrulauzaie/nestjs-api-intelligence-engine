@@ -147,6 +147,9 @@ export const scanCommand: CliCommand = {
         ...(projectConfiguration?.analysis.interactions === undefined
           ? {}
           : { interactions: projectConfiguration.analysis.interactions }),
+        ...(projectConfiguration?.analysis.authorization === undefined
+          ? {}
+          : { authorization: projectConfiguration.analysis.authorization }),
       };
       const result = await scanRepository({
         repositoryRoot,
@@ -174,6 +177,7 @@ export const scanCommand: CliCommand = {
             maxCallDepth: result.analysis.analysisRun.configuration.maxCallDepth,
             rawSqlDialect: result.analysis.analysisRun.configuration.rawSql?.dialect ?? null,
             interactions: result.analysis.analysisRun.configuration.interactions!,
+            authorization: result.analysis.analysisRun.configuration.authorization!,
           },
           output: { directory: outputDirectory },
           rules: projectConfiguration?.rules ?? [],

@@ -4,15 +4,15 @@ Analysis: `<run-specific-analysis-id>`
 Result: `completed_with_gaps`  
 Endpoints: 7 of 7
 
-| Method | Path | Handler | Selection | Direct guards | Global guards | Effective state | Evidence |
-|---|---|---|---|---|---|---|---|
-| GET | `/` | AppController.getHello | resolved | none_declared | unknown | unknown | src/app.controller.ts:4:1<br>src/app.controller.ts:8:3<br>src/app.controller.ts:9:3 |
-| GET | `/admin/notes/count` | AdminNotesController.count | resolved | controller: AuthGuard<br>method: AuditGuard | unknown | guard_declared | src/notes/admin-notes.controller.ts:11:3<br>src/notes/admin-notes.controller.ts:13:3<br>src/notes/admin-notes.controller.ts:6:1 |
-| GET | `/notes` | NotesController.findAll | resolved | none_declared | unknown | unknown | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:27:3<br>src/notes/notes.controller.ts:28:3 |
-| POST | `/notes` | NotesController.create | resolved | none_declared | unknown | unknown | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:21:3<br>src/notes/notes.controller.ts:22:3 |
-| DELETE | `/notes/:id` | NotesController.remove | resolved | method: AuthGuard | unknown | guard_declared | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:39:3<br>src/notes/notes.controller.ts:41:3 |
-| GET | `/notes/archived` | NotesController.findArchived | resolved | none_declared | unknown | unknown | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:33:3<br>src/notes/notes.controller.ts:34:3<br>src/notes/notes.controller.ts:9:7 |
-| PUT | `/notes/legacy/:id` | NotesController.updateLegacy | resolved | none_declared | unknown | unknown | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:47:3<br>src/notes/notes.controller.ts:48:3 |
+| Method | Path | Handler | Selection | Direct guards | Global guards | Effective state | Authorization metadata | Evidence |
+|---|---|---|---|---|---|---|---|---|
+| GET | `/` | AppController.getHello | resolved | none_declared | unknown | unknown | none_proven | src/app.controller.ts:4:1<br>src/app.controller.ts:8:3<br>src/app.controller.ts:9:3 |
+| GET | `/admin/notes/count` | AdminNotesController.count | resolved | controller: AuthGuard<br>method: AuditGuard | unknown | guard_declared | none_proven | src/notes/admin-notes.controller.ts:11:3<br>src/notes/admin-notes.controller.ts:13:3<br>src/notes/admin-notes.controller.ts:6:1 |
+| GET | `/notes` | NotesController.findAll | resolved | none_declared | unknown | unknown | none_proven | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:27:3<br>src/notes/notes.controller.ts:28:3 |
+| POST | `/notes` | NotesController.create | resolved | none_declared | unknown | unknown | none_proven | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:21:3<br>src/notes/notes.controller.ts:22:3 |
+| DELETE | `/notes/:id` | NotesController.remove | resolved | method: AuthGuard | unknown | guard_declared | none_proven | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:39:3<br>src/notes/notes.controller.ts:41:3 |
+| GET | `/notes/archived` | NotesController.findArchived | resolved | none_declared | unknown | unknown | none_proven | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:33:3<br>src/notes/notes.controller.ts:34:3<br>src/notes/notes.controller.ts:9:7 |
+| PUT | `/notes/legacy/:id` | NotesController.updateLegacy | resolved | none_declared | unknown | unknown | none_proven | src/notes/notes.controller.ts:12:1<br>src/notes/notes.controller.ts:47:3<br>src/notes/notes.controller.ts:48:3 |
 
 ## Diagnostics
 

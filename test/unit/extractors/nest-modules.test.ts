@@ -27,8 +27,8 @@ describe('NestJS module and global guard extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      expect(analysis.schemaVersion).toBe('3.0.0');
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      expect(analysis.schemaVersion).toBe('5.0.0');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
 
       const classById = new Map(analysis.classes.map((record) => [record.id, record]));
       const moduleById = new Map(analysis.modules.map((record) => [record.id, record]));
@@ -156,8 +156,8 @@ describe('NestJS module and global guard extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      expect(analysis.schemaVersion).toBe('3.0.0');
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      expect(analysis.schemaVersion).toBe('5.0.0');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       expect(analysis.modules).toHaveLength(3);
       expect(
         analysis.modules.every(({ metadataCompleteness }) => metadataCompleteness === 'incomplete'),

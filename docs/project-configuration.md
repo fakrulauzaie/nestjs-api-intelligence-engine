@@ -4,15 +4,15 @@
 JavaScript or TypeScript, interpolate environment variables, search parent directories,
 or resolve the editor-only `$schema` value.
 
-## Version 3
+## Version 4
 
-Version 3 adds bounded interaction-traversal settings to the version-2 project
+Version 4 adds strict authorization discovery configuration to the version-3 project
 configuration contract:
 
 ```json
 {
   "$schema": "./schemas/api-intel.config.schema.json",
-  "version": 3,
+  "version": 4,
   "analysis": {
     "maxCallDepth": 3,
     "rawSqlDialect": "postgresql-18",
@@ -20,6 +20,29 @@ configuration contract:
       "maxInteractionHops": 2,
       "maxFanOutPerInteraction": 50,
       "maxInteractionTraceStates": 1000
+    },
+    "authorization": {
+      "metadataKeys": ["roles"],
+      "decoratorSymbols": [
+        {
+          "symbol": {
+            "kind": "package_export",
+            "moduleSpecifier": "@acme/auth",
+            "exportedName": "Permission"
+          },
+          "metadataKey": "permissions"
+        }
+      ],
+      "enforcementRelationships": [
+        {
+          "metadataKey": "roles",
+          "guard": {
+            "kind": "repository_export",
+            "sourceFile": "src/auth/auth.guard.ts",
+            "exportedName": "AuthGuard"
+          }
+        }
+      ]
     }
   },
   "output": {
@@ -37,6 +60,23 @@ all four kinds: `outbound_http`, `in_process_event`, `job_queue`, and
 `microservice_message`. Configuration cannot disable a supported extractor. Symbolic
 tokens are derived only from source identity, never project
 configuration values or environment lookup.
+
+All authorization arrays are optional and default to empty. `metadataKeys` enables
+direct or wrapped `SetMetadata()` extraction for exact keys. `decoratorSymbols` must
+identify a package export by module/export name or a repository export by normalized
+source path/export name, then assign its metadata key. `enforcementRelationships`
+must identify an exact repository guard export. Bare decorator or guard names are
+rejected because same-named declarations are not reliable identities.
+
+Configuration never upgrades a relationship to package proof. A configured mapping
+is emitted as `configured_relationship`; only a statically exact
+`applyDecorators(SetMetadata(...), UseGuards(...))` composition is
+`proven_enforced`. Values are represented structurally and redacted.
+
+## Version 3 compatibility
+
+Version 3 retains the same interaction traversal contract without the authorization
+category. Its meaning is unchanged.
 
 ## Version 2 compatibility
 
@@ -114,7 +154,7 @@ not read, resolve, or fetch it.
 Effective values are selected in this order:
 
 1. An explicit CLI value.
-2. The selected version-2 or version-3 configuration value.
+2. The selected version-2, version-3, or version-4 configuration value.
 3. The built-in default.
 
 This applies to maximum call depth, interaction traversal limits, raw-SQL dialect,
@@ -143,15 +183,15 @@ Existing version-1 policy-only files remain valid:
 }
 ```
 
-`check` evaluates either version. For version 2, `rules` must be present when invoking
+`check` evaluates every supported version. For versions 2-4, `rules` must be present when invoking
 `check`; unrelated categories cannot retroactively alter the supplied analysis.
 `scan` tolerates a discovered version-1 file and records its normalized rules, but it
 has no version-1 analysis, output, or report defaults to apply.
 
 Migration therefore requires changing `version` to `2` when adding the version-2
-categories, or to `3` when adding interaction traversal limits. Version-2 files remain
-valid and retain their original meaning. Rule syntax and normalization are shared
-rather than duplicated.
+categories, to `3` when adding interaction traversal limits, or to `4` when adding
+authorization configuration. Older files remain valid and retain their original
+meaning. Rule syntax and normalization are shared rather than duplicated.
 
 ## Outputs and identity
 
@@ -163,8 +203,9 @@ For CLI scans, `run.json.projectConfiguration` records:
 - normalized rules in stable rule-ID order; and
 - effective policy, graph, controls, and OpenAPI selections and their options.
 
-`analysis.maxCallDepth`, the enabled raw-SQL parser configuration, and configured
-interaction traversal limits enter `analysis.json` and its analysis-run ID. Changing
+`analysis.maxCallDepth`, the enabled raw-SQL parser configuration, configured
+interaction traversal limits, and authorization discovery configuration enter
+`analysis.json` and its analysis-run ID. Changing
 output, rules, report enablement, OpenAPI inputs, or graph display limits does not
 change canonical facts or identity. Configured derived reports are built from the same
 in-memory validated analysis and are byte-identical to their standalone commands with

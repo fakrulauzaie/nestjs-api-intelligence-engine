@@ -44,9 +44,10 @@ invent a path.
 
 ## Impact document
 
-`ImpactDocument` has independent schema version `1.0.0`. Its reason categories are:
+`ImpactDocument` uses independent schema `1.0.0` for analysis v1-v3 inputs and
+`2.0.0` when either input is analysis v4 or v5. Its reason categories are:
 
-- `direct_endpoint_change` for added, removed, handler/guard-modified endpoints, or a
+- `direct_endpoint_change` for added, removed, handler/guard/authorization-modified endpoints, or a
   changed handler source file;
 - `reachable_method_file_change` for a changed method file reached through one or more
   supported calls;
@@ -78,6 +79,13 @@ paths may cross `METHOD_INITIATES_INTERACTION` and
 `INTERACTION_MATCHES_LOCAL_HANDLER`, while downstream worker effects retain their
 distributed-conditional meaning. Producer-only boundaries and handler-only roots do
 not become fabricated endpoint impact.
+
+Impact v2 also consumes dispatch, branch, and branch-effect diff records. When a path
+enters a BullMQ handler through a branch-scoped assertion, reverse traversal carries
+that selector to the producer edge. An exact producer is excluded only when every
+carried selector is proven incompatible; an unknown residual remains potential and is
+qualified by its incomplete-trace diagnostic. This prevents a cleanup-only effect
+from being attributed to a generate-only producer without claiming broker delivery.
 
 Nest microservice producer/handler changes use the same distributed path model.
 Transport-compatible event candidates may contribute conditional paths; ambiguous

@@ -13,7 +13,7 @@ describe('Phase 16 policy documentation', () => {
         };
       }>;
     };
-    expect(schema.anyOf.map((branch) => branch.properties.version.const)).toEqual([1, 2, 3]);
+    expect(schema.anyOf.map((branch) => branch.properties.version.const)).toEqual([1, 2, 3, 4]);
 
     for (const outcome of ['pass', 'fail', 'unknown', 'not_applicable']) {
       expect(guide).toContain(`\`${outcome}\``);
@@ -26,6 +26,7 @@ describe('Phase 16 policy documentation', () => {
       'forbid-dynamic-interaction-target',
       'require-proven-interaction-activation',
       'require-local-in-process-event-handler',
+      'require-proven-authorization-enforcement',
     ]) {
       expect(guide).toContain(`\`${rule}\``);
       for (const branch of schema.anyOf) {

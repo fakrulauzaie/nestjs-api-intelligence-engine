@@ -138,6 +138,9 @@ function addShapeIssues(diff: DiffDocument, issues: DiffIntegrityIssue[]): void 
   for (const [collection, changes] of [
     ['interactionChanges', diff.interactionChanges ?? []] as const,
     ['interactionHandlerChanges', diff.interactionHandlerChanges ?? []] as const,
+    ['jobQueueDispatchChanges', diff.jobQueueDispatchChanges ?? []] as const,
+    ['jobQueueBranchChanges', diff.jobQueueBranchChanges ?? []] as const,
+    ['jobQueueBranchEffectChanges', diff.jobQueueBranchEffectChanges ?? []] as const,
   ]) {
     for (const [index, change] of changes.entries()) {
       const valid =
@@ -210,6 +213,45 @@ function addSummaryIssues(diff: DiffDocument, issues: DiffIntegrityIssue[]): voi
             ({ change }) => change === 'modified',
           ).length,
         }),
+    ...(diff.jobQueueDispatchChanges === undefined
+      ? {}
+      : {
+          jobQueueDispatchesAdded: diff.jobQueueDispatchChanges.filter(
+            ({ change }) => change === 'added',
+          ).length,
+          jobQueueDispatchesRemoved: diff.jobQueueDispatchChanges.filter(
+            ({ change }) => change === 'removed',
+          ).length,
+          jobQueueDispatchesModified: diff.jobQueueDispatchChanges.filter(
+            ({ change }) => change === 'modified',
+          ).length,
+        }),
+    ...(diff.jobQueueBranchChanges === undefined
+      ? {}
+      : {
+          jobQueueBranchesAdded: diff.jobQueueBranchChanges.filter(
+            ({ change }) => change === 'added',
+          ).length,
+          jobQueueBranchesRemoved: diff.jobQueueBranchChanges.filter(
+            ({ change }) => change === 'removed',
+          ).length,
+          jobQueueBranchesModified: diff.jobQueueBranchChanges.filter(
+            ({ change }) => change === 'modified',
+          ).length,
+        }),
+    ...(diff.jobQueueBranchEffectChanges === undefined
+      ? {}
+      : {
+          jobQueueBranchEffectsAdded: diff.jobQueueBranchEffectChanges.filter(
+            ({ change }) => change === 'added',
+          ).length,
+          jobQueueBranchEffectsRemoved: diff.jobQueueBranchEffectChanges.filter(
+            ({ change }) => change === 'removed',
+          ).length,
+          jobQueueBranchEffectsModified: diff.jobQueueBranchEffectChanges.filter(
+            ({ change }) => change === 'modified',
+          ).length,
+        }),
   };
 
   for (const [field, value] of Object.entries(expected)) {
@@ -244,6 +286,18 @@ function addDuplicateIssues(diff: DiffDocument, issues: DiffIntegrityIssue[]): v
     [
       'interactionHandlerChanges',
       (diff.interactionHandlerChanges ?? []).map(({ change, key }) => `${change}:${key.encoded}`),
+    ],
+    [
+      'jobQueueDispatchChanges',
+      (diff.jobQueueDispatchChanges ?? []).map(({ change, key }) => `${change}:${key.encoded}`),
+    ],
+    [
+      'jobQueueBranchChanges',
+      (diff.jobQueueBranchChanges ?? []).map(({ change, key }) => `${change}:${key.encoded}`),
+    ],
+    [
+      'jobQueueBranchEffectChanges',
+      (diff.jobQueueBranchEffectChanges ?? []).map(({ change, key }) => `${change}:${key.encoded}`),
     ],
     [
       'ambiguities',

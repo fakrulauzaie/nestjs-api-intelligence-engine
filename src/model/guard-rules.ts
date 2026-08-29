@@ -1,4 +1,5 @@
 import type { GuardScope } from './analysis.js';
+import { AUTHORIZATION_RULE_IDS } from './authorization.js';
 
 export const DIRECT_GUARD_RULE_IDS: Readonly<
   Record<Extract<GuardScope, 'controller' | 'method'>, string>
@@ -19,5 +20,7 @@ export function guardScopeForRuleId(ruleId: string): GuardScope | null {
   }
   if (ruleId === DIRECT_GUARD_RULE_IDS.controller) return 'controller';
   if (ruleId === DIRECT_GUARD_RULE_IDS.method) return 'method';
+  if (ruleId === AUTHORIZATION_RULE_IDS.compositeControllerGuard) return 'controller';
+  if (ruleId === AUTHORIZATION_RULE_IDS.compositeMethodGuard) return 'method';
   return null;
 }

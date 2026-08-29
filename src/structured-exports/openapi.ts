@@ -1,5 +1,10 @@
 import { normalizeRoutePath } from '../extractors/route-paths.js';
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
 import { canonicalStringify } from '../model/ordering.js';
 import type {
   OpenApiEnrichmentResultDocument,
@@ -10,6 +15,8 @@ import {
   OPENAPI_ENRICHMENT_SCHEMA_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
 } from './model.js';
 import { canonicalizeOpenApiEnrichmentResult } from './ordering.js';
 import { buildEndpointExportFacts } from './endpoint-facts.js';
@@ -111,17 +118,21 @@ export function enrichOpenApiDocument(input: {
   const pathPrefix = normalizeRoutePath(input.pathPrefix ?? '/');
   const includeEvidence = input.includeEvidence === true;
   const hasDistributedInteractionRecords =
-    input.analysis.schemaVersion === '3.0.0' &&
+    analysisHasInteractionFacts(input.analysis) &&
     (input.analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
       input.analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
       input.analysis.interactionHandlers.some(
         ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
       ));
-  const schemaVersion = hasDistributedInteractionRecords
-    ? OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
-    : input.analysis.schemaVersion === '3.0.0'
-      ? OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION
-      : OPENAPI_ENRICHMENT_SCHEMA_VERSION;
+  const schemaVersion = analysisHasAuthorizationFacts(input.analysis)
+    ? OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
+    : analysisHasJobQueueBranchFacts(input.analysis)
+      ? OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION
+      : hasDistributedInteractionRecords
+        ? OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
+        : analysisHasInteractionFacts(input.analysis)
+          ? OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION
+          : OPENAPI_ENRICHMENT_SCHEMA_VERSION;
   const factsByEndpoint = buildEndpointExportFacts({ analysis: input.analysis });
   const endpointsBySlot = new Map<string, string[]>();
   for (const endpoint of input.analysis.endpoints) {
@@ -170,18 +181,27 @@ export function enrichOpenApiDocument(input: {
         dbWrites: facts.dbWrites,
         diagnosticCodes: facts.diagnostics.map(({ code }) => code),
         evidenceIds: includeEvidence ? facts.evidenceIds : [],
-        ...(input.analysis.schemaVersion === '3.0.0'
+        ...(analysisHasInteractionFacts(input.analysis)
           ? {
               outboundInteractions: facts.outboundInteractions,
               localInteractions: facts.localInteractions,
               localCausalEffects: facts.localCausalEffects,
-              ...(schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
+              ...(schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION ||
+              schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION ||
+              schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
                 ? {
                     distributedInteractions: facts.distributedInteractions,
                     distributedConditionalEffects: facts.distributedConditionalEffects,
                   }
                 : {}),
+              ...(schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION ||
+              schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
+                ? { jobQueueBranchIds: facts.jobQueueBranchIds }
+                : {}),
             }
+          : {}),
+        ...(schemaVersion === OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
+          ? { authorizationRequirements: facts.authorizationRequirements }
           : {}),
       };
     } else {

@@ -55,6 +55,16 @@ export const DIAGNOSTIC_CATALOGUE: Readonly<Record<DiagnosticCode, DiagnosticDef
     defaultSeverity: 'info',
     summary: 'Static global guard analysis is incomplete.',
   },
+  AUTHORIZATION_METADATA_VALUE_DYNAMIC: {
+    defaultSeverity: 'info',
+    summary:
+      'Authorization metadata was identified, but its value shape crosses the bounded static boundary.',
+  },
+  AUTHORIZATION_ENFORCEMENT_UNKNOWN: {
+    defaultSeverity: 'warning',
+    summary:
+      'Authorization metadata has no proven composite guard or configured exact guard relationship.',
+  },
   TYPEORM_ENTITY_UNRESOLVED: {
     defaultSeverity: 'warning',
     summary: 'A repository entity type could not be resolved.',
@@ -178,7 +188,12 @@ export const DIAGNOSTIC_CATALOGUE: Readonly<Record<DiagnosticCode, DiagnosticDef
   JOB_QUEUE_FILTER_UNPROVEN: {
     defaultSeverity: 'info',
     summary:
-      'A BullMQ worker inspects the job name, but bounded branch slicing is not enabled; effects remain queue-wide and conditional.',
+      'A BullMQ worker inspects the job name through unsupported control flow; its branch effects remain explicitly unknown.',
+  },
+  JOB_QUEUE_FILTER_PARTIAL: {
+    defaultSeverity: 'info',
+    summary:
+      'A BullMQ worker has both supported job branches and an explicit unsupported residual region.',
   },
   MICROSERVICE_TRANSPORT_UNKNOWN: {
     defaultSeverity: 'warning',

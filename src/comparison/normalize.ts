@@ -2,7 +2,13 @@ import { normalizeAnalysisDocument } from '../analysis/normalize-document.js';
 import type { AnalysisDocument } from '../model/analysis.js';
 import type { DiffInputSnapshot } from './model.js';
 
-export const SUPPORTED_COMPARISON_ANALYSIS_SCHEMA_VERSIONS = ['1.0.0', '2.0.0', '3.0.0'] as const;
+export const SUPPORTED_COMPARISON_ANALYSIS_SCHEMA_VERSIONS = [
+  '1.0.0',
+  '2.0.0',
+  '3.0.0',
+  '4.0.0',
+  '5.0.0',
+] as const;
 
 export interface NormalizedComparisonAnalysis {
   readonly analysis: AnalysisDocument;
@@ -37,6 +43,9 @@ export function normalizeAnalysisForComparison(input: unknown): NormalizedCompar
         terminals: 'available',
         assertions: 'available',
         diagnostics: 'available',
+        ...(normalized.facts.authorizationFamilies === 'available'
+          ? { authorization: 'available' as const }
+          : {}),
       },
     },
   };

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
+import type { AuthorizationAnalysisConfiguration } from '../model/authorization.js';
 import { DEFAULT_GRAPH_EDGE_LIMIT, DEFAULT_GRAPH_NODE_LIMIT } from '../graph-report/model.js';
 import type { InteractionTraversalConfiguration, RawSqlDialect } from '../model/entities.js';
 import type { NormalizedPolicyRuleConfiguration } from '../policy/model.js';
@@ -8,10 +9,15 @@ import { normalizePolicyRuleSettings, policyConfigurationSchema } from '../polic
 import {
   projectConfigurationV2Schema,
   projectConfigurationV3Schema,
+  projectConfigurationV4Schema,
   type ProjectConfigurationV2,
   type ProjectConfigurationV3,
+  type ProjectConfigurationV4,
 } from './project-config-schema.js';
-import { DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION } from './analysis-config.js';
+import {
+  DEFAULT_AUTHORIZATION_ANALYSIS_CONFIGURATION,
+  DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION,
+} from './analysis-config.js';
 
 export const PROJECT_CONFIGURATION_FILE_NAME = 'api-intel.config.json';
 export const PROJECT_CONFIGURATION_SOURCE_KINDS = ['discovered', 'explicit'] as const;
@@ -20,11 +26,12 @@ export type ProjectConfigurationSourceKind = (typeof PROJECT_CONFIGURATION_SOURC
 export interface LoadedProjectConfiguration {
   readonly path: string;
   readonly sourceKind: ProjectConfigurationSourceKind;
-  readonly fileVersion: 1 | 2 | 3;
+  readonly fileVersion: 1 | 2 | 3 | 4;
   readonly analysis: {
     readonly maxCallDepth?: number | undefined;
     readonly rawSqlDialect?: RawSqlDialect | undefined;
     readonly interactions?: InteractionTraversalConfiguration | undefined;
+    readonly authorization?: AuthorizationAnalysisConfiguration | undefined;
   };
   readonly outputDirectory?: string | undefined;
   readonly rules: readonly NormalizedPolicyRuleConfiguration[];
@@ -74,13 +81,17 @@ function isWithinDirectory(parent: string, candidate: string): boolean {
 }
 
 function normalizedVersioned(
-  parsed: ProjectConfigurationV2 | ProjectConfigurationV3,
+  parsed: ProjectConfigurationV2 | ProjectConfigurationV3 | ProjectConfigurationV4,
   context: {
     readonly path: string;
     readonly sourceKind: ProjectConfigurationSourceKind;
     readonly repositoryRoot: string;
   },
 ): LoadedProjectConfiguration {
+  const uniqueAuthorizationEntries = <T>(values: readonly T[]): T[] =>
+    [...new Map(values.map((value) => [JSON.stringify(value), value])).values()].sort(
+      (left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)),
+    );
   const outputDirectory =
     parsed.output === undefined
       ? undefined
@@ -98,6 +109,11 @@ function normalizedVersioned(
   const policy = parsed.reports?.policy;
   const controls = parsed.reports?.controls;
   const openapi = parsed.reports?.openapi;
+  let interactions: InteractionTraversalConfiguration | undefined;
+  if (parsed.version === 3 || parsed.version === 4) {
+    interactions = parsed.analysis?.interactions as InteractionTraversalConfiguration | undefined;
+  }
+  const authorization = parsed.version === 4 ? parsed.analysis?.authorization : undefined;
   return {
     path: context.path,
     sourceKind: context.sourceKind,
@@ -109,19 +125,39 @@ function normalizedVersioned(
       ...(parsed.analysis?.rawSqlDialect === undefined
         ? {}
         : { rawSqlDialect: parsed.analysis.rawSqlDialect }),
-      ...(parsed.version !== 3 || parsed.analysis?.interactions === undefined
+      ...(interactions === undefined
         ? {}
         : {
             interactions: {
               maxInteractionHops:
-                parsed.analysis.interactions.maxInteractionHops ??
+                interactions.maxInteractionHops ??
                 DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION.maxInteractionHops,
               maxFanOutPerInteraction:
-                parsed.analysis.interactions.maxFanOutPerInteraction ??
+                interactions.maxFanOutPerInteraction ??
                 DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION.maxFanOutPerInteraction,
               maxInteractionTraceStates:
-                parsed.analysis.interactions.maxInteractionTraceStates ??
+                interactions.maxInteractionTraceStates ??
                 DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION.maxInteractionTraceStates,
+            },
+          }),
+      ...(authorization === undefined
+        ? {}
+        : {
+            authorization: {
+              metadataKeys: [
+                ...new Set(
+                  authorization.metadataKeys ??
+                    DEFAULT_AUTHORIZATION_ANALYSIS_CONFIGURATION.metadataKeys,
+                ),
+              ].sort(),
+              decoratorSymbols: uniqueAuthorizationEntries(
+                authorization.decoratorSymbols ??
+                  DEFAULT_AUTHORIZATION_ANALYSIS_CONFIGURATION.decoratorSymbols,
+              ),
+              enforcementRelationships: uniqueAuthorizationEntries(
+                authorization.enforcementRelationships ??
+                  DEFAULT_AUTHORIZATION_ANALYSIS_CONFIGURATION.enforcementRelationships,
+              ),
             },
           }),
     },
@@ -174,7 +210,10 @@ function normalizeDocument(
   if (typeof input === 'object' && input !== null && 'version' in input && input.version === 2) {
     return normalizedVersioned(projectConfigurationV2Schema.parse(input), context);
   }
-  return normalizedVersioned(projectConfigurationV3Schema.parse(input), context);
+  if (typeof input === 'object' && input !== null && 'version' in input && input.version === 3) {
+    return normalizedVersioned(projectConfigurationV3Schema.parse(input), context);
+  }
+  return normalizedVersioned(projectConfigurationV4Schema.parse(input), context);
 }
 
 export async function loadProjectConfigurationForScan(input: {

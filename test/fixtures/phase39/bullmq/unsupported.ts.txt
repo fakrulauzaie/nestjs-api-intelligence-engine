@@ -1,0 +1,134 @@
+import { Injectable, Module } from '@nestjs/common';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+
+interface UnsupportedPayload {
+  readonly id: string;
+  readonly enabled: boolean;
+}
+
+@Injectable()
+class UnsupportedWorkService {
+  async run(_id: string): Promise<void> {}
+  async safe(_id: string): Promise<void> {}
+  async prepare(_id: string): Promise<void> {}
+  async other(_id: string): Promise<void> {}
+}
+
+// B0_CASE:alias-unsupported
+@Processor('alias-jobs')
+class AliasProcessor extends WorkerHost {
+  constructor(private readonly work: UnsupportedWorkService) {
+    super();
+  }
+
+  async process(job: Job<UnsupportedPayload, unknown, string>): Promise<void> {
+    // B0_NEGATIVE:aliased-discriminant
+    const jobName = job.name;
+    switch (jobName) {
+      case 'aliased':
+        await this.work.run(job.data.id);
+        return;
+      default:
+        return;
+    }
+  }
+}
+
+// B0_CASE:mutation-unsupported
+@Processor('mutated-jobs')
+class MutationProcessor extends WorkerHost {
+  constructor(private readonly work: UnsupportedWorkService) {
+    super();
+  }
+
+  async process(job: Job<UnsupportedPayload, unknown, string>): Promise<void> {
+    // B0_NEGATIVE:mutated-discriminant
+    (job as { name: string }).name = 'rewritten';
+    if (job.name === 'rewritten') await this.work.run(job.data.id);
+  }
+}
+
+// B0_CASE:compound-unsupported
+@Processor('compound-jobs')
+class CompoundProcessor extends WorkerHost {
+  constructor(private readonly work: UnsupportedWorkService) {
+    super();
+  }
+
+  async process(job: Job<UnsupportedPayload, unknown, string>): Promise<void> {
+    // B0_NEGATIVE:compound-predicate
+    if (job.name === 'compound' && job.data.enabled) {
+      await this.work.run(job.data.id);
+    }
+  }
+}
+
+// B0_CASE:fallthrough-partial
+@Processor('fallthrough-jobs')
+class FallthroughProcessor extends WorkerHost {
+  constructor(private readonly work: UnsupportedWorkService) {
+    super();
+  }
+
+  async process(job: Job<UnsupportedPayload, unknown, string>): Promise<void> {
+    switch (job.name) {
+      // B0_BRANCH:fallthrough-safe-exact
+      case 'safe':
+        await this.work.safe(job.data.id);
+        return;
+      // B0_NEGATIVE:nonempty-fallthrough
+      case 'prepare':
+        await this.work.prepare(job.data.id);
+      case 'other':
+        await this.work.other(job.data.id);
+        return;
+      default:
+        return;
+    }
+  }
+}
+
+// B0_CASE:dynamic-case-partial
+@Processor('dynamic-case-jobs')
+class DynamicCaseProcessor extends WorkerHost {
+  constructor(private readonly work: UnsupportedWorkService) {
+    super();
+  }
+
+  private dynamicJobName(): string {
+    return 'runtime-selected';
+  }
+
+  async process(job: Job<UnsupportedPayload, unknown, string>): Promise<void> {
+    switch (job.name) {
+      // B0_BRANCH:dynamic-case-safe-exact
+      case 'safe':
+        await this.work.safe(job.data.id);
+        return;
+      // B0_NEGATIVE:dynamic-case-label
+      case this.dynamicJobName():
+        await this.work.other(job.data.id);
+        return;
+      default:
+        return;
+    }
+  }
+}
+
+@Module({
+  providers: [
+    UnsupportedWorkService,
+    AliasProcessor,
+    MutationProcessor,
+    CompoundProcessor,
+    FallthroughProcessor,
+    DynamicCaseProcessor,
+  ],
+})
+class UnsupportedModule {}
+
+const __B0_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('B0 BullMQ fixture must never execute: unsupported');
+})();
+void __B0_EXECUTION_SENTINEL__;

@@ -1,0 +1,95 @@
+import { Controller, Injectable, Module, Post } from '@nestjs/common';
+import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Job, Queue } from 'bullmq';
+import { Entity, PrimaryColumn, Repository } from 'typeorm';
+
+@Entity('worker_receipt')
+class WorkerReceipt {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+@Entity('generated_pdf')
+class GeneratedPdf {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+@Entity('cleanup_receipt')
+class CleanupReceipt {
+  @PrimaryColumn()
+  declare id: string;
+}
+
+@Injectable()
+class ReportsProducer {
+  constructor(
+    @InjectQueue('reports')
+    private readonly reports: Queue<{ readonly id: string }, void, string>,
+  ) {}
+
+  async generate(id: string): Promise<void> {
+    await this.reports.add('generate-pdf', { id });
+  }
+
+  async cleanup(id: string): Promise<void> {
+    await this.reports.add('cleanup', { id });
+  }
+}
+
+@Controller('reports')
+class ReportsController {
+  constructor(private readonly producer: ReportsProducer) {}
+
+  @Post('generate')
+  async generate(): Promise<void> {
+    await this.producer.generate('generate-1');
+  }
+
+  @Post('cleanup')
+  async cleanup(): Promise<void> {
+    await this.producer.cleanup('cleanup-1');
+  }
+}
+
+@Processor('reports')
+class ReportsProcessor extends WorkerHost {
+  constructor(
+    @InjectRepository(WorkerReceipt)
+    private readonly receipts: Repository<WorkerReceipt>,
+    @InjectRepository(GeneratedPdf)
+    private readonly generated: Repository<GeneratedPdf>,
+    @InjectRepository(CleanupReceipt)
+    private readonly cleanupReceipts: Repository<CleanupReceipt>,
+  ) {
+    super();
+  }
+
+  async process(job: Job<{ readonly id: string }, unknown, string>): Promise<void> {
+    await this.receipts.save({ id: job.data.id });
+    switch (job.name) {
+      case 'generate-pdf': {
+        await this.generated.save({ id: job.data.id });
+        return;
+      }
+      case 'cleanup': {
+        await this.cleanupReceipts.save({ id: job.data.id });
+        return;
+      }
+      default:
+        return;
+    }
+  }
+}
+
+@Module({
+  controllers: [ReportsController],
+  providers: [ReportsProducer, ReportsProcessor],
+})
+class ReportsModule {}
+
+const __PHASE40_EXECUTION_SENTINEL__ = (() => {
+  throw new Error('Phase 40 BullMQ fixture must never execute');
+})();
+void __PHASE40_EXECUTION_SENTINEL__;

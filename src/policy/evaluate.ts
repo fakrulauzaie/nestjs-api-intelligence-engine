@@ -4,7 +4,11 @@ import type { AnalysisSemanticProjection } from '../comparison/projection.js';
 import { buildAnalysisSemanticProjection } from '../comparison/projection.js';
 import { createSemanticKey } from '../comparison/semantic-key.js';
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
 import type { AssertionRecord } from '../model/assertions.js';
 import type { DiagnosticSeverity } from '../model/diagnostics.js';
 import type { ClassRecord } from '../model/entities.js';
@@ -545,6 +549,89 @@ function evaluateCompleteTraceRule(
   });
 }
 
+function evaluateAuthorizationEnforcementRule(
+  context: EvaluationContext,
+  configuration: NormalizedPolicyRuleConfiguration,
+): PolicyResult[] {
+  const groups = endpointGroups(context);
+  if (groups.length === 0) {
+    return [
+      policyResult({
+        configuration,
+        outcome: 'not_applicable',
+        reasonCode: 'no_authorization_metadata',
+        message: 'No endpoint subjects were found.',
+        subject: analysisSubject(context.analysis),
+      }),
+    ];
+  }
+  return groups.map(({ snapshots, subject }) => {
+    if (snapshots.length !== 1 || !analysisHasAuthorizationFacts(context.analysis)) {
+      return policyResult({
+        configuration,
+        outcome: 'unknown',
+        reasonCode: 'authorization_enforcement_unknown',
+        message:
+          snapshots.length !== 1
+            ? 'Endpoint identity is ambiguous, so authorization enforcement is unknown.'
+            : 'Authorization facts are unavailable in this analysis schema.',
+        subject,
+      });
+    }
+    const authorization = snapshots[0]!.authorization;
+    const requirements = authorization?.requirements ?? [];
+    if (requirements.length === 0) {
+      return policyResult({
+        configuration,
+        outcome: 'not_applicable',
+        reasonCode: 'no_authorization_metadata',
+        message: 'No supported authorization metadata was proven for the endpoint.',
+        subject,
+      });
+    }
+    const enrichedSubject = {
+      ...subject,
+      canonicalIds: [
+        ...subject.canonicalIds,
+        ...requirements.flatMap(({ metadataId, enforcementId }) => [metadataId, enforcementId]),
+      ],
+    };
+    const evidenceIds = requirements.flatMap(({ evidenceIds: values }) => values);
+    if (requirements.every(({ enforcementState }) => enforcementState === 'proven_enforced')) {
+      return policyResult({
+        configuration,
+        outcome: 'pass',
+        reasonCode: 'authorization_enforcement_proven',
+        message:
+          'Every supported authorization requirement is co-declared with an exact composite guard.',
+        subject: enrichedSubject,
+        evidenceIds,
+      });
+    }
+    if (
+      requirements.some(({ enforcementState }) => enforcementState === 'configured_relationship')
+    ) {
+      return policyResult({
+        configuration,
+        outcome: 'unknown',
+        reasonCode: 'authorization_enforcement_configured',
+        message:
+          'An authorization requirement is related to a guard by configuration, not package-proven composition.',
+        subject: enrichedSubject,
+        evidenceIds,
+      });
+    }
+    return policyResult({
+      configuration,
+      outcome: 'unknown',
+      reasonCode: 'authorization_enforcement_unknown',
+      message: 'A supported authorization requirement has no proven enforcement relationship.',
+      subject: enrichedSubject,
+      evidenceIds,
+    });
+  });
+}
+
 function evaluateDiagnosticRule(
   context: EvaluationContext,
   baseline: AnalysisDocument | undefined,
@@ -686,7 +773,10 @@ function evaluateDynamicInteractionTargetRule(
   context: EvaluationContext,
   configuration: NormalizedPolicyRuleConfiguration,
 ): PolicyResult[] {
-  if (context.analysis.schemaVersion !== '3.0.0' || context.analysis.interactions.length === 0) {
+  if (
+    !analysisHasInteractionFacts(context.analysis) ||
+    context.analysis.interactions.length === 0
+  ) {
     return noInteractionSubjects(context, configuration);
   }
   return context.analysis.interactions.map((interaction) => {
@@ -716,7 +806,10 @@ function evaluateInteractionActivationRule(
   context: EvaluationContext,
   configuration: NormalizedPolicyRuleConfiguration,
 ): PolicyResult[] {
-  if (context.analysis.schemaVersion !== '3.0.0' || context.analysis.interactions.length === 0) {
+  if (
+    !analysisHasInteractionFacts(context.analysis) ||
+    context.analysis.interactions.length === 0
+  ) {
     return noInteractionSubjects(context, configuration);
   }
   return context.analysis.interactions.map((interaction) => {
@@ -752,13 +845,12 @@ function evaluateLocalEventHandlerRule(
   configuration: NormalizedPolicyRuleConfiguration,
 ): PolicyResult[] {
   const analysis = context.analysis;
-  const interactions =
-    analysis.schemaVersion === '3.0.0'
-      ? analysis.interactions.filter(
-          (interaction): interaction is InProcessEventInteractionRecord =>
-            interaction.kind === 'in_process_event',
-        )
-      : [];
+  const interactions = analysisHasInteractionFacts(analysis)
+    ? analysis.interactions.filter(
+        (interaction): interaction is InProcessEventInteractionRecord =>
+          interaction.kind === 'in_process_event',
+      )
+    : [];
   if (interactions.length === 0) {
     return [
       policyResult({
@@ -783,7 +875,7 @@ function evaluateLocalEventHandlerRule(
     const resolved = matches.filter(({ status }) => status === 'resolved');
     const uncertain =
       interaction.target.identityKind === 'dynamic' ||
-      analysis.schemaVersion !== '3.0.0' ||
+      !analysisHasInteractionFacts(analysis) ||
       analysis.interactionAnalysis.state !== 'complete' ||
       matches.some(({ status }) => status !== 'resolved');
     return policyResult({
@@ -837,6 +929,8 @@ export function evaluatePolicies(input: {
         return evaluateInteractionActivationRule(context, configuration);
       case 'require-local-in-process-event-handler':
         return evaluateLocalEventHandlerRule(context, configuration);
+      case 'require-proven-authorization-enforcement':
+        return evaluateAuthorizationEnforcementRule(context, configuration);
     }
   });
   const document = canonicalizePolicyResults({

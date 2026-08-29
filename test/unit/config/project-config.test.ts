@@ -53,9 +53,47 @@ describe('Phase 27 project configuration contract', () => {
         },
       },
       { version: 3 },
+      {
+        version: 4,
+        analysis: {
+          authorization: {
+            metadataKeys: ['roles'],
+            decoratorSymbols: [
+              {
+                symbol: {
+                  kind: 'package_export',
+                  moduleSpecifier: '@acme/auth',
+                  exportedName: 'Permission',
+                },
+                metadataKey: 'permissions',
+              },
+            ],
+            enforcementRelationships: [
+              {
+                metadataKey: 'roles',
+                guard: {
+                  kind: 'repository_export',
+                  sourceFile: 'src/auth.guard.ts',
+                  exportedName: 'AuthGuard',
+                },
+              },
+            ],
+          },
+        },
+        rules: { 'require-proven-authorization-enforcement': 'error' },
+      },
+      { version: 4 },
     ];
     const rejected = [
-      { version: 4 },
+      { version: 5 },
+      {
+        version: 4,
+        analysis: {
+          authorization: {
+            decoratorSymbols: [{ name: 'Roles', metadataKey: 'roles' }],
+          },
+        },
+      },
       { version: 2, analysis: { interactions: { maxInteractionHops: 2 } } },
       { version: 3, analysis: { interactions: { maxInteractionHops: 9 } } },
       { version: 3, analysis: { interactions: { invented: 2 } } },
@@ -161,6 +199,49 @@ describe('Phase 27 project configuration contract', () => {
             maxInteractionHops: 4,
             maxFanOutPerInteraction: 50,
             maxInteractionTraceStates: 1_000,
+          },
+        },
+      });
+
+      const v4Path = await files.write(
+        'configuration/v4.json',
+        JSON.stringify({
+          version: 4,
+          analysis: {
+            authorization: {
+              metadataKeys: ['roles', 'roles'],
+              decoratorSymbols: [
+                {
+                  symbol: {
+                    kind: 'package_export',
+                    moduleSpecifier: '@acme/auth',
+                    exportedName: 'Permission',
+                  },
+                  metadataKey: 'permissions',
+                },
+              ],
+            },
+          },
+        }),
+      );
+      expect(
+        await loadProjectConfigurationForScan({ repositoryRoot, explicitPath: v4Path }),
+      ).toMatchObject({
+        fileVersion: 4,
+        analysis: {
+          authorization: {
+            metadataKeys: ['roles'],
+            decoratorSymbols: [
+              {
+                symbol: {
+                  kind: 'package_export',
+                  moduleSpecifier: '@acme/auth',
+                  exportedName: 'Permission',
+                },
+                metadataKey: 'permissions',
+              },
+            ],
+            enforcementRelationships: [],
           },
         },
       });

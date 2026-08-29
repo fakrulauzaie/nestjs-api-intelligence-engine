@@ -20,16 +20,16 @@ replace or add facts to `AnalysisDocument`.
 
 ## Current version matrix
 
-| Artifact                   | Current writer behavior                                                                              |
-| -------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `analysis.json`            | `3.0.0`; v1/v2 remain readable and frozen                                                            |
-| `diff.json`                | `2.0.0` when either input is analysis v3; otherwise `1.0.0`                                          |
-| `impact.json`              | `1.0.0`                                                                                              |
-| `policy-results.json`      | `1.0.0`                                                                                              |
-| graph view                 | `4.0.0` for analysis v3; `1.0.0` for v1/v2; graph v2/v3 remain readable only                         |
-| OpenAPI enrichment sidecar | `3.0.0` with distributed interaction records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
-| control-evidence JSON/CSV  | `3.0.0` with distributed interaction records, otherwise `2.0.0` for analysis v3 or `1.0.0` for v1/v2 |
-| `bundle.json`              | `1.0.0`                                                                                              |
+| Artifact                   | Current writer behavior                                                      |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| `analysis.json`            | `5.0.0`; v1-v4 remain readable and frozen                                    |
+| `diff.json`                | `4.0.0` for analysis v5; older analyses use capability-appropriate v1-v3     |
+| `impact.json`              | `2.0.0` for analysis v4/v5, otherwise `1.0.0`                                |
+| `policy-results.json`      | `1.0.0`                                                                      |
+| graph view                 | `6.0.0` for analysis v5; older analyses use capability-appropriate v1-v5     |
+| OpenAPI enrichment sidecar | `5.0.0` for analysis v5; historical writers use capability-appropriate v1-v4 |
+| control-evidence JSON/CSV  | `5.0.0` for analysis v5; historical writers use capability-appropriate v1-v4 |
+| `bundle.json`              | `1.0.0`                                                                      |
 
 The scanner currently supports and enables `outbound_http`, `in_process_event`,
 `job_queue`, and `microservice_message`.
@@ -58,7 +58,11 @@ Important identity inputs include:
 - contract field: effective contract type plus property name;
 - request parameter: method, parameter index, and supported Nest source kind;
 - response contract: handler method; and
-- entity column: effective entity, declaring class, and property name.
+- entity column: effective entity, declaring class, and property name;
+- authorization metadata: endpoint, scope, exact metadata key, decorator identity,
+  evidence, and extraction rule; and
+- authorization enforcement: metadata identity, state, exact guard/assertion identity,
+  and rule.
 
 The integrity validator rejects repeated IDs. It distinguishes an identical duplicate
 from an unequal-content stable-ID collision; neither is silently overwritten.
@@ -127,6 +131,29 @@ node limit. The same configuration appears in `run.json` and contributes to the
 analysis-run ID. The property is absent when raw-SQL analysis is disabled, preserving
 the semantic identity and byte output of existing scans.
 
+## Analysis v5 authorization facts
+
+Analysis v5 preserves every v4 fact family and adds `authorizationMetadata` and
+`authorizationEnforcements`. These records deliberately separate three statements:
+
+- a supported metadata decorator is present on a controller or endpoint method;
+- a guard is registered for the endpoint or application; and
+- an exact relationship between that metadata and guard is package-proven, configured,
+  or unknown.
+
+Metadata values are never retained. The model records only a redacted scalar type,
+array length/item-type shape, object keys, or `unknown`. Direct `SetMetadata()` wrappers
+require an explicitly configured metadata key or exact decorator symbol. Repository
+wrappers using package-proven `applyDecorators(SetMetadata(...), UseGuards(...))` are
+discoverable without name configuration when both calls and the nested guard class are
+statically exact. Bare decorator names are not configuration identities.
+
+`proven_enforced` means only that one supported composite decorator co-declares the
+metadata and exact guard. `configured_relationship` preserves a user-declared mapping
+without upgrading it to proof. `enforcement_unknown` is explicit when neither condition
+holds. None of these states proves authentication, authorization success, runtime
+container registration, or guard execution.
+
 ## Result-state policy
 
 `completed` means the analysis encountered no diagnosed gap; this includes a genuinely
@@ -174,8 +201,11 @@ trusted `analysis.json`.
 
 OpenAPI enrichment sidecars and control-evidence matrices are independently versioned.
 Schema `1.0.0` represents analysis v1/v2 facts, `2.0.0` adds outbound/local
-interaction fields for analysis v3, and `3.0.0` adds distributed interactions and
-distributed-conditional effects when BullMQ or Nest microservice records are present.
+interaction fields for analysis v3, `3.0.0` adds distributed interactions and
+distributed-conditional effects, and `4.0.0` adds selected `jobQueueBranchIds` for
+analysis v4. Schema `5.0.0` adds redacted authorization requirements and enforcement
+states for analysis v5. An empty v4/v5 branch array means no branch was selected; an
+older schema means that branch capability is unavailable.
 Their cross-record
 validators require canonical snapshot identity, valid endpoint/table/evidence
 references, and complete evidence closure. The matrix additionally requires exactly
@@ -191,8 +221,8 @@ matrix JSON; spreadsheet formula neutralization does not alter the underlying fa
 ## Offline graph-view contract
 
 The graph view is independently versioned: schema `1.0.0` remains readable for
-analysis v1/v2, historical interaction reports may use `2.0.0` or `3.0.0`, and current
-analysis v3 reports emit graph schema `4.0.0`. Cross-record validation requires
+analysis v1/v2, historical interaction reports may use `2.0.0` through `5.0.0`, and
+current analysis v5 reports emit graph schema `6.0.0`. Cross-record validation requires
 snapshot identity, exactly one view per canonical endpoint, exactly one view per
 canonical interaction handler, unique node/edge/evidence IDs, complete scene
 references, canonical evidence closure, declared display limits, and summary
@@ -206,9 +236,11 @@ present in validated impact paths. HTML is a rendering of this document and is n
 canonical or independently inferred artifact.
 
 Graph schema `2.0.0` was introduced for early canonical interaction nodes and remains
-readable for compatibility. Current graph-v4 scenes represent outbound HTTP, local
-event, BullMQ, and Nest microservice interaction/handler/boundary nodes; assertion
-edges remain labeled as candidate matches rather than delivery.
+readable for compatibility. Graph v4 scenes represent outbound HTTP, local event,
+BullMQ, and Nest microservice interaction/handler/boundary nodes. Graph v5 additionally
+renders canonical BullMQ branch nodes and branch-effect edges; candidate edges remain
+labeled as candidates rather than delivery. Graph v6 adds endpoint authorization
+requirements with redacted value shapes and explicit enforcement states.
 
 ## Analysis v3 interaction substrate
 
@@ -242,6 +274,30 @@ with `technology: bullmq` and independently exact/dynamic queue and job identiti
 Phase 36 emits canonical microservice mode/pattern/client/transport targets for the
 supported Nest `ClientProxy` subset. Headers, bodies, credentials, environment values,
 queue payloads, broker delivery, and remote consumers are not canonical facts.
+
+## Analysis v4 BullMQ branch substrate
+
+Analysis v4 preserves every v3 family and adds strict
+`interactionHandlerDispatches`, `interactionHandlerBranches`, and
+`interactionHandlerBranchEffects` collections. Dispatches are `complete`, `partial`,
+or `unsupported`; selectors are exact jobs, all jobs, unmatched jobs, or unknown.
+Branch effects reference an existing canonical method assertion and prove only that
+its call-site evidence lies within that source region.
+
+The bounded extractor supports direct `switch (job.name)` and terminating sequential
+strict-equality checks on the exact `WorkerHost.process()` parameter symbol. It
+supports static literals, enums, `as const` values, grouped empty switch labels,
+`break`, `return`, `throw`, a default/unmatched region, a common prelude, and top-level
+`try/finally`. Aliases, mutation, compound predicates, dynamic case labels, and
+non-empty fallthrough fail closed into an explicit unknown residual branch. Exact
+producer jobs traverse only matching, common, or supported unmatched branch effects;
+unknown residual work is not copied onto exact jobs.
+
+Branch-aware endpoint traces list selected `jobQueueBranchIds`. Comparison v3 uses
+structural dispatch/branch/effect semantic keys; impact v2 applies branch selectors
+when walking back to exact producers. OpenAPI/control v4 and graph v5 expose the same
+selected branch identities. The broker boundary remains `distributed_conditional` and
+never proves enqueue, delivery, worker execution, or completion.
 
 Phase 31 outbound records use `direction: outbound`, `activation: eager`,
 `boundary: external_or_unobserved`, and `dispatchTiming: asynchronous`. Their target
@@ -278,10 +334,11 @@ plus explicit completeness diagnostics.
 Phase 35 queue producers are eager, outbound, and asynchronous. Their boundary is
 `external_or_unobserved` until one or more same-queue local `WorkerHost` candidates
 exist, then `broker_or_worker_boundary`. Queue-wide handlers use a dynamic job target
-by design; matched proven-registered worker terminals are
-`distributed_conditional`, never synchronous or exact job-specific. A v3 endpoint
-trace includes `distributedInteractionIds` only when such queue interactions are
-reachable. See [BullMQ Queue Interactions](bullmq-interactions.md).
+by design; analysis v4 separately projects supported `job.name` branches and selects
+compatible effects for exact producers. Matched proven-registered worker terminals
+remain `distributed_conditional`, never synchronous. Endpoint traces include
+`distributedInteractionIds` and, in v4, selected `jobQueueBranchIds`. See
+[BullMQ Queue Interactions](bullmq-interactions.md).
 
 Phase 36 microservice producers retain `request_response` or `event` mode, a bounded
 canonical scalar/plain-JSON pattern, client token, and supported transport inventory.

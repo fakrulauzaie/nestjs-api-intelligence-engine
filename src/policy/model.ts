@@ -13,6 +13,7 @@ export const POLICY_RULE_IDS = [
   'forbid-dynamic-interaction-target',
   'require-proven-interaction-activation',
   'require-local-in-process-event-handler',
+  'require-proven-authorization-enforcement',
 ] as const;
 export type PolicyRuleId = (typeof POLICY_RULE_IDS)[number];
 
@@ -24,6 +25,7 @@ export const POLICY_RULE_VERSIONS: Readonly<Record<PolicyRuleId, '1.0.0'>> = {
   'forbid-dynamic-interaction-target': '1.0.0',
   'require-proven-interaction-activation': '1.0.0',
   'require-local-in-process-event-handler': '1.0.0',
+  'require-proven-authorization-enforcement': '1.0.0',
 };
 
 export const POLICY_SEVERITIES = ['warn', 'error'] as const;
@@ -60,6 +62,10 @@ export const POLICY_REASON_CODES = [
   'local_event_handler_missing',
   'local_event_handler_unknown',
   'no_in_process_event_subjects',
+  'authorization_enforcement_proven',
+  'authorization_enforcement_configured',
+  'authorization_enforcement_unknown',
+  'no_authorization_metadata',
 ] as const;
 export type PolicyReasonCode = (typeof POLICY_REASON_CODES)[number];
 

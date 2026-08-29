@@ -5,11 +5,15 @@ import {
   MIN_GRAPH_DISPLAY_LIMIT,
 } from '../graph-report/model.js';
 import { RAW_SQL_DIALECTS } from '../model/entities.js';
-import { interactionTraversalConfigurationSchema } from '../model/schemas.js';
+import {
+  authorizationAnalysisConfigurationSchema,
+  interactionTraversalConfigurationSchema,
+} from '../model/schemas.js';
 import { policyConfigurationSchema, policyRuleSettingsSchema } from '../policy/rule-config.js';
 
 export const PROJECT_CONFIGURATION_V2_VERSION = 2 as const;
-export const PROJECT_CONFIGURATION_VERSION = 3 as const;
+export const PROJECT_CONFIGURATION_V3_VERSION = 3 as const;
+export const PROJECT_CONFIGURATION_VERSION = 4 as const;
 
 const portablePathSchema = z
   .string()
@@ -28,6 +32,10 @@ const analysisSettingsV2Schema = z
 
 const analysisSettingsV3Schema = analysisSettingsV2Schema.extend({
   interactions: interactionTraversalConfigurationSchema.partial().optional(),
+});
+
+const analysisSettingsV4Schema = analysisSettingsV3Schema.extend({
+  authorization: authorizationAnalysisConfigurationSchema.partial().optional(),
 });
 
 const outputSettingsSchema = z.object({ directory: portablePathSchema }).strict();
@@ -96,8 +104,28 @@ export const projectConfigurationV2Schema = z
 export const projectConfigurationV3Schema = z
   .object({
     $schema: z.string().min(1).optional(),
-    version: z.literal(PROJECT_CONFIGURATION_VERSION),
+    version: z.literal(PROJECT_CONFIGURATION_V3_VERSION),
     analysis: analysisSettingsV3Schema.optional(),
+    output: outputSettingsSchema.optional(),
+    rules: policyRuleSettingsSchema.optional(),
+    reports: reportSettingsSchema.optional(),
+  })
+  .strict()
+  .superRefine((configuration, context) => {
+    if (configuration.reports?.policy?.enabled === true && configuration.rules === undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['reports', 'policy'],
+        message: 'An enabled policy report requires a non-empty rules category.',
+      });
+    }
+  });
+
+export const projectConfigurationV4Schema = z
+  .object({
+    $schema: z.string().min(1).optional(),
+    version: z.literal(PROJECT_CONFIGURATION_VERSION),
+    analysis: analysisSettingsV4Schema.optional(),
     output: outputSettingsSchema.optional(),
     rules: policyRuleSettingsSchema.optional(),
     reports: reportSettingsSchema.optional(),
@@ -117,10 +145,12 @@ export const projectConfigurationFileSchema = z.union([
   policyConfigurationSchema,
   projectConfigurationV2Schema,
   projectConfigurationV3Schema,
+  projectConfigurationV4Schema,
 ]);
 
 export type ProjectConfigurationV2 = z.infer<typeof projectConfigurationV2Schema>;
 export type ProjectConfigurationV3 = z.infer<typeof projectConfigurationV3Schema>;
+export type ProjectConfigurationV4 = z.infer<typeof projectConfigurationV4Schema>;
 
 function completeGeneratedContracts(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(completeGeneratedContracts);

@@ -276,6 +276,16 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   function renderFacts(endpoint) {
     facts.replaceChildren();
     addFactSection(facts, 'Guards', endpoint.guards.length > 0 ? endpoint.guards : [endpoint.effectiveGuardState], 'No supported guard proven');
+    addFactSection(facts, 'Authorization metadata', (endpoint.authorizationRequirements || []).map(function (requirement) {
+      var shape = requirement.valueShape.kind === 'scalar'
+        ? requirement.valueShape.scalarType
+        : requirement.valueShape.kind === 'array'
+          ? 'array[' + requirement.valueShape.itemCount + ']'
+          : requirement.valueShape.kind === 'object'
+            ? 'object{' + requirement.valueShape.keys.join(', ') + '}'
+            : 'dynamic shape';
+      return requirement.scope + ': ' + requirement.metadataKey + ' — ' + requirement.enforcementState + (requirement.guardName ? ' via ' + requirement.guardName : '') + ' (redacted ' + shape + ')';
+    }), endpoint.authorizationRequirements ? 'No authorization metadata proven' : 'Authorization facts unavailable');
     addFactSection(facts, 'Synchronous data access', endpoint.dbReads.map(function (name) { return 'READ ' + name; }).concat(endpoint.dbWrites.map(function (name) { return 'WRITE ' + name; })), endpoint.mutationClassification === 'unknown' ? 'Synchronous persistence state unknown' : 'No synchronous table access proven');
     addFactSection(facts, 'Local causal effects', (endpoint.localCausalEffects || []).map(function (effect) { return effect.direction + ' ' + effect.table + ' (' + effect.causalClass + ')'; }), 'No local causal table effect proven');
     addFactSection(facts, 'Distributed conditional effects', (endpoint.distributedConditionalEffects || []).map(function (effect) { return effect.direction + ' ' + effect.table + ' (' + effect.causalClass + ')'; }), 'No distributed conditional table effect proven');

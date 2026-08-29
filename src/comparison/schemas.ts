@@ -8,13 +8,26 @@ import { ASSERTION_PREDICATES, ASSERTION_STATUSES } from '../model/assertions.js
 import { DIAGNOSTIC_CODES, DIAGNOSTIC_SEVERITIES } from '../model/diagnostics.js';
 import { HTTP_METHODS } from '../model/entities.js';
 import {
+  AUTHORIZATION_ENFORCEMENT_STATES,
+  AUTHORIZATION_METADATA_SOURCES,
+} from '../model/authorization.js';
+import {
   HANDLER_REGISTRATION_STATES,
   INTERACTION_ACTIVATION_STATES,
   INTERACTION_BOUNDARY_STATES,
   INTERACTION_DISPATCH_TIMINGS,
   INTERACTION_KINDS,
 } from '../model/interactions.js';
-import { stableIdSchema } from '../model/schemas.js';
+import {
+  JOB_QUEUE_BRANCH_CONTROL_FLOWS,
+  JOB_QUEUE_BRANCH_EFFECT_KINDS,
+  JOB_QUEUE_HANDLER_DISPATCH_STATES,
+} from '../model/job-queue-branches.js';
+import {
+  authorizationValueShapeSchema,
+  jobQueueBranchSelectorSchema,
+  stableIdSchema,
+} from '../model/schemas.js';
 import {
   DIAGNOSTIC_CHANGE_KINDS,
   DIAGNOSTIC_CHANGE_REASONS,
@@ -22,12 +35,15 @@ import {
   DIFF_AMBIGUITY_SIDES,
   DIFF_SCHEMA_VERSION,
   DIFF_SCHEMA_V2_VERSION,
+  DIFF_SCHEMA_V3_VERSION,
+  DIFF_SCHEMA_V4_VERSION,
   ENDPOINT_CHANGE_KINDS,
   ENDPOINT_CHANGE_REASONS,
   FACT_AVAILABILITY_STATES,
   INTERACTION_CHANGE_KINDS,
   INTERACTION_CHANGE_REASONS,
   INTERACTION_HANDLER_CHANGE_REASONS,
+  JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS,
   type DiffDocument,
 } from './model.js';
 import { SEMANTIC_KEY_KINDS, semanticKeyIsCanonical, type SemanticKey } from './semantic-key.js';
@@ -69,6 +85,7 @@ export const diffInputSnapshotSchema = z
         terminals: factAvailabilitySchema,
         assertions: factAvailabilitySchema,
         diagnostics: factAvailabilitySchema,
+        authorization: factAvailabilitySchema.optional(),
       })
       .strict(),
   })
@@ -121,6 +138,21 @@ const terminalFactSchema = z
   })
   .strict();
 
+const authorizationFactSchema = z
+  .object({
+    metadataId: stableIdSchema,
+    enforcementId: stableIdSchema,
+    metadataKey: nonEmptyStringSchema,
+    scope: z.enum(['controller', 'method']),
+    source: z.enum(AUTHORIZATION_METADATA_SOURCES),
+    valueShape: authorizationValueShapeSchema,
+    enforcementState: z.enum(AUTHORIZATION_ENFORCEMENT_STATES),
+    guardKey: semanticKeySchema.nullable(),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: z.array(stableIdSchema),
+  })
+  .strict();
+
 const endpointSnapshotSchema = z
   .object({
     endpointId: stableIdSchema,
@@ -139,6 +171,13 @@ const endpointSnapshotSchema = z
     terminals: z
       .object({ availability: factAvailabilitySchema, values: z.array(terminalFactSchema) })
       .strict(),
+    authorization: z
+      .object({
+        availability: factAvailabilitySchema,
+        requirements: z.array(authorizationFactSchema),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
@@ -246,6 +285,61 @@ const interactionHandlerChangeSchema = z
   })
   .strict();
 
+const jobQueueDispatchSnapshotSchema = z
+  .object({
+    dispatchId: stableIdSchema,
+    key: semanticKeySchema,
+    handlerKey: semanticKeySchema,
+    state: z.enum(JOB_QUEUE_HANDLER_DISPATCH_STATES),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: z.array(stableIdSchema),
+  })
+  .strict();
+
+const jobQueueBranchSnapshotSchema = z
+  .object({
+    branchId: stableIdSchema,
+    key: semanticKeySchema,
+    dispatchKey: semanticKeySchema,
+    selector: jobQueueBranchSelectorSchema,
+    controlFlow: z.enum(JOB_QUEUE_BRANCH_CONTROL_FLOWS),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: z.array(stableIdSchema),
+  })
+  .strict();
+
+const jobQueueBranchEffectSnapshotSchema = z
+  .object({
+    effectId: stableIdSchema,
+    key: semanticKeySchema,
+    branchKey: semanticKeySchema,
+    kind: z.enum(JOB_QUEUE_BRANCH_EFFECT_KINDS),
+    targetKey: semanticKeySchema,
+    sourceAssertionKey: semanticKeySchema,
+    status: z.enum(['resolved', 'ambiguous']),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: z.array(stableIdSchema),
+  })
+  .strict();
+
+function jobQueueFactChangeSchema<T extends z.ZodTypeAny>(snapshot: T) {
+  return z
+    .object({
+      change: z.enum(INTERACTION_CHANGE_KINDS),
+      key: semanticKeySchema,
+      reasons: z.array(z.enum(JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS)).min(1),
+      before: snapshot.nullable(),
+      after: snapshot.nullable(),
+    })
+    .strict();
+}
+
+const jobQueueDispatchChangeSchema = jobQueueFactChangeSchema(jobQueueDispatchSnapshotSchema);
+const jobQueueBranchChangeSchema = jobQueueFactChangeSchema(jobQueueBranchSnapshotSchema);
+const jobQueueBranchEffectChangeSchema = jobQueueFactChangeSchema(
+  jobQueueBranchEffectSnapshotSchema,
+);
+
 const ambiguitySchema = z
   .object({
     kind: z.enum(DIFF_AMBIGUITY_KINDS),
@@ -273,12 +367,26 @@ const summarySchema = z
     interactionHandlersAdded: nonNegativeIntegerSchema.optional(),
     interactionHandlersRemoved: nonNegativeIntegerSchema.optional(),
     interactionHandlersModified: nonNegativeIntegerSchema.optional(),
+    jobQueueDispatchesAdded: nonNegativeIntegerSchema.optional(),
+    jobQueueDispatchesRemoved: nonNegativeIntegerSchema.optional(),
+    jobQueueDispatchesModified: nonNegativeIntegerSchema.optional(),
+    jobQueueBranchesAdded: nonNegativeIntegerSchema.optional(),
+    jobQueueBranchesRemoved: nonNegativeIntegerSchema.optional(),
+    jobQueueBranchesModified: nonNegativeIntegerSchema.optional(),
+    jobQueueBranchEffectsAdded: nonNegativeIntegerSchema.optional(),
+    jobQueueBranchEffectsRemoved: nonNegativeIntegerSchema.optional(),
+    jobQueueBranchEffectsModified: nonNegativeIntegerSchema.optional(),
   })
   .strict();
 
 export const diffDocumentSchema: z.ZodType<DiffDocument> = z
   .object({
-    schemaVersion: z.enum([DIFF_SCHEMA_VERSION, DIFF_SCHEMA_V2_VERSION]),
+    schemaVersion: z.enum([
+      DIFF_SCHEMA_VERSION,
+      DIFF_SCHEMA_V2_VERSION,
+      DIFF_SCHEMA_V3_VERSION,
+      DIFF_SCHEMA_V4_VERSION,
+    ]),
     before: diffInputSnapshotSchema,
     after: diffInputSnapshotSchema,
     summary: summarySchema,
@@ -287,6 +395,9 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
     diagnosticChanges: z.array(diagnosticChangeSchema),
     interactionChanges: z.array(interactionChangeSchema).optional(),
     interactionHandlerChanges: z.array(interactionHandlerChangeSchema).optional(),
+    jobQueueDispatchChanges: z.array(jobQueueDispatchChangeSchema).optional(),
+    jobQueueBranchChanges: z.array(jobQueueBranchChangeSchema).optional(),
+    jobQueueBranchEffectChanges: z.array(jobQueueBranchEffectChangeSchema).optional(),
     ambiguities: z.array(ambiguitySchema),
   })
   .strict()
@@ -301,14 +412,66 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
       document.summary.interactionHandlersRemoved,
       document.summary.interactionHandlersModified,
     ];
+    const hasInteractionDiff =
+      document.schemaVersion === DIFF_SCHEMA_V2_VERSION ||
+      document.schemaVersion === DIFF_SCHEMA_V3_VERSION ||
+      document.schemaVersion === DIFF_SCHEMA_V4_VERSION;
     if (
-      document.schemaVersion === DIFF_SCHEMA_V2_VERSION
+      hasInteractionDiff
         ? v2Fields.some((value) => value === undefined)
         : v2Fields.some((value) => value !== undefined)
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Diff schema v2 requires interaction changes; schema v1 must omit them.',
+        message: 'Diff schema v2-v4 requires interaction changes; schema v1 must omit them.',
+      });
+    }
+    const v3Fields = [
+      document.jobQueueDispatchChanges,
+      document.jobQueueBranchChanges,
+      document.jobQueueBranchEffectChanges,
+      document.summary.jobQueueDispatchesAdded,
+      document.summary.jobQueueDispatchesRemoved,
+      document.summary.jobQueueDispatchesModified,
+      document.summary.jobQueueBranchesAdded,
+      document.summary.jobQueueBranchesRemoved,
+      document.summary.jobQueueBranchesModified,
+      document.summary.jobQueueBranchEffectsAdded,
+      document.summary.jobQueueBranchEffectsRemoved,
+      document.summary.jobQueueBranchEffectsModified,
+    ];
+    if (
+      document.schemaVersion === DIFF_SCHEMA_V3_VERSION ||
+      document.schemaVersion === DIFF_SCHEMA_V4_VERSION
+        ? v3Fields.some((value) => value === undefined)
+        : v3Fields.some((value) => value !== undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Diff schema v3/v4 requires branch changes; schema v1/v2 must omit them.',
+      });
+    }
+    const hasAuthorizationDiff = document.schemaVersion === DIFF_SCHEMA_V4_VERSION;
+    const authorizationFields = [
+      document.before.facts.authorization,
+      document.after.facts.authorization,
+    ];
+    const endpointAuthorizationMismatch = document.endpointChanges.some((change) =>
+      hasAuthorizationDiff
+        ? (change.before !== null && change.before.authorization === undefined) ||
+          (change.after !== null && change.after.authorization === undefined)
+        : change.before?.authorization !== undefined || change.after?.authorization !== undefined,
+    );
+    if (
+      (hasAuthorizationDiff
+        ? authorizationFields.some((value) => value === undefined)
+        : authorizationFields.some((value) => value !== undefined)) ||
+      endpointAuthorizationMismatch
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message:
+          'Diff schema v4 requires authorization availability and endpoint facts; earlier schemas must omit them.',
       });
     }
   }) as z.ZodType<DiffDocument>;

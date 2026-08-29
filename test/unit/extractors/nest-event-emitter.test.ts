@@ -53,7 +53,7 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method.qualifiedName]));
       const events = analysis.interactions.filter(
         (interaction) => interaction.kind === 'in_process_event',
@@ -341,7 +341,7 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
 
       const graph = buildGraphReportDocument({ analysis });
       const createdScene = graph.endpoints.find(({ path }) => path === '/events/create')?.scene;
-      expect(graph.schemaVersion).toBe('4.0.0');
+      expect(graph.schemaVersion).toBe('6.0.0');
       expect(createdScene?.nodes.some(({ label }) => label.includes('event order.created'))).toBe(
         true,
       );
@@ -394,7 +394,7 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       expect(analysis.applications).toEqual([]);
       expect(analysis.interactions).toEqual([]);
       expect(analysis.interactionHandlers).toEqual([

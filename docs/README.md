@@ -2,7 +2,7 @@
 
 This index separates current product documentation from historical evidence. Unless a
 document is explicitly marked historical, it describes the current `0.1.0` tool,
-analysis schema `3.0.0`, and the capabilities listed in
+analysis schema `5.0.0`, and the capabilities listed in
 [Supported Static-Analysis Patterns](supported-patterns.md).
 
 ## Source-of-truth hierarchy
@@ -47,6 +47,7 @@ references.
 ## Analysis feature guides
 
 - [Nest modules and effective guards](nest-modules-and-global-guards.md)
+- [Authorization metadata and composite decorators](authorization-metadata.md)
 - [TypeORM QueryBuilder](typeorm-query-builder.md)
 - [Static PostgreSQL raw SQL](postgresql-raw-sql.md)
 - [Declared contracts and entity columns](declared-contracts-and-columns.md)

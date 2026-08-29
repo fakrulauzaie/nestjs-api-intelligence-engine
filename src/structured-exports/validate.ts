@@ -1,4 +1,9 @@
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
 import type {
   ControlEvidenceDocument,
@@ -9,9 +14,13 @@ import {
   CONTROL_EVIDENCE_SCHEMA_VERSION,
   CONTROL_EVIDENCE_SCHEMA_V2_VERSION,
   CONTROL_EVIDENCE_SCHEMA_V3_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V4_VERSION,
+  CONTROL_EVIDENCE_SCHEMA_V5_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION,
   OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION,
+  OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION,
 } from './model.js';
 import {
   controlEvidenceDocumentSchema,
@@ -63,17 +72,21 @@ export function assertValidOpenApiEnrichmentResult(
   }
   if (analysis !== undefined) {
     const hasDistributedInteractionRecords =
-      analysis.schemaVersion === '3.0.0' &&
+      analysisHasInteractionFacts(analysis) &&
       (analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
         analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
         analysis.interactionHandlers.some(
           ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
         ));
-    const expectedSchemaVersion = hasDistributedInteractionRecords
-      ? OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
-      : analysis.schemaVersion === '3.0.0'
-        ? OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION
-        : OPENAPI_ENRICHMENT_SCHEMA_VERSION;
+    const expectedSchemaVersion = analysisHasAuthorizationFacts(analysis)
+      ? OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION
+      : analysisHasJobQueueBranchFacts(analysis)
+        ? OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION
+        : hasDistributedInteractionRecords
+          ? OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
+          : analysisHasInteractionFacts(analysis)
+            ? OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION
+            : OPENAPI_ENRICHMENT_SCHEMA_VERSION;
     if (document.schemaVersion !== expectedSchemaVersion) {
       issues.push('The OpenAPI sidecar schema version does not match its analysis capabilities.');
     }
@@ -120,17 +133,21 @@ export function assertValidControlEvidenceDocument(input: {
   const document = controlEvidenceDocumentSchema.parse(input.document);
   const issues: string[] = [];
   const hasDistributedInteractionRecords =
-    input.analysis.schemaVersion === '3.0.0' &&
+    analysisHasInteractionFacts(input.analysis) &&
     (input.analysis.interactions.some(({ kind }) => kind === 'job_queue') ||
       input.analysis.interactions.some(({ kind }) => kind === 'microservice_message') ||
       input.analysis.interactionHandlers.some(
         ({ kind }) => kind === 'job_queue' || kind === 'microservice_message',
       ));
-  const expectedSchemaVersion = hasDistributedInteractionRecords
-    ? CONTROL_EVIDENCE_SCHEMA_V3_VERSION
-    : input.analysis.schemaVersion === '3.0.0'
-      ? CONTROL_EVIDENCE_SCHEMA_V2_VERSION
-      : CONTROL_EVIDENCE_SCHEMA_VERSION;
+  const expectedSchemaVersion = analysisHasAuthorizationFacts(input.analysis)
+    ? CONTROL_EVIDENCE_SCHEMA_V5_VERSION
+    : analysisHasJobQueueBranchFacts(input.analysis)
+      ? CONTROL_EVIDENCE_SCHEMA_V4_VERSION
+      : hasDistributedInteractionRecords
+        ? CONTROL_EVIDENCE_SCHEMA_V3_VERSION
+        : analysisHasInteractionFacts(input.analysis)
+          ? CONTROL_EVIDENCE_SCHEMA_V2_VERSION
+          : CONTROL_EVIDENCE_SCHEMA_VERSION;
   if (document.schemaVersion !== expectedSchemaVersion) {
     issues.push('The matrix schema version does not match its analysis capabilities.');
   }
@@ -159,7 +176,14 @@ export function assertValidControlEvidenceDocument(input: {
   ]);
   const canonicalTableNames = new Set(input.analysis.tables.map(({ name }) => name));
   const canonicalInteractionIds = new Set(
-    input.analysis.schemaVersion === '3.0.0' ? input.analysis.interactions.map(({ id }) => id) : [],
+    analysisHasInteractionFacts(input.analysis)
+      ? input.analysis.interactions.map(({ id }) => id)
+      : [],
+  );
+  const canonicalBranchIds = new Set(
+    analysisHasJobQueueBranchFacts(input.analysis)
+      ? input.analysis.interactionHandlerBranches.map(({ id }) => id)
+      : [],
   );
   for (const row of document.rows) {
     if (
@@ -200,6 +224,9 @@ export function assertValidControlEvidenceDocument(input: {
         );
       }
     }
+    if ((row.jobQueueBranchIds ?? []).some((id) => !canonicalBranchIds.has(id))) {
+      issues.push(`Endpoint row ${row.endpointId} references a non-canonical job-queue branch.`);
+    }
     for (const evidenceId of row.evidenceIds) {
       if (!allowedEvidenceIds.has(evidenceId)) {
         issues.push(`Endpoint row ${row.endpointId} references unknown evidence ${evidenceId}.`);
@@ -216,6 +243,7 @@ export function assertValidControlEvidenceDocument(input: {
       ...(row.localCausalEffects ?? []).flatMap(({ evidenceIds }) => evidenceIds),
       ...(row.distributedInteractions ?? []).flatMap(({ evidenceIds }) => evidenceIds),
       ...(row.distributedConditionalEffects ?? []).flatMap(({ evidenceIds }) => evidenceIds),
+      ...(row.authorizationRequirements ?? []).flatMap(({ evidenceIds }) => evidenceIds),
     ];
     if (nestedEvidence.some((id) => !rowEvidence.has(id))) {
       issues.push(`Endpoint row ${row.endpointId} omits nested supporting evidence.`);

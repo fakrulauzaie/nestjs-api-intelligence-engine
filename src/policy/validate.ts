@@ -65,6 +65,12 @@ const REASON_CODES_BY_RULE = {
     'local_event_handler_unknown',
     'no_in_process_event_subjects',
   ]),
+  'require-proven-authorization-enforcement': new Set([
+    'authorization_enforcement_proven',
+    'authorization_enforcement_configured',
+    'authorization_enforcement_unknown',
+    'no_authorization_metadata',
+  ]),
 } as const;
 
 export function validatePolicyResultsDocument(input: unknown): PolicyValidationResult {

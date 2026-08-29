@@ -104,7 +104,7 @@ export function canonicalizeAnalysisDocument(analysis: AnalysisDocument): Analys
     globalGuardAnalysis: analysis.globalGuardAnalysis,
   };
   if (analysis.schemaVersion === '2.0.0') return orderedV2;
-  return {
+  const orderedInteractions = {
     ...orderedV2,
     applications: sortById(analysis.applications),
     interactions: sortById(analysis.interactions).map(canonicalizeInteractionRecord),
@@ -122,6 +122,57 @@ export function canonicalizeAnalysisDocument(analysis: AnalysisDocument): Analys
       supportedKinds: [...analysis.interactionAnalysis.supportedKinds].sort(compareStrings),
       enabledKinds: [...analysis.interactionAnalysis.enabledKinds].sort(compareStrings),
     },
+  };
+  if (analysis.schemaVersion === '3.0.0') return orderedInteractions;
+  const orderedBranches = {
+    ...orderedInteractions,
+    interactionHandlerDispatches: sortById(analysis.interactionHandlerDispatches).map(
+      (dispatch) => ({
+        ...dispatch,
+        branchIds: [...dispatch.branchIds].sort(compareStrings),
+        evidenceIds: [...dispatch.evidenceIds].sort(compareStrings),
+      }),
+    ),
+    interactionHandlerBranches: sortById(analysis.interactionHandlerBranches).map((branch) => ({
+      ...branch,
+      selector:
+        branch.selector.kind === 'exact_jobs'
+          ? { ...branch.selector, jobs: [...branch.selector.jobs].sort(compareStrings) }
+          : branch.selector.kind === 'unmatched_jobs'
+            ? {
+                ...branch.selector,
+                excludedJobs: [...branch.selector.excludedJobs].sort(compareStrings),
+              }
+            : branch.selector,
+      evidenceIds: [...branch.evidenceIds].sort(compareStrings),
+    })),
+    interactionHandlerBranchEffects: sortById(analysis.interactionHandlerBranchEffects).map(
+      (effect) => ({
+        ...effect,
+        evidenceIds: [...effect.evidenceIds].sort(compareStrings),
+      }),
+    ),
+  };
+  if (analysis.schemaVersion === '4.0.0') return orderedBranches;
+  return {
+    ...orderedBranches,
+    authorizationMetadata: sortById(analysis.authorizationMetadata).map((record) => ({
+      ...record,
+      valueShape:
+        record.valueShape.kind === 'array'
+          ? {
+              ...record.valueShape,
+              itemTypes: [...record.valueShape.itemTypes].sort(compareStrings),
+            }
+          : record.valueShape.kind === 'object'
+            ? { ...record.valueShape, keys: [...record.valueShape.keys].sort(compareStrings) }
+            : record.valueShape,
+      evidenceIds: [...record.evidenceIds].sort(compareStrings),
+    })),
+    authorizationEnforcements: sortById(analysis.authorizationEnforcements).map((record) => ({
+      ...record,
+      evidenceIds: [...record.evidenceIds].sort(compareStrings),
+    })),
   } as AnalysisDocument;
 }
 
@@ -204,6 +255,13 @@ export function canonicalizeEndpointTrace(trace: EndpointTraceView): EndpointTra
                   distributedInteractionIds: [
                     ...trace.causalSummary.distributedInteractionIds,
                   ].sort(compareStrings),
+                }),
+            ...(trace.causalSummary.jobQueueBranchIds === undefined
+              ? {}
+              : {
+                  jobQueueBranchIds: [...trace.causalSummary.jobQueueBranchIds].sort(
+                    compareStrings,
+                  ),
                 }),
             completeness: {
               ...trace.causalSummary.completeness,

@@ -1,8 +1,18 @@
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
 import type { ImpactDocument, ImpactGraphSide } from '../impact/model.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
 import type { GraphReportDocument } from './model.js';
-import { GRAPH_REPORT_SCHEMA_VERSION, GRAPH_REPORT_SCHEMA_V4_VERSION } from './model.js';
+import {
+  GRAPH_REPORT_SCHEMA_VERSION,
+  GRAPH_REPORT_SCHEMA_V4_VERSION,
+  GRAPH_REPORT_SCHEMA_V5_VERSION,
+  GRAPH_REPORT_SCHEMA_V6_VERSION,
+} from './model.js';
 import { graphReportDocumentSchema } from './schemas.js';
 
 export class GraphReportIntegrityError extends Error {
@@ -42,7 +52,9 @@ function expectedSummary(document: GraphReportDocument): GraphReportDocument['su
     omittedNodes: views.reduce((total, view) => total + view.scene.omitted.nodes, 0),
     omittedEdges: views.reduce((total, view) => total + view.scene.omitted.edges, 0),
     omittedEvidence: views.reduce((total, view) => total + view.scene.omitted.evidence, 0),
-    ...(document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION
+    ...(document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
       ? {
           interactionHandlers: handlers.length,
           handlersWithDiagnostics: handlers.filter(({ diagnostics }) => diagnostics.length > 0)
@@ -61,10 +73,13 @@ export function assertValidGraphReportDocument(input: {
 }): GraphReportDocument {
   const document = graphReportDocumentSchema.parse(input.document);
   const issues: string[] = [];
-  const expectedSchemaVersion =
-    input.analysis.schemaVersion === '3.0.0'
-      ? GRAPH_REPORT_SCHEMA_V4_VERSION
-      : GRAPH_REPORT_SCHEMA_VERSION;
+  const expectedSchemaVersion = analysisHasAuthorizationFacts(input.analysis)
+    ? GRAPH_REPORT_SCHEMA_V6_VERSION
+    : analysisHasJobQueueBranchFacts(input.analysis)
+      ? GRAPH_REPORT_SCHEMA_V5_VERSION
+      : analysisHasInteractionFacts(input.analysis)
+        ? GRAPH_REPORT_SCHEMA_V4_VERSION
+        : GRAPH_REPORT_SCHEMA_VERSION;
   if (document.schemaVersion !== expectedSchemaVersion) {
     issues.push('The graph report schema version does not match its interaction content.');
   }
@@ -109,11 +124,16 @@ export function assertValidGraphReportDocument(input: {
   const canonicalEvidence = new Set(input.analysis.evidence.map(({ id }) => id));
   const canonicalTables = new Set(input.analysis.tables.map(({ name }) => name));
   const canonicalInteractions = new Set(
-    input.analysis.schemaVersion === '3.0.0'
+    analysisHasInteractionFacts(input.analysis)
       ? [
           ...input.analysis.interactions.map(({ id }) => id),
           ...input.analysis.interactionHandlers.map(({ id }) => id),
         ]
+      : [],
+  );
+  const canonicalBranchIds = new Set(
+    analysisHasJobQueueBranchFacts(input.analysis)
+      ? input.analysis.interactionHandlerBranches.map(({ id }) => id)
       : [],
   );
   for (const endpoint of document.endpoints) {
@@ -147,6 +167,9 @@ export function assertValidGraphReportDocument(input: {
     ) {
       issues.push(`Endpoint ${endpoint.endpointId} contains a non-canonical interaction node.`);
     }
+    if ((endpoint.jobQueueBranchIds ?? []).some((id) => !canonicalBranchIds.has(id))) {
+      issues.push(`Endpoint ${endpoint.endpointId} references a non-canonical job-queue branch.`);
+    }
     const sceneEvidence = new Set(evidenceIds);
     const referencedEvidence = [
       ...endpoint.scene.nodes.flatMap(({ evidenceIds: ids }) => ids),
@@ -155,6 +178,7 @@ export function assertValidGraphReportDocument(input: {
       ...endpoint.policyOutcomes.flatMap(({ evidenceIds: ids }) => ids),
       ...(endpoint.localCausalEffects ?? []).flatMap(({ evidenceIds: ids }) => ids),
       ...(endpoint.distributedConditionalEffects ?? []).flatMap(({ evidenceIds: ids }) => ids),
+      ...(endpoint.authorizationRequirements ?? []).flatMap(({ evidenceIds: ids }) => ids),
     ];
     if (referencedEvidence.some((id) => !canonicalEvidence.has(id) || !sceneEvidence.has(id))) {
       issues.push(`Endpoint ${endpoint.endpointId} has incomplete canonical evidence closure.`);
@@ -180,10 +204,12 @@ export function assertValidGraphReportDocument(input: {
       endpoint.guards,
       endpoint.dbReads,
       endpoint.dbWrites,
+      endpoint.jobQueueBranchIds ?? [],
       ...endpoint.scene.nodes.map(({ evidenceIds: ids }) => ids),
       ...endpoint.scene.edges.map(({ evidenceIds: ids }) => ids),
       ...(endpoint.localCausalEffects ?? []).map(({ evidenceIds: ids }) => ids),
       ...(endpoint.distributedConditionalEffects ?? []).map(({ evidenceIds: ids }) => ids),
+      ...(endpoint.authorizationRequirements ?? []).map(({ evidenceIds: ids }) => ids),
     ]) {
       if (values.join('|') !== sortedUnique(values).join('|')) {
         issues.push(`Endpoint ${endpoint.endpointId} contains a non-canonical string set.`);
@@ -193,12 +219,14 @@ export function assertValidGraphReportDocument(input: {
   }
 
   const canonicalHandlerIds = new Set(
-    input.analysis.schemaVersion === '3.0.0'
+    analysisHasInteractionFacts(input.analysis)
       ? input.analysis.interactionHandlers.map(({ id }) => id)
       : [],
   );
   const canonicalInteractionIds = new Set(
-    input.analysis.schemaVersion === '3.0.0' ? input.analysis.interactions.map(({ id }) => id) : [],
+    analysisHasInteractionFacts(input.analysis)
+      ? input.analysis.interactions.map(({ id }) => id)
+      : [],
   );
   const handlerViews = document.interactionHandlers ?? [];
   const reportHandlerIds = handlerViews.map(({ handlerId }) => handlerId);
@@ -234,6 +262,48 @@ export function assertValidGraphReportDocument(input: {
       )
     ) {
       issues.push(`Handler ${handler.handlerId} contains a non-canonical interaction reference.`);
+    }
+    if (analysisHasJobQueueBranchFacts(input.analysis)) {
+      const canonicalDispatch = input.analysis.interactionHandlerDispatches.find(
+        ({ handlerId }) => handlerId === handler.handlerId,
+      );
+      if ((canonicalDispatch === undefined) !== (handler.jobQueueDispatch === null)) {
+        issues.push(`Handler ${handler.handlerId} has inconsistent branch capability.`);
+      }
+      if (canonicalDispatch !== undefined && handler.jobQueueDispatch !== null) {
+        const branchIds = handler.jobQueueDispatch?.branches.map(({ branchId }) => branchId) ?? [];
+        if (
+          handler.jobQueueDispatch?.state !== canonicalDispatch.state ||
+          branchIds.toSorted().join('|') !== canonicalDispatch.branchIds.toSorted().join('|')
+        ) {
+          issues.push(`Handler ${handler.handlerId} has an inconsistent dispatch projection.`);
+        }
+        for (const branch of handler.jobQueueDispatch?.branches ?? []) {
+          const canonicalBranch = input.analysis.interactionHandlerBranches.find(
+            ({ id }) => id === branch.branchId,
+          );
+          const canonicalEffectIds = input.analysis.interactionHandlerBranchEffects
+            .filter(({ branchId }) => branchId === branch.branchId)
+            .map(({ id }) => id)
+            .sort();
+          if (
+            canonicalBranch === undefined ||
+            branch.effects
+              .map(({ effectId }) => effectId)
+              .sort()
+              .join('|') !== canonicalEffectIds.join('|')
+          ) {
+            issues.push(`Handler ${handler.handlerId} has a non-canonical branch projection.`);
+          }
+        }
+      }
+    }
+    if (
+      handler.scene.nodes.some(
+        (node) => node.kind === 'interaction_branch' && !canonicalBranchIds.has(node.id),
+      )
+    ) {
+      issues.push(`Handler ${handler.handlerId} contains a non-canonical branch node.`);
     }
     const sceneEvidence = new Set(evidenceIds);
     const referencedEvidence = [

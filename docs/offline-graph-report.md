@@ -54,10 +54,13 @@ Automated tests inject launcher fakes and never open a real browser.
 
 The graph command never scans source, starts NestJS, imports target modules, connects
 to a database, or reads repository state outside its explicit inputs. Its independently
-versioned `GraphReportDocument` schema is `1.0.0` for analysis v1/v2 reports and
-`4.0.0` for current analysis v3 reports. Historical graph schemas `2.0.0` and `3.0.0`
-remain readable but are no longer emitted. Graph v4 adds one bounded handler-rooted
-scene per canonical interaction handler; it does not change analysis schema v3. The
+versioned `GraphReportDocument` schema is `1.0.0` for analysis v1/v2 reports,
+`4.0.0` for analysis v3, `5.0.0` for analysis v4, and `6.0.0` for current analysis v5
+reports. Historical graph
+schemas `2.0.0` and `3.0.0` remain readable but are no longer emitted. Graph v4 adds
+one bounded handler-rooted scene per canonical interaction handler. Graph v5 adds
+BullMQ branch nodes, branch-effect edges, and selected endpoint branch IDs. Graph v6
+adds redacted endpoint authorization requirements and enforcement states. The
 HTML is a rendering of the validated document, not a second fact graph.
 
 ## Endpoint and handler exploration

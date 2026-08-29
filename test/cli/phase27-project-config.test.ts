@@ -75,7 +75,7 @@ describe('Phase 27 scan project configuration', () => {
         };
       };
       expect(analysis).toMatchObject({
-        schemaVersion: '3.0.0',
+        schemaVersion: '5.0.0',
         analysisRun: {
           configuration: {
             interactions: {

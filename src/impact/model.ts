@@ -4,6 +4,8 @@ import type { DiffInputSnapshot } from '../comparison/model.js';
 import type { SemanticKey, SemanticKeyKind } from '../comparison/semantic-key.js';
 
 export const IMPACT_SCHEMA_VERSION = '1.0.0' as const;
+export const IMPACT_SCHEMA_V2_VERSION = '2.0.0' as const;
+export type ImpactSchemaVersion = typeof IMPACT_SCHEMA_VERSION | typeof IMPACT_SCHEMA_V2_VERSION;
 
 export const SOURCE_CHANGE_KINDS = ['added', 'removed', 'modified'] as const;
 export type SourceChangeKind = (typeof SOURCE_CHANGE_KINDS)[number];
@@ -21,7 +23,7 @@ export const IMPACT_CATEGORIES = [
 ] as const;
 export type ImpactCategory = (typeof IMPACT_CATEGORIES)[number];
 
-export const IMPACT_REASON_CODES = [
+export const IMPACT_REASON_CODES_V1 = [
   'endpoint_added',
   'endpoint_removed',
   'endpoint_modified',
@@ -42,6 +44,12 @@ export const IMPACT_REASON_CODES = [
   'interaction_handler_removed',
   'interaction_handler_modified',
   'ambiguous_or_incomplete_path',
+] as const;
+export const IMPACT_REASON_CODES = [
+  ...IMPACT_REASON_CODES_V1,
+  'job_queue_dispatch_changed',
+  'job_queue_branch_changed',
+  'job_queue_branch_effect_changed',
 ] as const;
 export type ImpactReasonCode = (typeof IMPACT_REASON_CODES)[number];
 
@@ -131,7 +139,7 @@ export interface ImpactSummary {
 }
 
 export interface ImpactDocument {
-  readonly schemaVersion: typeof IMPACT_SCHEMA_VERSION;
+  readonly schemaVersion: ImpactSchemaVersion;
   readonly before: DiffInputSnapshot;
   readonly after: DiffInputSnapshot;
   readonly summary: ImpactSummary;

@@ -28,6 +28,11 @@ export const STABLE_ID_KINDS = [
   'application',
   'interaction',
   'interaction_handler',
+  'interaction_handler_dispatch',
+  'interaction_handler_branch',
+  'interaction_handler_branch_effect',
+  'authorization_metadata',
+  'authorization_enforcement',
 ] as const;
 export type StableIdKind = (typeof STABLE_ID_KINDS)[number];
 
@@ -74,6 +79,21 @@ export function makeAnalysisRunId(input: {
           input.configuration.interactions.maxFanOutPerInteraction,
           input.configuration.interactions.maxInteractionTraceStates,
         ];
+  const authorizationIdentity: readonly StableIdentityValue[] =
+    input.configuration.authorization === undefined
+      ? []
+      : [
+          ...input.configuration.authorization.metadataKeys,
+          ...input.configuration.authorization.decoratorSymbols.map(({ symbol, metadataKey }) =>
+            symbol.kind === 'package_export'
+              ? `decorator:package:${symbol.moduleSpecifier}:${symbol.exportedName}:${metadataKey}`
+              : `decorator:repository:${symbol.sourceFile}:${symbol.exportedName}:${metadataKey}`,
+          ),
+          ...input.configuration.authorization.enforcementRelationships.map(
+            ({ metadataKey, guard }) =>
+              `enforcement:${metadataKey}:${guard.sourceFile}:${guard.exportedName}`,
+          ),
+        ];
   return createStableId('analysis', [
     input.repositoryRevision,
     input.tsconfigPath,
@@ -84,6 +104,7 @@ export function makeAnalysisRunId(input: {
     input.configuration.evidenceSnippetLimit,
     ...rawSqlIdentity,
     ...interactionIdentity,
+    ...authorizationIdentity,
   ]);
 }
 
@@ -271,6 +292,86 @@ export function makeInteractionHandlerId(input: {
     input.targetKey,
     input.applicationId,
     input.handlerEvidenceId,
+  ]);
+}
+
+export function makeJobQueueHandlerDispatchId(input: {
+  handlerId: string;
+  discriminantEvidenceId: string;
+  ruleId: string;
+}): string {
+  return createStableId('interaction_handler_dispatch', [
+    input.handlerId,
+    input.discriminantEvidenceId,
+    input.ruleId,
+  ]);
+}
+
+export function makeJobQueueHandlerBranchId(input: {
+  dispatchId: string;
+  selectorKey: string;
+  controlFlow: string;
+  branchEvidenceId: string;
+  ruleId: string;
+}): string {
+  return createStableId('interaction_handler_branch', [
+    input.dispatchId,
+    input.selectorKey,
+    input.controlFlow,
+    input.branchEvidenceId,
+    input.ruleId,
+  ]);
+}
+
+export function makeJobQueueHandlerBranchEffectId(input: {
+  branchId: string;
+  kind: string;
+  targetId: string;
+  sourceAssertionId: string;
+  effectEvidenceId: string;
+  ruleId: string;
+}): string {
+  return createStableId('interaction_handler_branch_effect', [
+    input.branchId,
+    input.kind,
+    input.targetId,
+    input.sourceAssertionId,
+    input.effectEvidenceId,
+    input.ruleId,
+  ]);
+}
+
+export function makeAuthorizationMetadataId(input: {
+  endpointId: string;
+  scope: string;
+  metadataKey: string;
+  decoratorKey: string;
+  decoratorEvidenceId: string;
+  ruleId: string;
+}): string {
+  return createStableId('authorization_metadata', [
+    input.endpointId,
+    input.scope,
+    input.metadataKey,
+    input.decoratorKey,
+    input.decoratorEvidenceId,
+    input.ruleId,
+  ]);
+}
+
+export function makeAuthorizationEnforcementId(input: {
+  metadataId: string;
+  state: string;
+  guardId: string | null;
+  guardAssertionId: string | null;
+  ruleId: string;
+}): string {
+  return createStableId('authorization_enforcement', [
+    input.metadataId,
+    input.state,
+    input.guardId,
+    input.guardAssertionId,
+    input.ruleId,
   ]);
 }
 

@@ -4,6 +4,7 @@ import {
   ENDPOINT_CHANGE_REASONS,
   INTERACTION_CHANGE_REASONS,
   INTERACTION_HANDLER_CHANGE_REASONS,
+  JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS,
   type DiagnosticSnapshot,
   type DiffDocument,
   type EndpointSnapshot,
@@ -12,6 +13,10 @@ import { assertValidDiffDocument } from './validate.js';
 
 function compareStrings(left: string, right: string): number {
   return left.localeCompare(right);
+}
+
+function unique(values: readonly string[]): string[] {
+  return [...new Set(values)].sort(compareStrings);
 }
 
 function orderByVocabulary<T extends string>(values: readonly T[], vocabulary: readonly T[]): T[] {
@@ -63,6 +68,35 @@ function canonicalizeEndpoint(snapshot: EndpointSnapshot | null): EndpointSnapsh
         }))
         .sort((left, right) => compareStrings(left.key.encoded, right.key.encoded)),
     },
+    ...(snapshot.authorization === undefined
+      ? {}
+      : {
+          authorization: {
+            ...snapshot.authorization,
+            requirements: [...snapshot.authorization.requirements]
+              .map((requirement) => ({
+                ...requirement,
+                valueShape:
+                  requirement.valueShape.kind === 'array'
+                    ? {
+                        ...requirement.valueShape,
+                        itemTypes: [...requirement.valueShape.itemTypes].sort(compareStrings),
+                      }
+                    : requirement.valueShape.kind === 'object'
+                      ? {
+                          ...requirement.valueShape,
+                          keys: [...requirement.valueShape.keys].sort(compareStrings),
+                        }
+                      : requirement.valueShape,
+                evidenceIds: unique(requirement.evidenceIds),
+              }))
+              .sort((left, right) =>
+                `${left.metadataKey}:${left.scope}:${left.enforcementState}:${left.enforcementId}`.localeCompare(
+                  `${right.metadataKey}:${right.scope}:${right.enforcementState}:${right.enforcementId}`,
+                ),
+              ),
+          },
+        }),
   };
 }
 
@@ -166,6 +200,72 @@ export function canonicalizeDiffDocument(input: DiffDocument): DiffDocument {
                       ...change.after,
                       evidenceIds: [...change.after.evidenceIds].sort(compareStrings),
                     },
+            }))
+            .sort((left, right) =>
+              `${left.key.encoded}:${left.change}`.localeCompare(
+                `${right.key.encoded}:${right.change}`,
+              ),
+            ),
+        }),
+    ...(diff.jobQueueDispatchChanges === undefined
+      ? {}
+      : {
+          jobQueueDispatchChanges: [...diff.jobQueueDispatchChanges]
+            .map((change) => ({
+              ...change,
+              reasons: orderByVocabulary(change.reasons, JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS),
+              before:
+                change.before === null
+                  ? null
+                  : { ...change.before, evidenceIds: unique(change.before.evidenceIds) },
+              after:
+                change.after === null
+                  ? null
+                  : { ...change.after, evidenceIds: unique(change.after.evidenceIds) },
+            }))
+            .sort((left, right) =>
+              `${left.key.encoded}:${left.change}`.localeCompare(
+                `${right.key.encoded}:${right.change}`,
+              ),
+            ),
+        }),
+    ...(diff.jobQueueBranchChanges === undefined
+      ? {}
+      : {
+          jobQueueBranchChanges: [...diff.jobQueueBranchChanges]
+            .map((change) => ({
+              ...change,
+              reasons: orderByVocabulary(change.reasons, JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS),
+              before:
+                change.before === null
+                  ? null
+                  : { ...change.before, evidenceIds: unique(change.before.evidenceIds) },
+              after:
+                change.after === null
+                  ? null
+                  : { ...change.after, evidenceIds: unique(change.after.evidenceIds) },
+            }))
+            .sort((left, right) =>
+              `${left.key.encoded}:${left.change}`.localeCompare(
+                `${right.key.encoded}:${right.change}`,
+              ),
+            ),
+        }),
+    ...(diff.jobQueueBranchEffectChanges === undefined
+      ? {}
+      : {
+          jobQueueBranchEffectChanges: [...diff.jobQueueBranchEffectChanges]
+            .map((change) => ({
+              ...change,
+              reasons: orderByVocabulary(change.reasons, JOB_QUEUE_BRANCH_FACT_CHANGE_REASONS),
+              before:
+                change.before === null
+                  ? null
+                  : { ...change.before, evidenceIds: unique(change.before.evidenceIds) },
+              after:
+                change.after === null
+                  ? null
+                  : { ...change.after, evidenceIds: unique(change.after.evidenceIds) },
             }))
             .sort((left, right) =>
               `${left.key.encoded}:${left.change}`.localeCompare(

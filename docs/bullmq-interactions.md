@@ -14,11 +14,17 @@ A producer is retained only when all of the following are proven:
 - the member binding is unique and is not reassigned; and
 - the source method calls that member's `add(jobName, data)` method.
 
-Queue and job identities support string literals, no-substitution templates, and the
-bounded immutable constant forms accepted by the shared string resolver. The payload
-and queue options are not retained. A dynamic queue or job remains a `job_queue`
-record with an explicit dynamic target and `INTERACTION_TARGET_DYNAMIC`; it is never
-matched to an exact local worker. A union or otherwise ambiguous receiver emits
+Queue and job identities support string literals, no-substitution templates, bounded
+acyclic immutable `const` chains, checker-resolved string/`const enum` members, and
+nested property or string-element access on `as const` objects. Named imports and
+`tsconfig.paths` aliases work when TypeScript resolves their source inside the scanned
+repository. The analyzer does not separately traverse aliases outside that boundary.
+
+The payload and queue options are not retained. A dynamic queue or job remains a
+`job_queue` record with an explicit dynamic target and
+`INTERACTION_TARGET_DYNAMIC`; it is never matched to an exact local worker. Mutable
+bindings, object spreads/computed keys, cycles, and exhausted resolution bounds remain
+dynamic. A union or otherwise ambiguous receiver emits
 `INTERACTION_RECEIVER_AMBIGUOUS` and produces no guessed interaction.
 
 The producer rule is `queue.bullmq.queue-add.v1`. Producers are eager, asynchronous,
@@ -39,13 +45,40 @@ emits `JOB_QUEUE_HANDLER_REGISTRATION_UNKNOWN`. A consumer-only repository there
 still exposes a handler-rooted trace without fabricating an HTTP endpoint or local
 producer.
 
-BullMQ `WorkerHost.process()` is queue-wide: its canonical job target is dynamic even
-when source control flow inspects `job.name`. A detected `switch` or equality test on
-`job.name` emits the informational `JOB_QUEUE_FILTER_UNPROVEN` diagnostic. Phase 35
-does not slice control-flow branches, so no database effect is labeled as belonging
-to one exact job name.
+The queue-wide handler remains the deployment candidate identity. Analysis v4 also
+publishes a separate dispatch/branch/effect projection for the supported bounded
+`job.name` grammar; the handler itself is not duplicated per job.
 
 The handler rule is `queue.bullmq.worker-host.process.queue-wide.v1`.
+
+## Phase 40 branch publication boundary
+
+Analysis v4 publishes the Gate B0 vocabulary for job-specific worker effects. It
+distinguishes:
+
+- `exact_jobs` branches selected by one or more proven job names;
+- `all_jobs` work in a common prelude or `finally` region;
+- `unmatched_jobs` work reached after excluding supported exact branches; and
+- `unknown` residual work whose control flow cannot be safely sliced.
+
+A dispatch is `complete`, `partial`, or `unsupported`. Partial and unsupported
+dispatches must retain discovered effects in an unknown residual branch; the engine
+must neither discard those effects nor copy them onto every exact job. Branch effects
+are source-range projections of existing canonical method/table/interaction
+assertions, not replacement facts.
+
+The extractor supports direct `switch (job.name)` and terminating sequential strict
+equality checks on the exact `process()` parameter symbol. Static literals, string
+enums, `as const` members, grouped empty case labels, `break`, `return`, `throw`,
+default/unmatched work, common prelude work, and top-level `try/finally` are bounded
+supported shapes. Aliases, mutation, compound predicates, dynamic case labels, and
+non-empty fallthrough emit `JOB_QUEUE_FILTER_PARTIAL` or
+`JOB_QUEUE_FILTER_UNPROVEN` and retain their effects under `unknown`.
+
+Exact producers select matching `exact_jobs`, `all_jobs`, and compatible
+`unmatched_jobs` records. An `unknown` residual is kept visible for honesty but is not
+copied onto an exact producer. See
+[ADR 0004](adr/0004-bullmq-branch-analysis-v4.md) for the compatibility decision.
 
 ## Candidate matching and open-world meaning
 
@@ -85,22 +118,25 @@ uses `delivered`.
 
 ## Comparison, impact, and structured exports
 
-Comparison schema `2.0.0` already treats interaction and handler identity generically,
-so queue/job target changes appear as deterministic interaction add/remove changes;
-boundary, timing, activation, registration, or rule changes remain modifications.
-Potential-impact paths attach those changes only to endpoints that reach the changed
-queue record.
+Comparison schema `3.0.0` adds structural dispatch, branch, and branch-effect semantic
+keys. Queue/job target changes remain deterministic interaction changes, while selector
+or control-flow identity changes appear as branch add/remove changes. Potential-impact
+schema `2.0.0` carries branch-aware reverse traversal so an exact branch effect is not
+attached to an incompatible exact producer job.
 
-OpenAPI enrichment and control evidence use schema `3.0.0` only when the analysis
-contains a `job_queue` interaction or handler. Resolved endpoint facts then add:
+OpenAPI enrichment and control evidence use schema `4.0.0` for frozen analysis v4 and
+schema `5.0.0` for current analysis v5. Resolved
+endpoint facts include:
 
 - `distributedInteractions`, including sanitized queue/job labels; and
 - `distributedConditionalEffects`, including direction, table, causal class, and
-  evidence IDs.
+  evidence IDs; and
+- `jobQueueBranchIds`, listing the exact/common/unmatched branches selected for the
+  endpoint trace.
 
-The control CSV v3 adds `distributed_interactions` and
-`distributed_conditional_effects`. Interaction-free and local-interaction-only
-analyses keep their prior export schema versions and bytes.
+The control CSV v4 adds `job_queue_branch_ids`. Graph schema v5 renders branch nodes
+and branch-effect edges in handler scenes and lists selected branch IDs on endpoint
+views. Historical analysis documents keep their prior derived schema behavior.
 
 ## Evidence and deliberate boundaries
 
@@ -108,9 +144,12 @@ Evidence retains only bounded call/declaration snippets and repository-relative
 coordinates. Queue payloads, option objects, credentials, environment values, and
 runtime broker state are not canonical facts.
 
-Phase 35 deliberately excludes legacy `@nestjs/bull`, named `@Process()` handlers,
-exact `job.name` branch slicing, custom queue wrappers, raw BullMQ consumers, repeat
-and flow APIs, Nest microservices, raw broker SDKs, and cross-repository discovery.
-The executable contracts are in
+The current scanner deliberately excludes legacy `@nestjs/bull`, named `@Process()`
+handlers, general control-flow/data-flow slicing beyond the bounded grammar, custom queue wrappers, raw BullMQ
+consumers, repeat and flow APIs, raw broker SDKs, and cross-repository discovery.
+Nest microservices are a separate supported interaction kind rather than part of the
+BullMQ surface. The executable queue-wide contracts are in
 `test/unit/extractors/nest-bullmq.test.ts`; their frozen source corpus remains under
-`test/fixtures/distributed/bullmq/`.
+`test/fixtures/distributed/bullmq/`. The non-executable Gate B0 branch corpus is under
+`test/fixtures/phase39/bullmq/`; executable Phase 40 propagation coverage is under
+`test/fixtures/phase40/` and `test/unit/extractors/bullmq-branches.test.ts`.

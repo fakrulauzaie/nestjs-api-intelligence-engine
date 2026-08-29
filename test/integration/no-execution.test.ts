@@ -54,7 +54,11 @@ describe('static-analysis safety', () => {
         'src/side-effect.ts',
       ]);
       expect(
-        scanned.analysis.schemaVersion === '3.0.0' ? scanned.analysis.interactions : [],
+        scanned.analysis.schemaVersion === '3.0.0' ||
+          scanned.analysis.schemaVersion === '4.0.0' ||
+          scanned.analysis.schemaVersion === '5.0.0'
+          ? scanned.analysis.interactions
+          : [],
       ).toHaveLength(2);
       expect(attemptedNetworkRequest).toBe(false);
       await expect(access(sentinel)).rejects.toThrow();

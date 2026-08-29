@@ -20,21 +20,44 @@ import type {
   PolicyRuleId,
   PolicySeverity,
 } from '../policy/model.js';
+import type {
+  AuthorizationEnforcementState,
+  AuthorizationMetadataSource,
+  AuthorizationValueShape,
+} from '../model/authorization.js';
 
 export const OPENAPI_ENRICHMENT_SCHEMA_VERSION = '1.0.0' as const;
 export const OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION = '2.0.0' as const;
 export const OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION = '3.0.0' as const;
+export const OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION = '4.0.0' as const;
+export const OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION = '5.0.0' as const;
 export const CONTROL_EVIDENCE_SCHEMA_VERSION = '1.0.0' as const;
 export const CONTROL_EVIDENCE_SCHEMA_V2_VERSION = '2.0.0' as const;
 export const CONTROL_EVIDENCE_SCHEMA_V3_VERSION = '3.0.0' as const;
+export const CONTROL_EVIDENCE_SCHEMA_V4_VERSION = '4.0.0' as const;
+export const CONTROL_EVIDENCE_SCHEMA_V5_VERSION = '5.0.0' as const;
 export type OpenApiEnrichmentSchemaVersion =
   | typeof OPENAPI_ENRICHMENT_SCHEMA_VERSION
   | typeof OPENAPI_ENRICHMENT_SCHEMA_V2_VERSION
-  | typeof OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION;
+  | typeof OPENAPI_ENRICHMENT_SCHEMA_V3_VERSION
+  | typeof OPENAPI_ENRICHMENT_SCHEMA_V4_VERSION
+  | typeof OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION;
 export type ControlEvidenceSchemaVersion =
   | typeof CONTROL_EVIDENCE_SCHEMA_VERSION
   | typeof CONTROL_EVIDENCE_SCHEMA_V2_VERSION
-  | typeof CONTROL_EVIDENCE_SCHEMA_V3_VERSION;
+  | typeof CONTROL_EVIDENCE_SCHEMA_V3_VERSION
+  | typeof CONTROL_EVIDENCE_SCHEMA_V4_VERSION
+  | typeof CONTROL_EVIDENCE_SCHEMA_V5_VERSION;
+
+export interface EndpointAuthorizationSummary {
+  readonly metadataKey: string;
+  readonly scope: Extract<GuardScope, 'controller' | 'method'>;
+  readonly source: AuthorizationMetadataSource;
+  readonly valueShape: AuthorizationValueShape;
+  readonly enforcementState: AuthorizationEnforcementState;
+  readonly guardName: string | null;
+  readonly evidenceIds: readonly string[];
+}
 
 export interface EndpointInteractionSummary {
   readonly interactionId: string;
@@ -93,6 +116,8 @@ export interface OpenApiResolvedExtension {
   readonly localCausalEffects?: readonly EndpointLocalCausalEffect[] | undefined;
   readonly distributedInteractions?: readonly EndpointInteractionSummary[] | undefined;
   readonly distributedConditionalEffects?: readonly EndpointDistributedCausalEffect[] | undefined;
+  readonly jobQueueBranchIds?: readonly string[] | undefined;
+  readonly authorizationRequirements?: readonly EndpointAuthorizationSummary[] | undefined;
 }
 
 export interface OpenApiNonResolvedExtension {
@@ -192,6 +217,8 @@ export interface ControlEvidenceRow {
   readonly localCausalEffects?: readonly EndpointLocalCausalEffect[] | undefined;
   readonly distributedInteractions?: readonly EndpointInteractionSummary[] | undefined;
   readonly distributedConditionalEffects?: readonly EndpointDistributedCausalEffect[] | undefined;
+  readonly jobQueueBranchIds?: readonly string[] | undefined;
+  readonly authorizationRequirements?: readonly EndpointAuthorizationSummary[] | undefined;
   readonly requestColumnInfluences: readonly ControlEvidenceInfluence[];
   readonly diagnosticCodes: readonly string[];
   readonly incompletenessCodes: readonly string[];

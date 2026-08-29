@@ -27,6 +27,24 @@ export function canonicalizeGraphReportDocument(
               dbReads: unique(handler.dbReads),
               dbWrites: unique(handler.dbWrites),
               producerInteractionIds: unique(handler.producerInteractionIds),
+              ...(handler.jobQueueDispatch === undefined
+                ? {}
+                : {
+                    jobQueueDispatch:
+                      handler.jobQueueDispatch === null
+                        ? null
+                        : {
+                            ...handler.jobQueueDispatch,
+                            branches: [...handler.jobQueueDispatch.branches]
+                              .map((branch) => ({
+                                ...branch,
+                                effects: [...branch.effects].sort((left, right) =>
+                                  compare(left.effectId, right.effectId),
+                                ),
+                              }))
+                              .sort((left, right) => compare(left.branchId, right.branchId)),
+                          },
+                  }),
               diagnostics: [...handler.diagnostics]
                 .map((diagnostic) => ({
                   ...diagnostic,
@@ -65,6 +83,33 @@ export function canonicalizeGraphReportDocument(
         guards: unique(endpoint.guards),
         dbReads: unique(endpoint.dbReads),
         dbWrites: unique(endpoint.dbWrites),
+        ...(endpoint.jobQueueBranchIds === undefined
+          ? {}
+          : { jobQueueBranchIds: unique(endpoint.jobQueueBranchIds) }),
+        ...(endpoint.authorizationRequirements === undefined
+          ? {}
+          : {
+              authorizationRequirements: [...endpoint.authorizationRequirements]
+                .map((requirement) => ({
+                  ...requirement,
+                  valueShape:
+                    requirement.valueShape.kind === 'array'
+                      ? {
+                          ...requirement.valueShape,
+                          itemTypes: [...new Set(requirement.valueShape.itemTypes)].sort(),
+                        }
+                      : requirement.valueShape.kind === 'object'
+                        ? { ...requirement.valueShape, keys: unique(requirement.valueShape.keys) }
+                        : requirement.valueShape,
+                  evidenceIds: unique(requirement.evidenceIds),
+                }))
+                .sort((left, right) =>
+                  compare(
+                    `${left.metadataKey}:${left.scope}:${left.enforcementState}:${left.guardName ?? ''}`,
+                    `${right.metadataKey}:${right.scope}:${right.enforcementState}:${right.guardName ?? ''}`,
+                  ),
+                ),
+            }),
         ...(endpoint.localCausalEffects === undefined
           ? {}
           : {

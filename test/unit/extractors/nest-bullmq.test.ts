@@ -19,6 +19,7 @@ import { renderControlEvidenceCsv } from '../../../src/structured-exports/csv.js
 import { enrichOpenApiDocument } from '../../../src/structured-exports/openapi.js';
 import { buildEndpointTrace } from '../../../src/tracing/endpoint-trace.js';
 import { buildInteractionHandlerTrace } from '../../../src/tracing/interaction-handler-trace.js';
+import { selectJobQueueBranches } from '../../../src/tracing/job-queue-branch-selection.js';
 import {
   writeFakeBullMq,
   writeFakeNestCommon,
@@ -46,11 +47,75 @@ async function scanFixture(name: string) {
 }
 
 describe('Nest BullMQ extraction', () => {
+  it('resolves aliased as-const queue names and enum job names inside the repository', async () => {
+    const project = await createTestTypeScriptProject();
+    try {
+      await Promise.all([writeFakeNestCommon(project), writeFakeBullMq(project)]);
+      await project.write(
+        'share/constants.ts',
+        [
+          "export enum VerificationJob { CTT_PPOE_API_SYNC = 'ctt-ppoe-api-sync' }",
+          "export const QUEUES = { VERIFICATION: 'verification-queue' } as const;",
+        ].join('\n'),
+      );
+      await project.write(
+        'src/verification.service.ts',
+        [
+          "import { Injectable } from '@nestjs/common';",
+          "import { InjectQueue } from '@nestjs/bullmq';",
+          "import type { Queue } from 'bullmq';",
+          "import { QUEUES, VerificationJob } from '~Share/constants';",
+          '@Injectable()',
+          'class VerificationService {',
+          '  constructor(',
+          '    @InjectQueue(QUEUES.VERIFICATION)',
+          '    private readonly verificationQueue: Queue,',
+          '  ) {}',
+          '  async enqueue(): Promise<void> {',
+          '    await this.verificationQueue.add(VerificationJob.CTT_PPOE_API_SYNC, {});',
+          '  }',
+          '}',
+        ].join('\n'),
+      );
+      await project.writeJson('tsconfig.json', {
+        compilerOptions: {
+          target: 'ES2023',
+          module: 'CommonJS',
+          moduleResolution: 'Node',
+          experimentalDecorators: true,
+          strict: true,
+          noEmit: true,
+          baseUrl: '.',
+          paths: { '~Share/*': ['share/*'] },
+        },
+        include: ['src/**/*.ts', 'share/**/*.ts'],
+      });
+
+      const result = await scanRepository({ repositoryRoot: project.path });
+      if (result.analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      expect(result.analysis.interactions.filter(({ kind }) => kind === 'job_queue')).toEqual([
+        expect.objectContaining({
+          target: {
+            targetKind: 'queue',
+            technology: 'bullmq',
+            queue: { resolution: 'exact', value: 'verification-queue' },
+            job: { resolution: 'exact', value: 'ctt-ppoe-api-sync' },
+          },
+        }),
+      ]);
+      expect(result.analysis.diagnostics.map(({ code }) => code)).not.toContain(
+        'INTERACTION_TARGET_DYNAMIC',
+      );
+    } finally {
+      await project.cleanup();
+    }
+  }, 30_000);
+
   it('links a co-located Queue.add producer to a registered queue-wide worker conditionally', async () => {
     const { project, result } = await scanFixture('colocated');
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       const interactions = analysis.interactions.filter(
         (record): record is JobQueueInteractionRecord => record.kind === 'job_queue',
       );
@@ -113,7 +178,7 @@ describe('Nest BullMQ extraction', () => {
         ]);
       }
       const graph = buildGraphReportDocument({ analysis });
-      expect(graph.schemaVersion).toBe('4.0.0');
+      expect(graph.schemaVersion).toBe('6.0.0');
       expect(graph.interactionHandlers).toEqual([
         expect.objectContaining({
           kind: 'job_queue',
@@ -158,7 +223,7 @@ describe('Nest BullMQ extraction', () => {
       }
 
       const controls = buildControlEvidenceDocument({ analysis });
-      expect(controls.schemaVersion).toBe('3.0.0');
+      expect(controls.schemaVersion).toBe('5.0.0');
       expect(controls.rows[0]?.distributedInteractions).toEqual([
         expect.objectContaining({ kind: 'job_queue', target: expect.stringContaining('reports') }),
       ]);
@@ -176,7 +241,7 @@ describe('Nest BullMQ extraction', () => {
           paths: { '/reports': { post: {} } },
         },
       });
-      expect(enriched.result.schemaVersion).toBe('3.0.0');
+      expect(enriched.result.schemaVersion).toBe('5.0.0');
       expect(
         (
           enriched.enrichedDocument.paths as Record<
@@ -212,10 +277,10 @@ describe('Nest BullMQ extraction', () => {
     const consumer = await scanFixture('consumer-only');
     try {
       if (
-        producer.result.analysis.schemaVersion !== '3.0.0' ||
-        consumer.result.analysis.schemaVersion !== '3.0.0'
+        producer.result.analysis.schemaVersion !== '5.0.0' ||
+        consumer.result.analysis.schemaVersion !== '5.0.0'
       ) {
-        throw new Error('Expected analysis v3.');
+        throw new Error('Expected analysis v5.');
       }
       const producerInteractions = producer.result.analysis.interactions.filter(
         ({ kind }) => kind === 'job_queue',
@@ -257,11 +322,11 @@ describe('Nest BullMQ extraction', () => {
     }
   }, 30_000);
 
-  it('retains queue-wide conditional effects when job-name branch slicing is unproven', async () => {
+  it('publishes exact BullMQ branches and filters endpoint effects by producer job', async () => {
     const { project, result } = await scanFixture('branch-filtering');
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       const interactions = analysis.interactions.filter(
         (record): record is JobQueueInteractionRecord => record.kind === 'job_queue',
       );
@@ -271,7 +336,51 @@ describe('Nest BullMQ extraction', () => {
       expect(interactions).toHaveLength(2);
       expect(handlers).toHaveLength(1);
       expect(handlers[0]!.target.job).toEqual({ resolution: 'dynamic', value: null });
-      expect(analysis.diagnostics.map(({ code }) => code)).toContain('JOB_QUEUE_FILTER_UNPROVEN');
+      expect(analysis.diagnostics.map(({ code }) => code)).not.toContain(
+        'JOB_QUEUE_FILTER_UNPROVEN',
+      );
+      expect(analysis.interactionHandlerDispatches).toEqual([
+        expect.objectContaining({ handlerId: handlers[0]!.id, state: 'complete' }),
+      ]);
+      expect(
+        analysis.interactionHandlerBranches.map(({ selector, controlFlow }) => ({
+          selector,
+          controlFlow,
+        })),
+      ).toEqual(
+        expect.arrayContaining([
+          {
+            selector: { kind: 'exact_jobs', jobs: ['cleanup'] },
+            controlFlow: 'switch_case',
+          },
+          {
+            selector: { kind: 'exact_jobs', jobs: ['generate-pdf'] },
+            controlFlow: 'switch_case',
+          },
+          {
+            selector: {
+              kind: 'unmatched_jobs',
+              excludedJobs: ['cleanup', 'generate-pdf'],
+            },
+            controlFlow: 'default_branch',
+          },
+        ]),
+      );
+      expect(analysis.interactionHandlerBranchEffects).toEqual([
+        expect.objectContaining({ kind: 'writes_table' }),
+      ]);
+      const selections = new Map(
+        interactions.map((interaction) => [
+          interaction.target.job.value,
+          selectJobQueueBranches({
+            analysis,
+            handlerId: handlers[0]!.id,
+            producerJob: interaction.target.job,
+          }),
+        ]),
+      );
+      expect(selections.get('generate-pdf')?.sourceAssertionIds.size).toBe(1);
+      expect(selections.get('cleanup')?.sourceAssertionIds.size).toBe(0);
       expect(
         analysis.assertions.filter(
           ({ predicate }) => predicate === 'INTERACTION_MATCHES_LOCAL_HANDLER',
@@ -334,7 +443,7 @@ describe('Nest BullMQ extraction', () => {
     const second = await scanFixture('negatives');
     try {
       const { analysis } = first.result;
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       const interactions = analysis.interactions.filter(
         (record): record is JobQueueInteractionRecord => record.kind === 'job_queue',
       );

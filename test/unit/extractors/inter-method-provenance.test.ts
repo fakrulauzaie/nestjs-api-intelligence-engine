@@ -105,7 +105,7 @@ describe('Phase 21 bounded inter-method request provenance', () => {
   it('maps proven call arguments through one and two service hops without reachability shortcuts', async () => {
     const { project, analysis } = await analyze();
     try {
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       expect(validateAnalysisDocument(analysis)).toMatchObject({ success: true });
       const methods = new Map(analysis.methods.map((method) => [method.id, method]));
       const origins = new Map(analysis.requestFieldOrigins.map((origin) => [origin.id, origin]));
@@ -177,7 +177,7 @@ describe('Phase 21 bounded inter-method request provenance', () => {
   it('stops before a second hop when the configured call depth is one', async () => {
     const { project, analysis } = await analyze(1);
     try {
-      if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected analysis v3.');
+      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method]));
       const origins = new Map(analysis.requestFieldOrigins.map((origin) => [origin.id, origin]));
       const parameters = new Map(

@@ -12,11 +12,18 @@ export const DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION = {
   maxInteractionTraceStates: 1_000,
 } as const;
 
+export const DEFAULT_AUTHORIZATION_ANALYSIS_CONFIGURATION = {
+  metadataKeys: [],
+  decoratorSymbols: [],
+  enforcementRelationships: [],
+} as const;
+
 export const DEFAULT_ANALYSIS_CONFIGURATION: AnalysisConfiguration = {
   maxCallDepth: 3,
   maxSourceFileBytes: DEFAULT_MAX_SOURCE_FILE_BYTES,
   evidenceSnippetLimit: DEFAULT_EVIDENCE_SNIPPET_LIMIT,
   interactions: DEFAULT_INTERACTION_TRAVERSAL_CONFIGURATION,
+  authorization: DEFAULT_AUTHORIZATION_ANALYSIS_CONFIGURATION,
 };
 
 export const POSTGRESQL_18_RAW_SQL_CONFIGURATION: RawSqlAnalysisConfiguration = {

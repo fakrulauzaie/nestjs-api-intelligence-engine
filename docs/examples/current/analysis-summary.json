@@ -1,6 +1,6 @@
 {
   "artifactKind": "current-analysis-summary-not-complete-canonical-document",
-  "schemaVersion": "3.0.0",
+  "schemaVersion": "5.0.0",
   "resultState": "completed_with_gaps",
   "recordCounts": {
     "sourceFiles": 17,
@@ -9,6 +9,9 @@
     "applications": 1,
     "interactions": 0,
     "interactionHandlers": 0,
+    "interactionHandlerDispatches": 0,
+    "interactionHandlerBranches": 0,
+    "interactionHandlerBranchEffects": 0,
     "diagnostics": 7
   },
   "interactionAnalysis": {

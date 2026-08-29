@@ -3,6 +3,7 @@ import {
   type AnalysisDocument,
   type AnalysisDocumentV2,
   type AnalysisDocumentV3,
+  type AnalysisDocumentV4,
   type EvidenceRecord,
   type SourceRange,
 } from '../../src/model/index.js';
@@ -214,5 +215,15 @@ export function createMinimalAnalysisDocumentV3(): AnalysisDocumentV3 {
       enabledKinds: [],
       state: 'not_run',
     },
+  };
+}
+
+export function createMinimalAnalysisDocumentV4(): AnalysisDocumentV4 {
+  return {
+    ...createMinimalAnalysisDocumentV3(),
+    schemaVersion: '4.0.0',
+    interactionHandlerDispatches: [],
+    interactionHandlerBranches: [],
+    interactionHandlerBranchEffects: [],
   };
 }

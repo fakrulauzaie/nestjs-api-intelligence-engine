@@ -38,9 +38,9 @@ function normalizeGeneratedMarkdown(value: string): string {
 }
 
 describe('Documentation Gate D1 current examples', () => {
-  it('keeps the checked-in catalogue, traces, and summary equal to current v3 output', async () => {
+  it('keeps the checked-in catalogue, traces, and summary equal to current v5 output', async () => {
     const { analysis } = await scanRepository({ repositoryRoot: resolve('example-nestjs-app') });
-    if (analysis.schemaVersion !== '3.0.0') throw new Error('Expected current analysis v3.');
+    if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected current analysis v5.');
 
     const [catalogue, readTrace, writeTrace, summaryText] = await Promise.all([
       readFile(resolve('docs/examples/current/endpoints.md'), 'utf8'),
@@ -90,6 +90,9 @@ describe('Documentation Gate D1 current examples', () => {
         applications: analysis.applications.length,
         interactions: analysis.interactions.length,
         interactionHandlers: analysis.interactionHandlers.length,
+        interactionHandlerDispatches: analysis.interactionHandlerDispatches.length,
+        interactionHandlerBranches: analysis.interactionHandlerBranches.length,
+        interactionHandlerBranchEffects: analysis.interactionHandlerBranchEffects.length,
         diagnostics: analysis.diagnostics.length,
       },
       interactionAnalysis: {

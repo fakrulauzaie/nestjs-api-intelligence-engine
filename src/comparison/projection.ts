@@ -1,20 +1,34 @@
 import { normalizeRoutePath } from '../extractors/route-paths.js';
-import type { AnalysisDocument } from '../model/analysis.js';
+import {
+  analysisHasAuthorizationFacts,
+  analysisHasInteractionFacts,
+  analysisHasJobQueueBranchFacts,
+  type AnalysisDocument,
+} from '../model/analysis.js';
+import { buildEndpointAuthorization } from '../authorization/endpoint-authorization.js';
 import type { AssertionRecord } from '../model/assertions.js';
 import type { EvidenceRecord } from '../model/evidence.js';
 import { interactionTargetKey } from '../model/interactions.js';
+import {
+  canonicalizeJobQueueBranchSelector,
+  jobQueueBranchSelectorKey,
+} from '../model/job-queue-branches.js';
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
 import type {
   AssertionSnapshot,
   DiagnosticSnapshot,
   DiffInputSnapshot,
   EndpointGuardFact,
+  EndpointAuthorizationFact,
   EndpointHandlerFact,
   EndpointSnapshot,
   EndpointTerminalContributor,
   EndpointTerminalFact,
   InteractionHandlerSnapshot,
   InteractionSnapshot,
+  JobQueueBranchEffectSnapshot,
+  JobQueueBranchSnapshot,
+  JobQueueDispatchSnapshot,
 } from './model.js';
 import { normalizeAnalysisForComparison } from './normalize.js';
 import {
@@ -38,6 +52,9 @@ export interface AnalysisSemanticProjection {
   readonly diagnostics: readonly DiagnosticSnapshot[];
   readonly interactions: readonly InteractionSnapshot[];
   readonly interactionHandlers: readonly InteractionHandlerSnapshot[];
+  readonly jobQueueDispatches: readonly JobQueueDispatchSnapshot[];
+  readonly jobQueueBranches: readonly JobQueueBranchSnapshot[];
+  readonly jobQueueBranchEffects: readonly JobQueueBranchEffectSnapshot[];
   readonly collisions: readonly ProjectionSemanticCollision[];
 }
 
@@ -376,7 +393,7 @@ export function buildAnalysisSemanticProjection(
       );
     }
   }
-  if (analysis.schemaVersion === '3.0.0') {
+  if (analysisHasInteractionFacts(analysis)) {
     for (const application of analysis.applications) {
       const bootstrapEvidence = evidenceById.get(application.bootstrapEvidenceId);
       register(
@@ -536,6 +553,25 @@ export function buildAnalysisSemanticProjection(
       });
     const directGuards = projectGuards(effectiveView.directGuards);
     const effectiveGuards = projectGuards(effectiveView.effectiveGuards);
+    const authorization = buildEndpointAuthorization(analysis, endpoint.id);
+    const authorizationRequirements: EndpointAuthorizationFact[] = authorization.requirements.map(
+      (requirement) => ({
+        metadataId: requirement.metadataId,
+        enforcementId: requirement.enforcementId,
+        metadataKey: requirement.metadataKey,
+        scope: requirement.scope,
+        source: requirement.source,
+        valueShape: requirement.valueShape,
+        enforcementState: requirement.enforcementState,
+        guardKey:
+          requirement.guardId === null ? null : (semanticKeyById.get(requirement.guardId) ?? null),
+        ruleId: analysisHasAuthorizationFacts(analysis)
+          ? (analysis.authorizationEnforcements.find(({ id }) => id === requirement.enforcementId)
+              ?.ruleId ?? '<missing-rule>')
+          : '<unavailable>',
+        evidenceIds: sortedUnique(requirement.evidenceIds),
+      }),
+    );
 
     return {
       endpointId: endpoint.id,
@@ -561,8 +597,50 @@ export function buildAnalysisSemanticProjection(
           semanticKeyById,
         }),
       },
+      ...(authorization.availability === 'available'
+        ? {
+            authorization: {
+              availability: 'available' as const,
+              requirements: authorizationRequirements,
+            },
+          }
+        : {}),
     };
   });
+
+  if (analysisHasAuthorizationFacts(analysis)) {
+    for (const metadata of analysis.authorizationMetadata) {
+      register(
+        metadata.id,
+        'authorization_metadata',
+        createSemanticKey('authorization_metadata', [
+          semanticKeyById.get(metadata.endpointId)!.encoded,
+          metadata.scope,
+          metadata.metadataKey,
+          metadata.source,
+          metadata.decorator.kind,
+          metadata.decorator.moduleSpecifier,
+          metadata.decorator.exportedName,
+          metadata.decorator.sourceFileId === null
+            ? null
+            : (sourcePathById.get(metadata.decorator.sourceFileId) ?? null),
+        ]),
+      );
+    }
+    for (const enforcement of analysis.authorizationEnforcements) {
+      register(
+        enforcement.id,
+        'authorization_enforcement',
+        createSemanticKey('authorization_enforcement', [
+          semanticKeyById.get(enforcement.metadataId)!.encoded,
+          enforcement.guardId === null
+            ? null
+            : (semanticKeyById.get(enforcement.guardId)?.encoded ?? null),
+          enforcement.ruleId,
+        ]),
+      );
+    }
+  }
 
   const assertions = analysis.assertions
     .map((assertion): AssertionSnapshot => {
@@ -624,71 +702,136 @@ export function buildAnalysisSemanticProjection(
     })
     .sort((left, right) => compareSemanticKeys(left.key, right.key));
 
-  const interactions: InteractionSnapshot[] =
-    analysis.schemaVersion === '3.0.0'
-      ? analysis.interactions
-          .map((interaction) => {
-            const sourceMethodKey = semanticKeyById.get(interaction.sourceMethodId)!;
-            const applicationKey =
-              interaction.applicationId === null
-                ? null
-                : (semanticKeyById.get(interaction.applicationId) ?? null);
-            return {
-              interactionId: interaction.id,
-              key: createSemanticKey('interaction', [
-                'comparison_identity',
-                sourceMethodKey.encoded,
-                interaction.kind,
-                interactionTargetKey(interaction.target),
-                applicationKey?.encoded ?? null,
-              ]),
-              kind: interaction.kind,
-              sourceMethodKey,
-              targetKey: interactionTargetKey(interaction.target),
-              applicationKey,
-              activation: interaction.activation,
-              boundary: interaction.boundary,
-              dispatchTiming: interaction.dispatchTiming,
-              ruleId: interaction.ruleId,
-              evidenceIds: sortedUnique(interaction.evidenceIds),
-            };
-          })
-          .sort((left, right) => compareSemanticKeys(left.key, right.key))
-      : [];
-  const interactionHandlers: InteractionHandlerSnapshot[] =
-    analysis.schemaVersion === '3.0.0'
-      ? analysis.interactionHandlers
-          .map((handler) => {
-            const methodKey = semanticKeyById.get(handler.methodId)!;
-            const applicationKey =
-              handler.applicationId === null
-                ? null
-                : (semanticKeyById.get(handler.applicationId) ?? null);
-            return {
-              handlerId: handler.id,
-              key: createSemanticKey('interaction_handler', [
-                'comparison_identity',
-                methodKey.encoded,
-                handler.kind,
-                interactionTargetKey(handler.target),
-                applicationKey?.encoded ?? null,
-              ]),
-              kind: handler.kind,
-              methodKey,
-              targetKey: interactionTargetKey(handler.target),
-              applicationKey,
-              registrationState: handler.registrationState,
-              ruleId: handler.ruleId,
-              evidenceIds: sortedUnique([
-                handler.handlerEvidenceId,
-                ...(handler.kind === 'in_process_event'
-                  ? (handler.configurationEvidenceIds ?? [])
-                  : []),
-              ]),
-            };
-          })
-          .sort((left, right) => compareSemanticKeys(left.key, right.key))
-      : [];
+  const interactions: InteractionSnapshot[] = analysisHasInteractionFacts(analysis)
+    ? analysis.interactions
+        .map((interaction) => {
+          const sourceMethodKey = semanticKeyById.get(interaction.sourceMethodId)!;
+          const applicationKey =
+            interaction.applicationId === null
+              ? null
+              : (semanticKeyById.get(interaction.applicationId) ?? null);
+          return {
+            interactionId: interaction.id,
+            key: createSemanticKey('interaction', [
+              'comparison_identity',
+              sourceMethodKey.encoded,
+              interaction.kind,
+              interactionTargetKey(interaction.target),
+              applicationKey?.encoded ?? null,
+            ]),
+            kind: interaction.kind,
+            sourceMethodKey,
+            targetKey: interactionTargetKey(interaction.target),
+            applicationKey,
+            activation: interaction.activation,
+            boundary: interaction.boundary,
+            dispatchTiming: interaction.dispatchTiming,
+            ruleId: interaction.ruleId,
+            evidenceIds: sortedUnique(interaction.evidenceIds),
+          };
+        })
+        .sort((left, right) => compareSemanticKeys(left.key, right.key))
+    : [];
+  const interactionHandlers: InteractionHandlerSnapshot[] = analysisHasInteractionFacts(analysis)
+    ? analysis.interactionHandlers
+        .map((handler) => {
+          const methodKey = semanticKeyById.get(handler.methodId)!;
+          const applicationKey =
+            handler.applicationId === null
+              ? null
+              : (semanticKeyById.get(handler.applicationId) ?? null);
+          return {
+            handlerId: handler.id,
+            key: createSemanticKey('interaction_handler', [
+              'comparison_identity',
+              methodKey.encoded,
+              handler.kind,
+              interactionTargetKey(handler.target),
+              applicationKey?.encoded ?? null,
+            ]),
+            kind: handler.kind,
+            methodKey,
+            targetKey: interactionTargetKey(handler.target),
+            applicationKey,
+            registrationState: handler.registrationState,
+            ruleId: handler.ruleId,
+            evidenceIds: sortedUnique([
+              handler.handlerEvidenceId,
+              ...(handler.kind === 'in_process_event'
+                ? (handler.configurationEvidenceIds ?? [])
+                : []),
+            ]),
+          };
+        })
+        .sort((left, right) => compareSemanticKeys(left.key, right.key))
+    : [];
+
+  const jobQueueDispatches: JobQueueDispatchSnapshot[] = [];
+  const jobQueueBranches: JobQueueBranchSnapshot[] = [];
+  const jobQueueBranchEffects: JobQueueBranchEffectSnapshot[] = [];
+  if (analysisHasJobQueueBranchFacts(analysis)) {
+    for (const dispatch of analysis.interactionHandlerDispatches) {
+      const handlerKey = semanticKeyById.get(dispatch.handlerId)!;
+      const key = createSemanticKey('interaction_handler_dispatch', [
+        handlerKey.encoded,
+        dispatch.ruleId,
+      ]);
+      register(dispatch.id, 'interaction_handler_dispatch', key);
+      jobQueueDispatches.push({
+        dispatchId: dispatch.id,
+        key,
+        handlerKey,
+        state: dispatch.state,
+        ruleId: dispatch.ruleId,
+        evidenceIds: sortedUnique(dispatch.evidenceIds),
+      });
+    }
+    for (const branch of analysis.interactionHandlerBranches) {
+      const dispatchKey = semanticKeyById.get(branch.dispatchId)!;
+      const selector = canonicalizeJobQueueBranchSelector(branch.selector);
+      const key = createSemanticKey('interaction_handler_branch', [
+        dispatchKey.encoded,
+        jobQueueBranchSelectorKey(selector),
+        branch.controlFlow,
+      ]);
+      register(branch.id, 'interaction_handler_branch', key);
+      jobQueueBranches.push({
+        branchId: branch.id,
+        key,
+        dispatchKey,
+        selector,
+        controlFlow: branch.controlFlow,
+        ruleId: branch.ruleId,
+        evidenceIds: sortedUnique(branch.evidenceIds),
+      });
+    }
+    for (const effect of analysis.interactionHandlerBranchEffects) {
+      const branchKey = semanticKeyById.get(effect.branchId)!;
+      const targetKey = semanticKeyById.get(effect.targetId)!;
+      const sourceAssertionKey = semanticKeyById.get(effect.sourceAssertionId)!;
+      const key = createSemanticKey('interaction_handler_branch_effect', [
+        branchKey.encoded,
+        effect.kind,
+        targetKey.encoded,
+        sourceAssertionKey.encoded,
+      ]);
+      register(effect.id, 'interaction_handler_branch_effect', key);
+      jobQueueBranchEffects.push({
+        effectId: effect.id,
+        key,
+        branchKey,
+        kind: effect.kind,
+        targetKey,
+        sourceAssertionKey,
+        status: effect.status,
+        ruleId: effect.ruleId,
+        evidenceIds: sortedUnique(effect.evidenceIds),
+      });
+    }
+    jobQueueDispatches.sort((left, right) => compareSemanticKeys(left.key, right.key));
+    jobQueueBranches.sort((left, right) => compareSemanticKeys(left.key, right.key));
+    jobQueueBranchEffects.sort((left, right) => compareSemanticKeys(left.key, right.key));
+  }
 
   return {
     input: normalized.input,
@@ -702,6 +845,9 @@ export function buildAnalysisSemanticProjection(
     diagnostics,
     interactions,
     interactionHandlers,
+    jobQueueDispatches,
+    jobQueueBranches,
+    jobQueueBranchEffects,
     collisions: groupCollisions(keyedRecords),
   };
 }

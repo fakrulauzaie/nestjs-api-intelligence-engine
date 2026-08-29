@@ -7,6 +7,8 @@ export * from './guard-rules.js';
 export * from './hashing.js';
 export * from './ids.js';
 export * from './interactions.js';
+export * from './job-queue-branches.js';
+export * from './authorization.js';
 export * from './ordering.js';
 export * from './paths.js';
 export * from './schemas.js';

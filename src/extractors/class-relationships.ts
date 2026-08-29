@@ -33,6 +33,7 @@ export const CLASS_INJECTION_RULE_ID = 'nest.di.class-constructor.v1';
 export const DIRECT_CALL_RULE_ID = 'nest.call.injected-member.v1';
 
 const NEST_COMMON_MODULE = '@nestjs/common';
+const NEST_BULLMQ_MODULE = '@nestjs/bullmq';
 const NEST_TYPEORM_MODULE = '@nestjs/typeorm';
 const EXTERNALLY_MODELED_CONSTRUCTOR_TYPES = new Map([
   ['@nestjs/axios', 'HttpService'],
@@ -252,8 +253,10 @@ export function extractClassRelationships(input: {
     const isController = located.indexedClass.decorators.some((decorator) =>
       isPackageDecorator(decorator, NEST_COMMON_MODULE, 'Controller'),
     );
-    const isProvider = located.indexedClass.decorators.some((decorator) =>
-      isPackageDecorator(decorator, NEST_COMMON_MODULE, 'Injectable'),
+    const isProvider = located.indexedClass.decorators.some(
+      (decorator) =>
+        isPackageDecorator(decorator, NEST_COMMON_MODULE, 'Injectable') ||
+        isPackageDecorator(decorator, NEST_BULLMQ_MODULE, 'Processor'),
     );
     if (!isController && !isProvider) continue;
     recognizedOwners.push(located);

@@ -6,12 +6,17 @@ import type {
   GlobalGuardState,
   GuardScope,
 } from '../model/analysis.js';
+import { analysisHasInteractionFacts } from '../model/analysis.js';
 import type { AssertionStatus } from '../model/assertions.js';
 import type { DiagnosticCode } from '../model/diagnostics.js';
 import type { HttpMethod } from '../model/entities.js';
 import { interactionTargetKey } from '../model/interactions.js';
 import { normalizeRoutePath } from '../extractors/route-paths.js';
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
+import {
+  buildEndpointAuthorization,
+  type EndpointAuthorizationRequirement,
+} from '../authorization/endpoint-authorization.js';
 import { buildEndpointTrace } from '../tracing/endpoint-trace.js';
 import {
   inProcessEventTargetLabel,
@@ -47,6 +52,8 @@ export interface EndpointCatalogueEntry {
   readonly directGuards: readonly EndpointCatalogueGuard[];
   readonly globalGuards: readonly EndpointCatalogueGuard[];
   readonly guards: readonly EndpointCatalogueGuard[];
+  readonly authorizationAvailability: 'available' | 'unavailable';
+  readonly authorizationRequirements: readonly EndpointAuthorizationRequirement[];
   readonly evidence: readonly string[];
   readonly outboundHttpInteractions?:
     | readonly {
@@ -124,10 +131,9 @@ export function buildEndpointCatalogue(
   const classes = new Map(analysis.classes.map((record) => [record.id, record]));
   const sources = new Map(analysis.sourceFiles.map((source) => [source.id, source]));
   const evidence = new Map(analysis.evidence.map((record) => [record.id, record]));
-  const interactionById =
-    analysis.schemaVersion === '3.0.0'
-      ? new Map(analysis.interactions.map((interaction) => [interaction.id, interaction]))
-      : new Map();
+  const interactionById = analysisHasInteractionFacts(analysis)
+    ? new Map(analysis.interactions.map((interaction) => [interaction.id, interaction]))
+    : new Map();
   const implementationByEndpoint = new Map(
     analysis.assertions
       .filter((assertion) => assertion.predicate === 'ENDPOINT_IMPLEMENTED_BY')
@@ -181,6 +187,7 @@ export function buildEndpointCatalogue(
       const directGuards = mapGuards(guardView.directGuards);
       const globalGuards = mapGuards(guardView.globalGuards);
       const guards = mapGuards(guardView.effectiveGuards);
+      const authorization = buildEndpointAuthorization(analysis, endpoint.id);
       const trace =
         handler === undefined || duplicate
           ? null
@@ -205,10 +212,9 @@ export function buildEndpointCatalogue(
                   ]
                 : [];
             });
-      const handlerById =
-        analysis.schemaVersion === '3.0.0'
-          ? new Map(analysis.interactionHandlers.map((handler) => [handler.id, handler]))
-          : new Map();
+      const handlerById = analysisHasInteractionFacts(analysis)
+        ? new Map(analysis.interactionHandlers.map((handler) => [handler.id, handler]))
+        : new Map();
       const handlerStatesByInteraction = new Map<string, string[]>();
       const handlerCandidatesByInteraction = new Map<string, string[]>();
       if (trace?.status === 'resolved') {
@@ -317,6 +323,8 @@ export function buildEndpointCatalogue(
         directGuards,
         globalGuards,
         guards,
+        authorizationAvailability: authorization.availability,
+        authorizationRequirements: authorization.requirements,
         evidence: [...new Set(references)].sort(),
         ...(outboundHttpInteractions.length === 0
           ? {}
@@ -404,11 +412,11 @@ export function renderEndpointCatalogueMarkdown(catalogue: EndpointCatalogueView
             .join(', ')}`,
         ]),
     '',
-    '| Method | Path | Handler | Selection | Direct guards | Global guards | Effective state | Evidence |',
-    '|---|---|---|---|---|---|---|---|',
+    '| Method | Path | Handler | Selection | Direct guards | Global guards | Effective state | Authorization metadata | Evidence |',
+    '|---|---|---|---|---|---|---|---|---|',
     ...catalogue.endpoints.map(
       (endpoint) =>
-        `| ${endpoint.httpMethod} | \`${escapeTableCell(endpoint.path)}\` | ${escapeTableCell(endpoint.handlerQualifiedName ?? 'unresolved')} | ${endpoint.selectionStatus} | ${escapeTableCell(endpoint.directGuards.length === 0 ? endpoint.directGuardState : endpoint.directGuards.map((guard) => `${guard.scope}: ${guard.name}`).join('<br>'))} | ${escapeTableCell(endpoint.globalGuards.length === 0 ? endpoint.globalGuardState : endpoint.globalGuards.map((guard) => guard.name).join('<br>'))} | ${endpoint.effectiveGuardState} | ${escapeTableCell(endpoint.evidence.join('<br>'))} |`,
+        `| ${endpoint.httpMethod} | \`${escapeTableCell(endpoint.path)}\` | ${escapeTableCell(endpoint.handlerQualifiedName ?? 'unresolved')} | ${endpoint.selectionStatus} | ${escapeTableCell(endpoint.directGuards.length === 0 ? endpoint.directGuardState : endpoint.directGuards.map((guard) => `${guard.scope}: ${guard.name}`).join('<br>'))} | ${escapeTableCell(endpoint.globalGuards.length === 0 ? endpoint.globalGuardState : endpoint.globalGuards.map((guard) => guard.name).join('<br>'))} | ${endpoint.effectiveGuardState} | ${escapeTableCell(endpoint.authorizationAvailability === 'unavailable' ? 'unavailable' : endpoint.authorizationRequirements.length === 0 ? 'none_proven' : endpoint.authorizationRequirements.map((requirement) => `${requirement.scope}: ${requirement.metadataKey} (${requirement.enforcementState}${requirement.guardName === null ? '' : `; ${requirement.guardName}`})`).join('<br>'))} | ${escapeTableCell(endpoint.evidence.join('<br>'))} |`,
     ),
   ];
 

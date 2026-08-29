@@ -17,7 +17,9 @@ describe('Phase 14 impact documentation', () => {
     expect(impact).toContain('The analysis traverses both snapshots');
     expect(impact).toContain('A terminals-only endpoint diff is not labeled a direct edit');
     expect(impact).toContain('Changed files with no supported endpoint path remain visible');
-    expect(impact).toContain('ImpactDocument` has independent schema version `1.0.0`');
+    expect(impact).toMatch(
+      /`ImpactDocument` uses independent schema `1\.0\.0`[\s\S]*`2\.0\.0` when either input is analysis v4/u,
+    );
     expect(architecture).toContain('validated impact.json');
     expect(workflow).toContain('api-intel impact <before-analysis.json> <after-analysis.json>');
   });

@@ -26,7 +26,7 @@ Configuration is strict JSON: unknown rules, properties, severities, versions, a
 option types are rejected.
 
 The version-1 policy-only form below remains accepted byte-for-byte. A version-2
-project configuration is also accepted by `check`, as is version 3, when it contains a
+project configuration is also accepted by `check`, as are versions 3 and 4, when it contains a
 non-empty `rules` object; analysis, output, and report categories do not alter
 evaluation of an existing canonical analysis. See
 [Project Configuration](project-configuration.md).
@@ -42,7 +42,8 @@ evaluation of an existing canonical analysis. See
     "no-new-diagnostics": ["warn", { "minimumSeverity": "warning", "onUnknown": "error" }],
     "forbid-dynamic-interaction-target": ["error", { "onUnknown": "warn" }],
     "require-proven-interaction-activation": ["warn", { "onUnknown": "warn" }],
-    "require-local-in-process-event-handler": ["warn", { "onUnknown": "warn" }]
+    "require-local-in-process-event-handler": ["warn", { "onUnknown": "warn" }],
+    "require-proven-authorization-enforcement": ["error", { "onUnknown": "error" }]
   }
 }
 ```
@@ -53,7 +54,7 @@ can set `onUnknown` separately. `no-new-diagnostics` additionally accepts
 short string form is used. Omit a rule to disable it; at least one rule is required.
 
 Analysis controls such as maximum call depth and interaction traversal limits are
-ignored by `check` in a valid version-2 or version-3 project config. They belong to
+ignored by `check` in a valid version-2, version-3, or version-4 project config. They belong to
 `scan` and are already recorded in canonical analysis.
 This prevents policy evaluation from pretending it can retroactively change trace depth.
 There is no JavaScript/TypeScript config, expression language, regular-expression guard
@@ -155,7 +156,21 @@ analysis, or ambiguous matches remain unknown. Queue and microservice producers 
 excluded because their missing local consumers are normal open-world topology, not a
 policy failure.
 
-All three interaction rules are opt-in. Existing controller-repository,
+### `require-proven-authorization-enforcement` v1.0.0
+
+Evaluates supported authorization metadata on each endpoint. It passes only when every
+requirement is co-declared with an exact guard by a package-proven composite wrapper.
+A configured metadata-to-guard relationship remains `unknown` with reason
+`authorization_enforcement_configured`; a requirement with no exact relationship is
+`unknown` with reason `authorization_enforcement_unknown`. Endpoints without supported
+authorization metadata are not applicable. The rule does not prove runtime guard
+execution or authorization success.
+
+This rule is separate from `require-guard-on-write-endpoint`. Metadata alone never
+satisfies the guard rule; an ordinary exact guard declaration may satisfy the guard
+rule while remaining merely configured for authorization semantics.
+
+All interaction and authorization rules are opt-in. Existing controller-repository,
 guard-on-write, and write-trace meanings remain synchronous and unchanged when the
 new rules are omitted.
 

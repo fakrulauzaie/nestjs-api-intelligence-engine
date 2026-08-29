@@ -83,6 +83,19 @@ export function renderDiffMarkdown(input: DiffDocument): string {
           `| Interaction handlers removed | ${diff.summary.interactionHandlersRemoved ?? 0} |`,
           `| Interaction handlers modified | ${diff.summary.interactionHandlersModified ?? 0} |`,
         ]),
+    ...(diff.jobQueueDispatchChanges === undefined
+      ? []
+      : [
+          `| Job-queue dispatches added | ${diff.summary.jobQueueDispatchesAdded ?? 0} |`,
+          `| Job-queue dispatches removed | ${diff.summary.jobQueueDispatchesRemoved ?? 0} |`,
+          `| Job-queue dispatches modified | ${diff.summary.jobQueueDispatchesModified ?? 0} |`,
+          `| Job-queue branches added | ${diff.summary.jobQueueBranchesAdded ?? 0} |`,
+          `| Job-queue branches removed | ${diff.summary.jobQueueBranchesRemoved ?? 0} |`,
+          `| Job-queue branches modified | ${diff.summary.jobQueueBranchesModified ?? 0} |`,
+          `| Job-queue branch effects added | ${diff.summary.jobQueueBranchEffectsAdded ?? 0} |`,
+          `| Job-queue branch effects removed | ${diff.summary.jobQueueBranchEffectsRemoved ?? 0} |`,
+          `| Job-queue branch effects modified | ${diff.summary.jobQueueBranchEffectsModified ?? 0} |`,
+        ]),
     '',
     '## Endpoint changes',
     '',
@@ -130,6 +143,27 @@ export function renderDiffMarkdown(input: DiffDocument): string {
         const snapshot = change.before ?? change.after!;
         lines.push(
           `- **${change.change}** ${snapshot.kind} handler target \`${escapeMarkdown(snapshot.targetKey)}\` (${change.reasons.join(', ')}): before=\`${change.before?.handlerId ?? 'none'}\`, after=\`${change.after?.handlerId ?? 'none'}\``,
+        );
+      }
+    }
+  }
+
+  if (diff.jobQueueDispatchChanges !== undefined) {
+    lines.push('', '## Job-queue branch changes', '');
+    const allChanges = [
+      ...diff.jobQueueDispatchChanges.map((change) => ({ family: 'dispatch', change })),
+      ...(diff.jobQueueBranchChanges ?? []).map((change) => ({ family: 'branch', change })),
+      ...(diff.jobQueueBranchEffectChanges ?? []).map((change) => ({
+        family: 'branch effect',
+        change,
+      })),
+    ];
+    if (allChanges.length === 0) {
+      lines.push('No semantic job-queue branch changes.');
+    } else {
+      for (const { family, change } of allChanges) {
+        lines.push(
+          `- **${change.change}** ${family} \`${escapeMarkdown(change.key.encoded)}\` (${change.reasons.join(', ')})`,
         );
       }
     }

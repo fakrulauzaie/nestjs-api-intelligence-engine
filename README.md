@@ -36,7 +36,7 @@ POST /users
   -> WRITE user
 ```
 
-Each edge cites repository-relative source coordinates. See the current v3
+Each edge cites repository-relative source coordinates. See the current v4
 [endpoint catalogue](docs/examples/current/endpoints.md),
 [read trace](docs/examples/current/read-trace.md),
 [write trace](docs/examples/current/write-trace.md), and
@@ -127,8 +127,9 @@ pnpm run cli -- graph C:\reports\after\analysis.json --output C:\reports\graph -
 `--route` view filters. A scan filter changes only reports, never canonical facts.
 `scan --max-call-depth <1-3>` changes the bounded direct-call trace depth and records
 the effective value in output metadata. Analysis settings can also come from a
-version-2 or version-3 project configuration. Version 3 additionally records bounded
+version-2, version-3, or version-4 project configuration. Version 3 records bounded
 interaction-traversal limits; those settings do not enable extractors by themselves.
+Version 4 adds exact authorization metadata/decorator/guard identities.
 The supported eager/Nest `HttpService` outbound-HTTP, configured in-process event,
 BullMQ queue, and bounded Nest microservice extractors run on every current scan.
 Raw-SQL analysis remains disabled unless the CLI or configuration explicitly selects
@@ -137,8 +138,8 @@ Raw-SQL analysis remains disabled unless the CLI or configuration explicitly sel
 Full scan/report command behavior is in [CLI and Reporting Workflow](docs/cli-workflow.md).
 The [Documentation Index](docs/README.md) distinguishes current references and feature
 guides from historical validation, benchmark, spike, and ADR records.
-Strict version-3 defaults, exact-root discovery, path rules, precedence, and version-1/
-version-2 compatibility are in [Project Configuration](docs/project-configuration.md).
+Strict version-4 defaults, exact-root discovery, path rules, precedence, and older-version
+compatibility are in [Project Configuration](docs/project-configuration.md).
 Coherent selected-report publication and the final completeness manifest are in
 [Selected Scan Bundles](docs/selected-scan-bundles.md).
 Semantic matching, ambiguity, and diff output are documented in
@@ -147,6 +148,8 @@ Evidence-backed before/after reachability and its interpretation boundary are in
 [Potential Change-Impact Analysis](docs/impact-analysis.md).
 Static module metadata, global registrations, and effective guard state are in
 [Nest Modules and Effective Guard State](docs/nest-modules-and-global-guards.md).
+Authorization metadata, composite decorators, redaction, and enforcement states are in
+[Authorization Metadata and Composite Decorators](docs/authorization-metadata.md).
 Typed configuration, four-state outcomes, built-in rules, and policy exit behavior are
 in the [Architecture Policy Engine](docs/policy-engine.md).
 Bounded fluent/variable flows, table provenance, terminals, and uncertainty are in
@@ -200,7 +203,8 @@ cancellation have distinct exit codes documented in the CLI workflow.
 
 - Standard `@nestjs/common` controllers and REST decorators: `Get`, `Post`, `Put`,
   `Patch`, `Delete`, `Options`, `Head`, and `All`.
-- Literal, no-substitution template, omitted, and one-hop immutable `const` paths.
+- Literal, no-substitution template, omitted, bounded immutable `const` chains,
+  string-enum members, and repository-visible `as const` property paths.
 - Checker-resolved class constructor injection and direct calls through bound members.
 - Direct controller- and method-level `UseGuards` class arguments.
 - Bounded `Module`/`Global` metadata, module imports/providers/exports/controllers,
@@ -261,8 +265,9 @@ canonical rule to executable tests.
 - QueryBuilder callbacks, CTEs, relation-string target inference, escaped/reassigned
   builders, dynamic/non-PostgreSQL raw SQL, and custom repositories are not persistence
   facts. Arbitrary HTTP clients/wrappers, general RxJS data flow, dynamic/manual
-  EventEmitter listeners, legacy Bull, custom/raw BullMQ APIs, exact job-branch
-  slicing, dynamic microservice factories/patterns, transport-specific broker routing,
+  EventEmitter listeners, legacy Bull, custom/raw BullMQ APIs, general job control-flow
+  slicing beyond the bounded direct `job.name` grammar, dynamic microservice
+  factories/patterns, transport-specific broker routing,
   custom `ClientProxy` wrappers, gRPC/protobuf semantics, and raw broker SDKs are
   outside the current interaction extractors. The frozen Distributed Gate D0 corpus
   is the semantic contract consumed by the supported BullMQ and Nest microservice
@@ -308,11 +313,22 @@ no absolute checkout path or timing; volatile run metadata is separate. Publicat
 stages complete files, commits canonical analysis last, and preserves unrelated files.
 See [Architecture](docs/architecture.md) and the [Canonical Model Contract](docs/model-contract.md).
 
-The current scanner publishes strict analysis schema `3.0.0` and advertises
+The current scanner publishes strict analysis schema `5.0.0` and advertises
 `outbound_http`, `in_process_event`, `job_queue`, and `microservice_message` as
 supported and enabled. Phase 30 originally introduced empty
 interaction collections; frozen v1/v2 documents remain readable, and missing
 historical interaction families normalize to unavailable rather than empty proof.
+Analysis v4 publishes bounded BullMQ dispatch, selector, and branch-effect
+records. Exact job producers traverse matching/common branches without changing the
+`distributed_conditional` broker boundary; unsupported control flow remains explicit
+unknown residual work.
+
+Analysis v5 separately inventories authorization metadata and its enforcement
+relationship. Supported `SetMetadata()` wrappers retain exact keys and only redacted
+value shapes. Package-proven composite decorators can connect metadata to an exact
+`UseGuards()` class; configured mappings stay `configured_relationship`, and metadata
+alone stays `enforcement_unknown`. These facts never claim runtime authorization
+success and do not make metadata satisfy the existing guard-on-write policy.
 
 ## Reproducible official-sample demo
 

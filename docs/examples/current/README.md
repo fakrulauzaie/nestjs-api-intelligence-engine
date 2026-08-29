@@ -2,7 +2,7 @@
 
 These files are generated from the repository-local `example-nestjs-app` by the
 current scanner and are checked against current renderer output by Documentation Gate
-D1. They demonstrate analysis schema `3.0.0`; the compact JSON file is a documented
+D1. They demonstrate analysis schema `5.0.0`; the compact JSON file is a documented
 summary, not a complete canonical analysis document. The checked-in Markdown replaces
 the revision-sensitive analysis ID with `<run-specific-analysis-id>` so the examples
 remain valid across repository revisions and local Git trust settings. The conformance

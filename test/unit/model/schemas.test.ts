@@ -16,6 +16,7 @@ import {
   createMinimalAnalysisDocument,
   createMinimalAnalysisDocumentV2,
   createMinimalAnalysisDocumentV3,
+  createMinimalAnalysisDocumentV4,
 } from '../../helpers/minimal-analysis.js';
 
 describe('canonical runtime schemas', () => {
@@ -23,13 +24,15 @@ describe('canonical runtime schemas', () => {
     expect(analysisDocumentSchema.safeParse(createMinimalAnalysisDocument()).success).toBe(true);
   });
 
-  it('keeps v1/v2 strict while accepting the explicit v3 interaction envelope', () => {
+  it('keeps v1-v3 strict while accepting the explicit v4 branch envelope', () => {
     const v1 = createMinimalAnalysisDocument();
     const v2 = createMinimalAnalysisDocumentV2();
     const v3 = createMinimalAnalysisDocumentV3();
+    const v4 = createMinimalAnalysisDocumentV4();
 
     expect(analysisDocumentSchema.safeParse(v2).success).toBe(true);
     expect(analysisDocumentSchema.safeParse(v3).success).toBe(true);
+    expect(analysisDocumentSchema.safeParse(v4).success).toBe(true);
     expect(
       analysisDocumentSchema.safeParse({ ...v1, modules: [] }).success,
       'v1 must reject v2-only fields',
@@ -67,8 +70,14 @@ describe('canonical runtime schemas', () => {
       analysisDocumentSchema.safeParse(missingInteractionFamily).success,
       'v3 must carry every Phase 30 record family',
     ).toBe(false);
+    const missingBranchFamily: Record<string, unknown> = { ...v4 };
+    delete missingBranchFamily.interactionHandlerBranches;
     expect(
-      analysisDocumentSchema.safeParse({ ...v3, schemaVersion: '4.0.0' }).success,
+      analysisDocumentSchema.safeParse(missingBranchFamily).success,
+      'v4 must carry every Phase 40 branch family',
+    ).toBe(false);
+    expect(
+      analysisDocumentSchema.safeParse({ ...v4, schemaVersion: '5.0.0' }).success,
       'unknown schema versions must fail closed',
     ).toBe(false);
   });

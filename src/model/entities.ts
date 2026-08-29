@@ -1,3 +1,5 @@
+import type { AuthorizationAnalysisConfiguration } from './authorization.js';
+
 export type RecordId = string;
 
 export const CLASS_ROLES_V1 = ['controller', 'provider', 'guard', 'entity'] as const;
@@ -52,6 +54,8 @@ export interface AnalysisConfiguration {
   readonly rawSql?: RawSqlAnalysisConfiguration | undefined;
   /** Required by analysis v3; absent from frozen v1/v2 documents. */
   readonly interactions?: InteractionTraversalConfiguration | undefined;
+  /** Required by analysis v5; absent from frozen v1-v4 documents. */
+  readonly authorization?: AuthorizationAnalysisConfiguration | undefined;
 }
 
 export interface InteractionTraversalConfiguration {

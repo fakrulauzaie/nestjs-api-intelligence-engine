@@ -5,7 +5,7 @@ import {
   type AnalysisSemanticProjection,
 } from '../comparison/projection.js';
 import type { SemanticKey } from '../comparison/semantic-key.js';
-import type { AnalysisDocument } from '../model/analysis.js';
+import { analysisHasJobQueueBranchFacts, type AnalysisDocument } from '../model/analysis.js';
 import type { AssertionRecord } from '../model/assertions.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
 import type {
@@ -25,6 +25,7 @@ import {
 import {
   IMPACT_CATEGORIES,
   IMPACT_SCHEMA_VERSION,
+  IMPACT_SCHEMA_V2_VERSION,
   type ImpactCategory,
   type ImpactDocument,
   type ImpactPath,
@@ -390,6 +391,8 @@ function processDirectEndpointChanges(
             ...snapshot.handlers.flatMap(({ evidenceIds }) => evidenceIds),
             ...snapshot.directGuards.guards.flatMap(({ evidenceIds }) => evidenceIds),
             ...snapshot.effectiveGuards.guards.flatMap(({ evidenceIds }) => evidenceIds),
+            ...(snapshot.authorization?.requirements.flatMap(({ evidenceIds }) => evidenceIds) ??
+              []),
           ];
     addReason(accumulator, {
       category: 'direct_endpoint_change',
@@ -664,6 +667,113 @@ function processInteractionChanges(
       });
     }
   }
+  for (const change of diff.jobQueueDispatchChanges ?? []) {
+    const paths: ImpactPath[] = [];
+    let subject: ImpactSemanticSubject | undefined;
+    for (const [side, snapshot] of [
+      ['before', change.before] as const,
+      ['after', change.after] as const,
+    ]) {
+      if (snapshot === null) continue;
+      const index = accumulator.indexes[side];
+      const dispatch = analysisHasJobQueueBranchFacts(index.graph.analysis)
+        ? index.graph.analysis.interactionHandlerDispatches.find(
+            ({ id }) => id === snapshot.dispatchId,
+          )
+        : undefined;
+      if (dispatch === undefined) continue;
+      paths.push(...pathsFromEndpoints(index.graph, dispatch.handlerId));
+      subject ??= {
+        kind: snapshot.key.kind,
+        key: snapshot.key,
+        displayName: `job queue dispatch (${snapshot.state})`,
+        sourcePath: null,
+      };
+    }
+    if (subject !== undefined && paths.length > 0) {
+      addReason(accumulator, {
+        category: 'diagnostic_or_resolution_change',
+        reasonCode: 'job_queue_dispatch_changed',
+        subject,
+        sourceChangePath: null,
+        paths,
+        beforeEvidenceIds: change.before?.evidenceIds ?? [],
+        afterEvidenceIds: change.after?.evidenceIds ?? [],
+      });
+    }
+  }
+  for (const change of diff.jobQueueBranchChanges ?? []) {
+    const paths: ImpactPath[] = [];
+    let subject: ImpactSemanticSubject | undefined;
+    for (const [side, snapshot] of [
+      ['before', change.before] as const,
+      ['after', change.after] as const,
+    ]) {
+      if (snapshot === null) continue;
+      const index = accumulator.indexes[side];
+      if (!analysisHasJobQueueBranchFacts(index.graph.analysis)) continue;
+      const branch = index.graph.analysis.interactionHandlerBranches.find(
+        ({ id }) => id === snapshot.branchId,
+      );
+      const dispatch = index.graph.analysis.interactionHandlerDispatches.find(
+        ({ id }) => id === branch?.dispatchId,
+      );
+      if (dispatch === undefined) continue;
+      paths.push(...pathsFromEndpoints(index.graph, dispatch.handlerId));
+      subject ??= {
+        kind: snapshot.key.kind,
+        key: snapshot.key,
+        displayName: `job queue ${snapshot.controlFlow}`,
+        sourcePath: null,
+      };
+    }
+    if (subject !== undefined && paths.length > 0) {
+      addReason(accumulator, {
+        category: 'diagnostic_or_resolution_change',
+        reasonCode: 'job_queue_branch_changed',
+        subject,
+        sourceChangePath: null,
+        paths,
+        beforeEvidenceIds: change.before?.evidenceIds ?? [],
+        afterEvidenceIds: change.after?.evidenceIds ?? [],
+      });
+    }
+  }
+  for (const change of diff.jobQueueBranchEffectChanges ?? []) {
+    const paths: ImpactPath[] = [];
+    let subject: ImpactSemanticSubject | undefined;
+    for (const [side, snapshot] of [
+      ['before', change.before] as const,
+      ['after', change.after] as const,
+    ]) {
+      if (snapshot === null) continue;
+      const index = accumulator.indexes[side];
+      const effect = analysisHasJobQueueBranchFacts(index.graph.analysis)
+        ? index.graph.analysis.interactionHandlerBranchEffects.find(
+            ({ id }) => id === snapshot.effectId,
+          )
+        : undefined;
+      if (effect === undefined) continue;
+      paths.push(...pathsFromEndpoints(index.graph, effect.targetId));
+      subject ??= {
+        kind: snapshot.key.kind,
+        key: snapshot.key,
+        displayName: `job queue branch ${snapshot.kind}`,
+        sourcePath: null,
+      };
+    }
+    if (subject !== undefined && paths.length > 0) {
+      addReason(accumulator, {
+        category: 'diagnostic_or_resolution_change',
+        reasonCode: 'job_queue_branch_effect_changed',
+        subject,
+        sourceChangePath: null,
+        paths,
+        beforeEvidenceIds: change.before?.evidenceIds ?? [],
+        afterEvidenceIds: change.after?.evidenceIds ?? [],
+      });
+    }
+  }
 }
 
 function finalizeEndpoints(accumulator: ImpactAccumulator): ImpactedEndpoint[] {
@@ -807,7 +917,11 @@ export function analyzePotentialImpact(
     indexes,
   );
   return assertValidImpactDocument({
-    schemaVersion: IMPACT_SCHEMA_VERSION,
+    schemaVersion:
+      analysisHasJobQueueBranchFacts(beforeAnalysis) ||
+      analysisHasJobQueueBranchFacts(afterAnalysis)
+        ? IMPACT_SCHEMA_V2_VERSION
+        : IMPACT_SCHEMA_VERSION,
     before: diff.before,
     after: diff.after,
     summary: buildSummary(sourceChanges, impactedEndpoints, unreachableSourceChanges),
