@@ -1,7 +1,9 @@
 import {
   analysisHasAuthorizationFacts,
+  analysisHasCriticalSectionFacts,
   analysisHasInteractionFacts,
   analysisHasJobQueueBranchFacts,
+  analysisHasResourceAccessFacts,
   type AnalysisDocument,
 } from '../model/analysis.js';
 import type { AssertionPredicate } from '../model/assertions.js';
@@ -37,6 +39,8 @@ export const INTEGRITY_ISSUE_CODES = [
   'INTERACTION_ASSERTION_MISMATCH',
   'INTERACTION_CAPABILITY_MISMATCH',
   'AUTHORIZATION_RELATIONSHIP_MISMATCH',
+  'RESOURCE_ACCESS_RELATIONSHIP_MISMATCH',
+  'CRITICAL_SECTION_RELATIONSHIP_MISMATCH',
 ] as const;
 export type IntegrityIssueCode = (typeof INTEGRITY_ISSUE_CODES)[number];
 
@@ -80,7 +84,9 @@ type CanonicalRecordKind =
   | 'interaction_handler_branch'
   | 'interaction_handler_branch_effect'
   | 'authorization_metadata'
-  | 'authorization_enforcement';
+  | 'authorization_enforcement'
+  | 'resource_access'
+  | 'critical_section';
 
 interface RecordEnvelope {
   readonly id: string;
@@ -126,6 +132,7 @@ const ASSERTION_KINDS: Readonly<
     object: 'interaction_handler',
   },
   HANDLER_IMPLEMENTED_BY: { subject: 'interaction_handler', object: 'method' },
+  METHOD_ACCESSES_RESOURCE: { subject: 'method', object: 'resource_access' },
 };
 
 function allRecords(analysis: AnalysisDocument): RecordEnvelope[] {
@@ -182,6 +189,12 @@ function allRecords(analysis: AnalysisDocument): RecordEnvelope[] {
           ...envelope('authorization_metadata', analysis.authorizationMetadata),
           ...envelope('authorization_enforcement', analysis.authorizationEnforcements),
         ]
+      : []),
+    ...(analysisHasResourceAccessFacts(analysis)
+      ? [...envelope('resource_access', analysis.resourceAccesses)]
+      : []),
+    ...(analysisHasCriticalSectionFacts(analysis)
+      ? [...envelope('critical_section', analysis.criticalSections)]
       : []),
   ];
 }
@@ -996,7 +1009,9 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
             ? 'method'
             : effect.kind === 'initiates_interaction'
               ? 'interaction'
-              : 'table';
+              : effect.kind === 'accesses_resource'
+                ? 'resource_access'
+                : 'table';
         requireReference(effect.id, 'targetId', effect.targetId, targetKind);
         addDuplicateReferenceIssues(effect.id, 'evidenceIds', effect.evidenceIds, issues);
         for (const evidenceId of effect.evidenceIds) {
@@ -1015,7 +1030,9 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
             (effect.kind === 'writes_table' &&
               sourceAssertion.predicate !== 'METHOD_WRITES_TABLE') ||
             (effect.kind === 'initiates_interaction' &&
-              sourceAssertion.predicate !== 'METHOD_INITIATES_INTERACTION'))
+              sourceAssertion.predicate !== 'METHOD_INITIATES_INTERACTION') ||
+            (effect.kind === 'accesses_resource' &&
+              sourceAssertion.predicate !== 'METHOD_ACCESSES_RESOURCE'))
         ) {
           issues.push({
             code: 'INTERACTION_ASSERTION_MISMATCH',
@@ -1112,6 +1129,126 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
     }
   }
 
+  if (analysisHasResourceAccessFacts(analysis)) {
+    const supported = [...analysis.resourceAccessAnalysis.supportedTechnologies].sort();
+    const enabled = [...analysis.resourceAccessAnalysis.enabledTechnologies].sort();
+    const expectedTechnologies = analysisHasCriticalSectionFacts(analysis)
+      ? ['cache_manager', 'ioredis', 'redlock'].sort()
+      : ['cache_manager', 'ioredis'];
+    if (
+      supported.join('|') !== expectedTechnologies.join('|') ||
+      enabled.join('|') !== supported.join('|')
+    ) {
+      issues.push({
+        code: 'RESOURCE_ACCESS_RELATIONSHIP_MISMATCH',
+        path: 'resourceAccessAnalysis',
+        message:
+          'Resource-access analysis must advertise the complete supported and enabled technology set.',
+      });
+    }
+    const accessById = new Map(analysis.resourceAccesses.map((record) => [record.id, record]));
+    const linkedAccessIds = new Set<string>();
+    for (const access of analysis.resourceAccesses) {
+      requireReference(access.id, 'sourceMethodId', access.sourceMethodId, 'method');
+      addDuplicateReferenceIssues(access.id, 'evidenceIds', access.evidenceIds, issues);
+      for (const evidenceId of access.evidenceIds) {
+        requireReference(access.id, 'evidenceIds', evidenceId, 'evidence');
+      }
+    }
+    for (const assertion of analysis.assertions) {
+      if (assertion.predicate !== 'METHOD_ACCESSES_RESOURCE' || assertion.objectId === null) {
+        continue;
+      }
+      linkedAccessIds.add(assertion.objectId);
+      const access = accessById.get(assertion.objectId);
+      if (
+        access !== undefined &&
+        (assertion.status !== 'resolved' ||
+          assertion.subjectId !== access.sourceMethodId ||
+          assertion.ruleId !== access.ruleId ||
+          !access.evidenceIds.some((id) => assertion.evidenceIds.includes(id)))
+      ) {
+        issues.push({
+          code: 'RESOURCE_ACCESS_RELATIONSHIP_MISMATCH',
+          recordId: assertion.id,
+          message: `Resource assertion ${assertion.id} does not match its access record.`,
+        });
+      }
+    }
+    for (const access of analysis.resourceAccesses) {
+      if (!linkedAccessIds.has(access.id)) {
+        issues.push({
+          code: 'RESOURCE_ACCESS_RELATIONSHIP_MISMATCH',
+          recordId: access.id,
+          message: `Resource access ${access.id} has no method-access assertion.`,
+        });
+      }
+    }
+  }
+
+  if (analysisHasCriticalSectionFacts(analysis)) {
+    const accessById = new Map(analysis.resourceAccesses.map((record) => [record.id, record]));
+    const assertionById = new Map(analysis.assertions.map((record) => [record.id, record]));
+    for (const section of analysis.criticalSections) {
+      requireReference(section.id, 'sourceMethodId', section.sourceMethodId, 'method');
+      requireReference(section.id, 'callbackEvidenceId', section.callbackEvidenceId, 'evidence');
+      addDuplicateReferenceIssues(
+        section.id,
+        'lockResourceAccessIds',
+        section.lockResourceAccessIds,
+        issues,
+      );
+      addDuplicateReferenceIssues(
+        section.id,
+        'effectAssertionIds',
+        section.effectAssertionIds,
+        issues,
+      );
+      for (const evidenceId of section.evidenceIds) {
+        requireReference(section.id, 'evidenceIds', evidenceId, 'evidence');
+      }
+      for (const accessId of section.lockResourceAccessIds) {
+        requireReference(section.id, 'lockResourceAccessIds', accessId, 'resource_access');
+        const access = accessById.get(accessId);
+        if (
+          access !== undefined &&
+          (access.sourceMethodId !== section.sourceMethodId ||
+            access.technology !== 'redlock' ||
+            access.resourceKind !== 'distributed_lock' ||
+            access.operation !== 'critical_section')
+        ) {
+          issues.push({
+            code: 'CRITICAL_SECTION_RELATIONSHIP_MISMATCH',
+            recordId: section.id,
+            path: 'lockResourceAccessIds',
+            message: `Critical section ${section.id} references a non-Redlock critical-section resource.`,
+          });
+        }
+      }
+      for (const assertionId of section.effectAssertionIds) {
+        requireReference(section.id, 'effectAssertionIds', assertionId, 'assertion');
+        const assertion = assertionById.get(assertionId);
+        if (
+          assertion !== undefined &&
+          (assertion.subjectId !== section.sourceMethodId ||
+            ![
+              'METHOD_CALLS_METHOD',
+              'METHOD_READS_TABLE',
+              'METHOD_WRITES_TABLE',
+              'METHOD_ACCESSES_RESOURCE',
+            ].includes(assertion.predicate))
+        ) {
+          issues.push({
+            code: 'CRITICAL_SECTION_RELATIONSHIP_MISMATCH',
+            recordId: section.id,
+            path: 'effectAssertionIds',
+            message: `Critical section ${section.id} references an assertion outside its supported effect family.`,
+          });
+        }
+      }
+    }
+  }
+
   const sourceById = new Map(analysis.sourceFiles.map((source) => [source.id, source]));
   for (const evidence of analysis.evidence) {
     requireReference(evidence.id, 'fileId', evidence.fileId, 'source');
@@ -1194,7 +1331,14 @@ export class AnalysisIntegrityError extends Error {
   readonly issues: readonly IntegrityIssue[];
 
   constructor(issues: readonly IntegrityIssue[]) {
-    super(`Analysis integrity validation failed with ${issues.length} issue(s).`);
+    super(
+      `Analysis integrity validation failed with ${issues.length} issue(s): ${issues
+        .map(
+          (issue) =>
+            `${issue.code}${issue.path === undefined ? '' : ` at ${issue.path}`}: ${issue.message}`,
+        )
+        .join(' | ')}`,
+    );
     this.name = 'AnalysisIntegrityError';
     this.issues = issues;
   }

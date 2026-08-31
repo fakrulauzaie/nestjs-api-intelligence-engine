@@ -68,6 +68,16 @@ function canonicalizeEndpoint(snapshot: EndpointSnapshot | null): EndpointSnapsh
         }))
         .sort((left, right) => compareStrings(left.key.encoded, right.key.encoded)),
     },
+    ...(snapshot.resourceAccesses === undefined
+      ? {}
+      : {
+          resourceAccesses: {
+            ...snapshot.resourceAccesses,
+            values: [...snapshot.resourceAccesses.values].sort((left, right) =>
+              compareStrings(left.key.encoded, right.key.encoded),
+            ),
+          },
+        }),
     ...(snapshot.authorization === undefined
       ? {}
       : {

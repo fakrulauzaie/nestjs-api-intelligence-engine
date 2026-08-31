@@ -109,7 +109,7 @@ export async function renderOfflineGraphReport(
         <section class="filters">
           <h2>Find graph views</h2>
           <div class="filter-grid">
-            <label>View<select id="filter-view"><option value="endpoints">Endpoint producers</option><option value="handlers">Interaction handlers</option></select></label>
+            <label>View<select id="filter-view"><option value="endpoints">Endpoint producers</option><option value="handlers">Interaction handlers</option>${document.architecture === undefined ? '' : '<option value="architecture">Architecture overview</option>'}</select></label>
             <label>Search path, target, or handler<input id="filter-search" type="search" autocomplete="off"></label>
             <label>Method<select id="filter-method"><option value="">Any</option></select></label>
             <label>Guard<select id="filter-guard"><option value="">Any</option><option value="declared">Declared</option><option value="none">None proven</option><option value="unknown">Unknown</option></select></label>
@@ -117,6 +117,7 @@ export async function renderOfflineGraphReport(
             <label>Data access<select id="filter-access"><option value="">Any</option><option value="read">Read</option><option value="write">Write</option><option value="read_write">Read + write</option><option value="none">None proven</option><option value="unknown">Unknown</option></select></label>
             <label>Policy<select id="filter-policy"><option value="">Any</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="unknown">Unknown</option><option value="not_applicable">Not applicable</option><option value="not_supplied">Not supplied/no outcome</option></select></label>
             <label>Impact<select id="filter-impact"><option value="">Any</option><option value="direct">Direct</option><option value="potential">Potential</option><option value="unknown">Unknown</option><option value="none">None</option></select></label>
+            <label>Architecture heat<select id="filter-metric"><option value="supported_root_reach_count">Supported-root reach</option></select></label>
           </div>
         </section>
         <p id="result-count" class="result-count" role="status"></p>
@@ -133,7 +134,7 @@ export async function renderOfflineGraphReport(
           <section class="graph-card" aria-labelledby="graph-label">
             <h3 id="graph-label" class="visually-hidden">Interactive evidence graph</h3>
             <div id="graph" aria-hidden="true"></div>
-            <p class="graph-caption">Select a node or edge to highlight its causal path and inspect retained evidence. Dashed labels and borders name uncertainty without relying on color. Selecting a handler node opens its handler-rooted view; selecting a producer interaction from a handler view returns to a related endpoint when present.</p>
+            <p class="graph-caption">Select a node or edge to highlight its static path and inspect retained evidence. Dashed labels and borders name uncertainty without relying on color. Architecture heat is also published numerically in the accessible table and percentile legend. Selecting a handler or endpoint root opens its dedicated view.</p>
           </section>
           <aside class="inspector" aria-live="polite" aria-label="Evidence inspector">
             <div id="inspector-content"><p class="inspector-empty">Select an endpoint to inspect evidence.</p></div>

@@ -4,6 +4,7 @@ import {
   type AnalysisDocumentV2,
   type AnalysisDocumentV3,
   type AnalysisDocumentV4,
+  type AnalysisDocumentV5,
   type EvidenceRecord,
   type SourceRange,
 } from '../../src/model/index.js';
@@ -225,5 +226,34 @@ export function createMinimalAnalysisDocumentV4(): AnalysisDocumentV4 {
     interactionHandlerDispatches: [],
     interactionHandlerBranches: [],
     interactionHandlerBranchEffects: [],
+  };
+}
+
+export function createMinimalAnalysisDocumentV5(): AnalysisDocumentV5 {
+  const v4 = createMinimalAnalysisDocumentV4();
+  const configuration = {
+    ...v4.analysisRun.configuration,
+    authorization: {
+      metadataKeys: [],
+      decoratorSymbols: [],
+      enforcementRelationships: [],
+    },
+  } as const;
+  return {
+    ...v4,
+    schemaVersion: '5.0.0',
+    analysisRun: {
+      ...v4.analysisRun,
+      id: makeAnalysisRunId({
+        repositoryRevision,
+        tsconfigPath: 'tsconfig.json',
+        toolVersion: '0.1.0',
+        typescriptVersion: '5.9.3',
+        configuration,
+      }),
+      configuration,
+    },
+    authorizationMetadata: [],
+    authorizationEnforcements: [],
   };
 }

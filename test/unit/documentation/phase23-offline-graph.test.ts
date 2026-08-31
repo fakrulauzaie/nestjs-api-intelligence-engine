@@ -24,9 +24,9 @@ describe('Phase 23 offline-graph documentation', () => {
     expect(guide).toContain('No Git-facing workflow');
     expect(workflow).toContain('ten complete commands');
     expect(workflow).toContain('api-intel graph <analysis.json>');
-    expect(architecture).toContain('validated endpoint/handler graph views');
+    expect(architecture).toContain('validated endpoint/handler/architecture graph views');
     expect(model).toContain('schema `1.0.0` remains readable for');
-    expect(model).toMatch(/current analysis v5 reports emit graph schema `6\.0\.0`/u);
+    expect(model).toMatch(/current analysis v7 reports emit graph schema `9\.0\.0`/u);
     expect(patterns).toContain('Derived offline graph report');
     expect(benchmark).toContain('Median generation time was 913.70 ms');
     expect(benchmark).toContain('22.01% size increase');

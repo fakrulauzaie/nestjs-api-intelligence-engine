@@ -27,7 +27,7 @@ describe('Phase 20 bounded request-to-column provenance', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       expect(validateAnalysisDocument(analysis)).toMatchObject({ success: true });
 
       const methods = new Map(analysis.methods.map((method) => [method.id, method]));
@@ -175,7 +175,7 @@ import { Column, Entity, Repository } from 'typeorm';
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method.displayName]));
       const columns = new Map(analysis.entityColumns.map((column) => [column.id, column]));
       const facts = analysis.columnInfluences.map((influence) => ({

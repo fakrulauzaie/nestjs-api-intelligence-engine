@@ -72,7 +72,9 @@ function reverseDiscoveryOrder(analysis: AnalysisDocument): AnalysisDocument {
       : {}),
     ...(analysis.schemaVersion === '3.0.0' ||
     analysis.schemaVersion === '4.0.0' ||
-    analysis.schemaVersion === '5.0.0'
+    analysis.schemaVersion === '5.0.0' ||
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0'
       ? {
           applications: analysis.applications.toReversed(),
           interactions: analysis.interactions.toReversed().map((record) => ({
@@ -88,7 +90,10 @@ function reverseDiscoveryOrder(analysis: AnalysisDocument): AnalysisDocument {
           },
         }
       : {}),
-    ...(analysis.schemaVersion === '4.0.0' || analysis.schemaVersion === '5.0.0'
+    ...(analysis.schemaVersion === '4.0.0' ||
+    analysis.schemaVersion === '5.0.0' ||
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0'
       ? {
           interactionHandlerDispatches: analysis.interactionHandlerDispatches
             .toReversed()
@@ -120,7 +125,9 @@ function reverseDiscoveryOrder(analysis: AnalysisDocument): AnalysisDocument {
             })),
         }
       : {}),
-    ...(analysis.schemaVersion === '5.0.0'
+    ...(analysis.schemaVersion === '5.0.0' ||
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0'
       ? {
           authorizationMetadata: analysis.authorizationMetadata.toReversed().map((record) => ({
             ...record,
@@ -134,11 +141,35 @@ function reverseDiscoveryOrder(analysis: AnalysisDocument): AnalysisDocument {
             })),
         }
       : {}),
+    ...(analysis.schemaVersion === '6.0.0' || analysis.schemaVersion === '7.0.0'
+      ? {
+          resourceAccesses: analysis.resourceAccesses.toReversed().map((record) => ({
+            ...record,
+            evidenceIds: record.evidenceIds.toReversed(),
+          })),
+          resourceAccessAnalysis: {
+            ...analysis.resourceAccessAnalysis,
+            supportedTechnologies:
+              analysis.resourceAccessAnalysis.supportedTechnologies.toReversed(),
+            enabledTechnologies: analysis.resourceAccessAnalysis.enabledTechnologies.toReversed(),
+          },
+        }
+      : {}),
+    ...(analysis.schemaVersion === '7.0.0'
+      ? {
+          criticalSections: analysis.criticalSections.toReversed().map((record) => ({
+            ...record,
+            lockResourceAccessIds: record.lockResourceAccessIds.toReversed(),
+            effectAssertionIds: record.effectAssertionIds.toReversed(),
+            evidenceIds: record.evidenceIds.toReversed(),
+          })),
+        }
+      : {}),
   };
 }
 
-describe('complete integrated analysis v5 determinism and frozen v2 golden', () => {
-  it('keeps v2 byte-stable and v5 scans identical across discovery order', async () => {
+describe('complete integrated analysis v7 determinism and frozen v2 golden', () => {
+  it('keeps v2 byte-stable and v7 scans identical across discovery order', async () => {
     const repositoryRoot = resolve('example-nestjs-app');
     const goldenPath = resolve('test/golden/example-nestjs-app/analysis-v2.json');
     const startedAt = performance.now();
@@ -151,7 +182,7 @@ describe('complete integrated analysis v5 determinism and frozen v2 golden', () 
     const frozenV2 = assertValidAnalysisDocument(JSON.parse(golden) as unknown);
 
     expect(serializeCanonicalAnalysis(frozenV2)).toBe(golden);
-    expect(first.analysis.schemaVersion).toBe('5.0.0');
+    expect(first.analysis.schemaVersion).toBe('7.0.0');
     expect(serializeCanonicalAnalysis(second.analysis)).toBe(
       serializeCanonicalAnalysis(first.analysis),
     );

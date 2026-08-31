@@ -39,6 +39,7 @@ const EXTERNALLY_MODELED_CONSTRUCTOR_TYPES = new Map([
   ['@nestjs/axios', 'HttpService'],
   ['@nestjs/config', 'ConfigService'],
   ['@nestjs/event-emitter', 'EventEmitter2'],
+  ['redlock', 'Redlock'],
 ]);
 
 export interface ClassRelationshipExtraction {
@@ -86,8 +87,12 @@ function absolutePathKey(filePath: string): string {
   return process.platform === 'win32' ? absolute.toLowerCase() : absolute;
 }
 
-function nestedFunctionBoundary(node: ts.Node, root: ts.MethodDeclaration): boolean {
-  return node !== root && ts.isFunctionLike(node);
+function nestedFunctionBoundary(
+  node: ts.Node,
+  root: ts.MethodDeclaration,
+  allowedNestedFunctions: ReadonlySet<ts.Node>,
+): boolean {
+  return node !== root && ts.isFunctionLike(node) && !allowedNestedFunctions.has(node);
 }
 
 function externallyModeledConstructorType(
@@ -116,7 +121,9 @@ export function extractClassRelationships(input: {
   checker: ts.TypeChecker;
   repositoryRevision: string | null;
   evidenceSnippetLimit: number;
+  allowedNestedFunctions?: ReadonlySet<ts.Node>;
 }): ClassRelationshipExtraction {
+  const allowedNestedFunctions = input.allowedNestedFunctions ?? new Set();
   const classByNode = new Map<ts.ClassDeclaration, LocatedClass>();
   const methodByNode = new Map<ts.MethodDeclaration, LocatedMethod>();
   const sourceByAbsolutePath = new Map<string, IndexedSourceFile>();
@@ -380,7 +387,7 @@ export function extractClassRelationships(input: {
       const body = sourceMethod.node.body;
       if (body === undefined) continue;
       const visit = (node: ts.Node): void => {
-        if (nestedFunctionBoundary(node, sourceMethod.node)) return;
+        if (nestedFunctionBoundary(node, sourceMethod.node, allowedNestedFunctions)) return;
         if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
           const calledProperty = node.expression;
           const receiver = calledProperty.expression;

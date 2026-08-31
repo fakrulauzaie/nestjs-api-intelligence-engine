@@ -26,6 +26,7 @@ No supported authorization metadata declaration was proven.
 
 Synchronous effects: 1  
 Local interaction effects: 0  
+Critical-section conditional effects: 0<br>
 Distributed conditional effects: 0  
 Outbound interactions: 0  
 Local interactions: 0  
@@ -36,6 +37,10 @@ Completeness: incomplete (AUTH_GLOBAL_POLICY_UNKNOWN)
 | Method | Direction | Table | Causal class |
 |---|---|---|---|
 | NotesService.findAll | READ | note | synchronous |
+
+## Non-relational resource access
+
+No supported cache or Redis access was reached.
 
 ## Diagnostics
 

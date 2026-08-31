@@ -120,6 +120,8 @@ describe('analysis v3 interaction substrate', () => {
       interactionFamilies: 'unavailable',
       jobQueueBranchFamilies: 'unavailable',
       authorizationFamilies: 'unavailable',
+      resourceAccessFamilies: 'unavailable',
+      criticalSectionFamilies: 'unavailable',
     });
     expect(v1.v2).toBeNull();
     expect(v2.facts).toEqual({
@@ -127,6 +129,8 @@ describe('analysis v3 interaction substrate', () => {
       interactionFamilies: 'unavailable',
       jobQueueBranchFamilies: 'unavailable',
       authorizationFamilies: 'unavailable',
+      resourceAccessFamilies: 'unavailable',
+      criticalSectionFamilies: 'unavailable',
     });
     expect(v2.v3).toBeNull();
     expect(v3.facts).toEqual({
@@ -134,6 +138,8 @@ describe('analysis v3 interaction substrate', () => {
       interactionFamilies: 'available',
       jobQueueBranchFamilies: 'unavailable',
       authorizationFamilies: 'unavailable',
+      resourceAccessFamilies: 'unavailable',
+      criticalSectionFamilies: 'unavailable',
     });
     expect(v3.v3?.interactions).toEqual([]);
     expect(v4.facts).toEqual({
@@ -141,6 +147,8 @@ describe('analysis v3 interaction substrate', () => {
       interactionFamilies: 'available',
       jobQueueBranchFamilies: 'available',
       authorizationFamilies: 'unavailable',
+      resourceAccessFamilies: 'unavailable',
+      criticalSectionFamilies: 'unavailable',
     });
     expect(v4.v4?.interactionHandlerBranches).toEqual([]);
   });

@@ -1,4 +1,9 @@
-import type { AnalysisDocumentV4, AnalysisDocumentV5 } from '../model/analysis.js';
+import type {
+  AnalysisDocumentV4,
+  AnalysisDocumentV5,
+  AnalysisDocumentV6,
+  AnalysisDocumentV7,
+} from '../model/analysis.js';
 import type { TextInteractionTarget } from '../model/interactions.js';
 import { matchJobQueueBranchSelector } from '../model/job-queue-branches.js';
 
@@ -9,7 +14,11 @@ export interface SelectedJobQueueBranches {
 }
 
 export function selectJobQueueBranches(input: {
-  readonly analysis: AnalysisDocumentV4 | AnalysisDocumentV5;
+  readonly analysis:
+    | AnalysisDocumentV4
+    | AnalysisDocumentV5
+    | AnalysisDocumentV6
+    | AnalysisDocumentV7;
   readonly handlerId: string;
   readonly producerJob: TextInteractionTarget;
 }): SelectedJobQueueBranches | null {

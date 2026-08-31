@@ -51,6 +51,8 @@ function effectKind(assertion: AssertionRecord): JobQueueBranchEffectKind | null
       return 'writes_table';
     case 'METHOD_INITIATES_INTERACTION':
       return 'initiates_interaction';
+    case 'METHOD_ACCESSES_RESOURCE':
+      return 'accesses_resource';
     default:
       return null;
   }

@@ -4,6 +4,7 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   var report = JSON.parse(document.getElementById('api-intel-data').textContent);
   var endpoints = report.endpoints;
   var handlers = report.interactionHandlers || [];
+  var architecture = report.architecture || null;
   var selectedId = endpoints.length > 0 ? endpoints[0].endpointId : null;
   var graph = null;
   var controls = {
@@ -14,7 +15,8 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     diagnostic: document.getElementById('filter-diagnostic'),
     access: document.getElementById('filter-access'),
     policy: document.getElementById('filter-policy'),
-    impact: document.getElementById('filter-impact')
+    impact: document.getElementById('filter-impact'),
+    metric: document.getElementById('filter-metric')
   };
   var list = document.getElementById('endpoint-list');
   var resultCount = document.getElementById('result-count');
@@ -43,6 +45,13 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   Array.from(new Set(endpoints.map(function (endpoint) { return endpoint.httpMethod; })))
     .sort()
     .forEach(function (method) { addOption(controls.method, method, method); });
+  if (architecture) {
+    architecture.metricLegends.forEach(function (legend) {
+      if (legend.metric !== 'supported_root_reach_count') {
+        addOption(controls.metric, legend.metric, legend.metric.replaceAll('_', ' '));
+      }
+    });
+  }
 
   function endpointAccess(endpoint) {
     if (endpoint.mutationClassification === 'unknown') return 'unknown';
@@ -79,6 +88,10 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   }
 
   function renderList() {
+    if (controls.view.value === 'architecture') {
+      renderArchitectureList();
+      return;
+    }
     if (controls.view.value === 'handlers') {
       renderHandlerList();
       return;
@@ -113,6 +126,27 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       list.appendChild(item);
     });
     renderEndpoint(visible.find(function (endpoint) { return endpoint.endpointId === selectedId; }) || visible[0]);
+  }
+
+  function renderArchitectureList() {
+    list.replaceChildren();
+    if (!architecture) {
+      resultCount.textContent = 'Architecture overview unavailable for this graph schema';
+      renderArchitecture(null);
+      return;
+    }
+    resultCount.textContent = architecture.summary.metricRecords + ' metric records';
+    selectedId = architecture.rootId;
+    var item = document.createElement('li');
+    var button = element('button', 'endpoint-button');
+    button.type = 'button';
+    button.setAttribute('aria-pressed', 'true');
+    button.appendChild(badge('repository', 'method'));
+    button.appendChild(badge('bounded metrics', 'resolved'));
+    button.appendChild(element('span', 'endpoint-route', 'Architecture overview'));
+    item.appendChild(button);
+    list.appendChild(item);
+    renderArchitecture(architecture);
   }
 
   function handlerMatches(handler) {
@@ -181,11 +215,15 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     });
   }
 
-  function renderGraph(record, rootId, rootLabel) {
+  function renderGraph(record, rootId, rootLabel, architectureMode) {
     if (graph) graph.destroy();
     var elements = record.scene.nodes.map(function (node) {
       var suffix = node.uncertainty === 'resolved' ? '' : ' · ' + node.uncertainty;
-      return { data: { id: node.id, label: node.label + suffix, kind: node.kind, uncertainty: node.uncertainty, impact: node.impact, evidenceIds: node.evidenceIds } };
+      var metric = (node.architectureMetrics || []).find(function (candidate) { return candidate.metric === controls.metric.value; });
+      var metricSuffix = architectureMode && metric ? ' · ' + metric.value : '';
+      var data = { id: node.id, label: node.label + suffix + metricSuffix, kind: node.kind, uncertainty: node.uncertainty, impact: node.impact, evidenceIds: node.evidenceIds, heat: metric ? metric.heat : 'zero', metricValue: metric ? metric.value : null, reachability: node.architectureReachability || null, ownership: node.moduleOwnership ? node.moduleOwnership.state : null };
+      if (node.parentId) data.parent = node.parentId;
+      return { data: data };
     }).concat(record.scene.edges.map(function (edge) {
       var suffix = edge.uncertainty === 'resolved' ? '' : ' · ' + edge.uncertainty;
       return { data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label + suffix, kind: edge.kind, uncertainty: edge.uncertainty, impact: edge.impact, evidenceIds: edge.evidenceIds } };
@@ -199,7 +237,12 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       style: [
         { selector: 'node', style: { 'label': 'data(label)', 'font-size': 10, 'text-wrap': 'wrap', 'text-max-width': 130, 'text-valign': 'bottom', 'text-margin-y': 7, 'background-color': '#52647f', 'border-width': 2, 'border-color': '#334057', 'width': 30, 'height': 30 } },
         { selector: 'node[kind="endpoint"]', style: { 'shape': 'round-rectangle', 'width': 48, 'height': 32, 'background-color': '#2457d6' } },
+        { selector: 'node[kind="repository"]', style: { 'shape': 'round-rectangle', 'width': 64, 'height': 38, 'background-color': '#172033' } },
+        { selector: 'node[kind="module"]', style: { 'shape': 'round-rectangle', 'background-color': '#dbe5f7', 'border-color': '#2457d6', 'padding': 18, 'text-valign': 'top', 'text-margin-y': -8 } },
+        { selector: 'node[kind="class"]', style: { 'shape': 'round-rectangle', 'background-color': '#eef2f7', 'border-color': '#637087', 'padding': 12, 'text-valign': 'top', 'text-margin-y': -7 } },
         { selector: 'node[kind="table"]', style: { 'shape': 'barrel', 'background-color': '#18794e' } },
+        { selector: 'node[kind="resource_access"]', style: { 'shape': 'hexagon', 'background-color': '#0f766e' } },
+        { selector: 'node[kind="critical_section"]', style: { 'shape': 'round-rectangle', 'background-color': '#6d28d9', 'border-color': '#4c1d95', 'border-style': 'double' } },
         { selector: 'node[kind="guard"]', style: { 'shape': 'diamond', 'background-color': '#9a6700' } },
         { selector: 'node[kind="request_origin"], node[kind="request_parameter"]', style: { 'shape': 'hexagon', 'background-color': '#6f42c1' } },
         { selector: 'node[kind="entity_column"]', style: { 'shape': 'round-rectangle', 'background-color': '#147d92' } },
@@ -212,9 +255,14 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
         { selector: 'node[impact="direct"]', style: { 'border-color': '#b42318', 'border-width': 6 } },
         { selector: 'node[impact="potential"]', style: { 'border-color': '#d19a00', 'border-width': 6 } },
         { selector: 'node[impact="unknown"]', style: { 'border-color': '#6f42c1', 'border-width': 6, 'border-style': 'dotted' } },
+        { selector: 'node[heat="low"]', style: { 'background-color': '#7aa2e8' } },
+        { selector: 'node[heat="medium"]', style: { 'background-color': '#d19a00' } },
+        { selector: 'node[heat="high"]', style: { 'background-color': '#d06413' } },
+        { selector: 'node[heat="very_high"]', style: { 'background-color': '#b42318' } },
         { selector: 'edge', style: { 'label': 'data(label)', 'font-size': 8, 'text-background-color': '#ffffff', 'text-background-opacity': 0.9, 'text-background-padding': 2, 'curve-style': 'bezier', 'line-color': '#93a1b5', 'target-arrow-color': '#93a1b5', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.8, 'width': 2 } },
         { selector: 'edge[kind="provenance"]', style: { 'line-style': 'dashed', 'line-color': '#6f42c1', 'target-arrow-color': '#6f42c1' } },
         { selector: 'edge[kind="interaction"]', style: { 'line-style': 'dashed', 'line-color': '#b54708', 'target-arrow-color': '#b54708' } },
+        { selector: 'edge[kind="architecture"]', style: { 'line-color': '#b9c3d3', 'target-arrow-color': '#b9c3d3', 'width': 1 } },
         { selector: 'edge[uncertainty != "resolved"]', style: { 'line-style': 'dotted', 'line-color': '#b42318', 'target-arrow-color': '#b42318' } },
         { selector: 'edge[impact="direct"]', style: { 'line-color': '#b42318', 'target-arrow-color': '#b42318', 'width': 5 } },
         { selector: 'edge[impact="potential"]', style: { 'line-color': '#d19a00', 'target-arrow-color': '#d19a00', 'width': 5 } },
@@ -233,6 +281,13 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       if (handlerView && (controls.view.value !== 'handlers' || selectedId !== handlerView.handlerId)) {
         controls.view.value = 'handlers';
         selectedId = handlerView.handlerId;
+        renderList();
+        return;
+      }
+      var endpointView = endpoints.find(function (endpoint) { return endpoint.endpointId === target.id(); });
+      if (endpointView && controls.view.value === 'architecture') {
+        controls.view.value = 'endpoints';
+        selectedId = endpointView.endpointId;
         renderList();
         return;
       }
@@ -299,7 +354,10 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     tableBody.replaceChildren();
     endpoint.scene.nodes.forEach(function (node) {
       var row = document.createElement('tr');
-      ['node', node.kind, node.label, node.uncertainty, node.impact, String(node.evidenceIds.length)].forEach(function (value) { row.appendChild(element('td', '', value)); });
+      var metric = (node.architectureMetrics || []).find(function (candidate) { return candidate.metric === controls.metric.value; });
+      var label = node.label + (metric ? ' · ' + metric.metric + '=' + metric.value + ' [' + metric.heat + ']' : '');
+      var certainty = node.uncertainty + (node.architectureReachability ? ' · ' + node.architectureReachability : '') + (node.moduleOwnership ? ' · ' + node.moduleOwnership.state : '');
+      ['node', node.kind, label, certainty, node.impact, String(node.evidenceIds.length)].forEach(function (value) { row.appendChild(element('td', '', value)); });
       tableBody.appendChild(row);
     });
     endpoint.scene.edges.forEach(function (edge) {
@@ -370,6 +428,38 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     renderFallback(handler);
     var root = handler.scene.nodes.find(function (node) { return node.id === handler.handlerId; });
     showEvidence(handler, 'Handler evidence', root ? root.evidenceIds : []);
+  }
+
+  function renderArchitecture(overview) {
+    if (!overview) {
+      title.textContent = 'Architecture overview unavailable';
+      badges.replaceChildren();
+      chips.replaceChildren();
+      facts.replaceChildren();
+      tableBody.replaceChildren();
+      limitNotice.hidden = true;
+      if (graph) { graph.destroy(); graph = null; }
+      document.getElementById('graph').replaceChildren();
+      return;
+    }
+    title.textContent = 'Repository architecture overview';
+    badges.replaceChildren(badge('derived static view', 'resolved'));
+    chips.replaceChildren();
+    appendChip(chips, overview.supportedRoots.endpoints + ' endpoint roots');
+    appendChip(chips, overview.supportedRoots.interactionHandlers + ' handler roots');
+    appendChip(chips, overview.scene.nodes.length + ' nodes · ' + overview.scene.edges.length + ' edges');
+    var omitted = overview.scene.omitted;
+    limitNotice.hidden = omitted.nodes + omitted.edges + omitted.evidence === 0;
+    limitNotice.textContent = 'Display limits omitted ' + omitted.nodes + ' nodes, ' + omitted.edges + ' edges, and ' + omitted.evidence + ' evidence records from this architecture scene. Complete numeric records remain in the report data.';
+    renderGraph(overview, overview.rootId, 'Architecture overview', true);
+    facts.replaceChildren();
+    addFactSection(facts, 'Supported static roots', [overview.supportedRoots.endpoints + ' endpoints', overview.supportedRoots.interactionHandlers + ' interaction handlers (' + overview.rootCapabilities.interactionHandlers + ')'], 'No supported roots');
+    addFactSection(facts, 'Selected heat legend', overview.metricLegends.filter(function (legend) { return legend.metric === controls.metric.value; }).map(function (legend) { return legend.metric.replaceAll('_', ' ') + ': p50 ' + legend.percentiles.p50 + ' · p75 ' + legend.percentiles.p75 + ' · p90 ' + legend.percentiles.p90 + ' · max ' + legend.maximum + ' (' + legend.eligibleRecords + ' records)'; }), 'Metric unavailable');
+    addFactSection(facts, 'Reachability', [overview.summary.notReachedFromSupportedRoots + ' of ' + overview.summary.metricRecords + ' records: not_reached_from_supported_roots'], 'No metric records');
+    addFactSection(facts, 'Module declarations', [overview.summary.uniquelyOwnedClasses + ' uniquely owned classes', overview.summary.multipleOwnerClasses + ' multiple-owner classes', overview.summary.ownershipUnknownClasses + ' unknown/unavailable class ownership'], 'Module ownership unavailable');
+    addFactSection(facts, 'Interpretation boundary', ['Reach means inclusion in a supported static endpoint or handler trace. It does not prove runtime execution. Zero reach is not dead code and is never a safe-to-delete conclusion.'], 'No interpretation statement');
+    renderFallback(overview);
+    showEvidence(overview, 'Architecture overview', []);
   }
 
   Object.keys(controls).forEach(function (key) {

@@ -316,6 +316,102 @@ export async function writeFakeNestAxios(project: TestTypeScriptProject): Promis
   );
 }
 
+export async function writeFakeCacheManager(project: TestTypeScriptProject): Promise<void> {
+  await project.writeJson('node_modules/cache-manager/package.json', {
+    name: 'cache-manager',
+    version: '7.2.0-test',
+    types: 'index.d.ts',
+  });
+  await project.write(
+    'node_modules/cache-manager/index.d.ts',
+    [
+      'export interface Cache {',
+      '  get<T = unknown>(key: string): Promise<T | undefined>;',
+      '  set<T = unknown>(key: string, value: T, ttl?: number): Promise<T>;',
+      '  del(key: string): Promise<boolean>;',
+      '  wrap<T>(key: string, fn: () => Promise<T>, ttl?: number): Promise<T>;',
+      '  clear(): Promise<void>;',
+      '}',
+    ].join('\n'),
+  );
+  await project.writeJson('node_modules/@nestjs/cache-manager/package.json', {
+    name: '@nestjs/cache-manager',
+    version: '3.0.1-test',
+    types: 'index.d.ts',
+  });
+  await project.write(
+    'node_modules/@nestjs/cache-manager/index.d.ts',
+    'export declare const CACHE_MANAGER: unique symbol;\n',
+  );
+}
+
+export async function writeFakeIoredis(project: TestTypeScriptProject): Promise<void> {
+  await project.writeJson('node_modules/ioredis/package.json', {
+    name: 'ioredis',
+    version: '5.8.2-test',
+    types: 'index.d.ts',
+  });
+  await project.write(
+    'node_modules/ioredis/index.d.ts',
+    [
+      'export default class Redis {',
+      '  get(key: string): Promise<string | null>;',
+      '  exists(key: string): Promise<number>;',
+      '  ttl(key: string): Promise<number>;',
+      '  pttl(key: string): Promise<number>;',
+      '  type(key: string): Promise<string>;',
+      '  set(key: string, value: unknown): Promise<string | null>;',
+      '  setex(key: string, seconds: number, value: unknown): Promise<string>;',
+      '  psetex(key: string, milliseconds: number, value: unknown): Promise<string>;',
+      '  incr(key: string): Promise<number>;',
+      '  incrby(key: string, increment: number): Promise<number>;',
+      '  decr(key: string): Promise<number>;',
+      '  decrby(key: string, decrement: number): Promise<number>;',
+      '  append(key: string, value: unknown): Promise<number>;',
+      '  del(...keys: string[]): Promise<number>;',
+      '  unlink(...keys: string[]): Promise<number>;',
+      '  expire(key: string, seconds: number): Promise<number>;',
+      '  pexpire(key: string, milliseconds: number): Promise<number>;',
+      '  expireat(key: string, timestamp: number): Promise<number>;',
+      '  pexpireat(key: string, timestamp: number): Promise<number>;',
+      '  persist(key: string): Promise<number>;',
+      '  hget(key: string, field: string): Promise<string | null>;',
+      '  hgetall(key: string): Promise<Record<string, string>>;',
+      '  hexists(key: string, field: string): Promise<number>;',
+      '  hset(key: string, field: string, value: unknown): Promise<number>;',
+      '  hincrby(key: string, field: string, increment: number): Promise<number>;',
+      '  hincrbyfloat(key: string, field: string, increment: number): Promise<string>;',
+      '  hdel(key: string, ...fields: string[]): Promise<number>;',
+      '  scan(cursor: string, ...args: unknown[]): Promise<[string, string[]]>;',
+      '  hscan(key: string, cursor: string, ...args: unknown[]): Promise<[string, string[]]>;',
+      '  pipeline(): unknown;',
+      '  eval(script: string): Promise<unknown>;',
+      '  publish(channel: string, payload: unknown): Promise<number>;',
+      '  keys(pattern: string): Promise<string[]>;',
+      '}',
+    ].join('\n'),
+  );
+}
+
+export async function writeFakeRedlock(project: TestTypeScriptProject): Promise<void> {
+  await project.writeJson('node_modules/redlock/package.json', {
+    name: 'redlock',
+    version: '5.0.0-beta.2-test',
+    types: 'index.d.ts',
+  });
+  await project.write(
+    'node_modules/redlock/index.d.ts',
+    [
+      'export interface ExecutionSignal { readonly aborted: boolean; readonly error?: Error; }',
+      'export interface Settings { readonly retryCount?: number; }',
+      'export default class Redlock {',
+      '  using<T>(resources: readonly string[], duration: number, routine: (signal: ExecutionSignal) => Promise<T>): Promise<T>;',
+      '  using<T>(resources: readonly string[], duration: number, settings: Settings, routine: (signal: ExecutionSignal) => Promise<T>): Promise<T>;',
+      '}',
+    ].join('\n'),
+  );
+}
+
 export async function writeFakeNestConfig(project: TestTypeScriptProject): Promise<void> {
   await project.writeJson('node_modules/@nestjs/config/package.json', {
     name: '@nestjs/config',

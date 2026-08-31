@@ -17,6 +17,8 @@ import { extractNestEventEmitter } from '../extractors/nest-event-emitter.js';
 import { extractNestBullMq } from '../extractors/nest-bullmq.js';
 import { extractNestMicroservices } from '../extractors/nest-microservices.js';
 import { extractOutboundHttp } from '../extractors/outbound-http.js';
+import { extractResourceAccesses } from '../extractors/resource-access.js';
+import { extractRedlockCriticalSections } from '../extractors/redlock-critical-sections.js';
 import { extractTypeOrmPersistence } from '../extractors/typeorm-persistence.js';
 import { extractTypeOrmRawSql } from '../extractors/typeorm-raw-sql.js';
 import {
@@ -29,6 +31,7 @@ import type { AnalysisConfiguration, ToolMetadata } from '../model/entities.js';
 import type { EvidenceRecord } from '../model/evidence.js';
 import { INTERACTION_KINDS, type InteractionKind } from '../model/interactions.js';
 import { makeAnalysisRunId } from '../model/ids.js';
+import { RESOURCE_TECHNOLOGIES } from '../model/resource-access.js';
 import { canonicalizeAnalysisDocument, canonicalizeRunDocument } from '../model/ordering.js';
 import { normalizeRepositoryRelativePath } from '../model/paths.js';
 import { analysisConfigurationSchema, runDocumentSchema } from '../model/schemas.js';
@@ -53,6 +56,7 @@ import {
 } from './merge-records.js';
 import { deriveAnalysisResultState } from './result-state.js';
 import { projectJobQueueBranchEffects } from './job-queue-branch-effects.js';
+import { projectCriticalSectionEffects } from './critical-section-effects.js';
 
 export interface ScanRepositoryOptions {
   readonly repositoryRoot: string;
@@ -261,11 +265,19 @@ export async function scanRepository(
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
   });
   options.signal?.throwIfAborted();
+  const redlockCriticalSections = extractRedlockCriticalSections({
+    sourceIndex,
+    checker: project.checker,
+    repositoryRevision,
+    evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+  });
+  options.signal?.throwIfAborted();
   const classRelationships = extractClassRelationships({
     sourceIndex,
     checker: project.checker,
     repositoryRevision,
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const outboundHttp = extractOutboundHttp({
@@ -311,11 +323,20 @@ export async function scanRepository(
     maxFanOutPerInteraction: configuration.interactions.maxFanOutPerInteraction,
   });
   options.signal?.throwIfAborted();
+  const resourceAccesses = extractResourceAccesses({
+    sourceIndex,
+    checker: project.checker,
+    repositoryRevision,
+    evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
+  });
+  options.signal?.throwIfAborted();
   const typeOrmPersistence = extractTypeOrmPersistence({
     sourceIndex,
     checker: project.checker,
     repositoryRevision,
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const requestProvenance = extractRequestProvenance({
@@ -345,6 +366,7 @@ export async function scanRepository(
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
     configuration: configuration.rawSql,
     signal: options.signal,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const compiler = canonicalCompilerDiagnostics(
@@ -373,6 +395,8 @@ export async function scanRepository(
     ...nestEventEmitter.diagnostics,
     ...nestBullMq.diagnostics,
     ...nestMicroservices.diagnostics,
+    ...resourceAccesses.diagnostics,
+    ...redlockCriticalSections.diagnostics,
     ...typeOrmPersistence.diagnostics,
     ...requestProvenance.diagnostics,
     ...interMethodProvenance.diagnostics,
@@ -418,7 +442,12 @@ export async function scanRepository(
     nestMicroservices.applications.length +
     nestMicroservices.interactions.length +
     nestMicroservices.handlers.length +
-    nestMicroservices.assertions.length;
+    nestMicroservices.assertions.length +
+    resourceAccesses.resourceAccesses.length +
+    resourceAccesses.assertions.length +
+    redlockCriticalSections.resourceAccesses.length +
+    redlockCriticalSections.assertions.length +
+    redlockCriticalSections.criticalSections.length;
   const resultState = deriveAnalysisResultState({ diagnostics, trustedFactCount });
   const tool = toolMetadata();
   const tsconfigPath = normalizeRepositoryRelativePath(repositoryRoot, project.tsconfigPath);
@@ -439,6 +468,8 @@ export async function scanRepository(
     nestEventEmitter.assertions,
     nestBullMq.assertions,
     nestMicroservices.assertions,
+    resourceAccesses.assertions,
+    redlockCriticalSections.assertions,
     typeOrmPersistence.assertions,
     typeOrmRawSql.assertions,
     moduleExtraction.assertions,
@@ -456,6 +487,8 @@ export async function scanRepository(
     nestEventEmitter.evidence,
     nestBullMq.evidence,
     nestMicroservices.evidence,
+    resourceAccesses.evidence,
+    redlockCriticalSections.evidence,
     typeOrmPersistence.evidence,
     typeOrmRawSql.evidence,
     compiler.evidence,
@@ -473,6 +506,11 @@ export async function scanRepository(
     handlers: interactionHandlers,
     dispatches: nestBullMq.handlerDispatches,
     branches: nestBullMq.handlerBranches,
+    assertions,
+    evidence,
+  });
+  const criticalSections = projectCriticalSectionEffects({
+    criticalSections: redlockCriticalSections.criticalSections,
     assertions,
     evidence,
   });
@@ -497,6 +535,8 @@ export async function scanRepository(
       nestEventEmitter.classes,
       nestBullMq.classes,
       nestMicroservices.classes,
+      resourceAccesses.classes,
+      redlockCriticalSections.classes,
       typeOrmPersistence.classes,
       typeOrmRawSql.classes,
       moduleExtraction.classes,
@@ -509,6 +549,8 @@ export async function scanRepository(
       nestEventEmitter.methods,
       nestBullMq.methods,
       nestMicroservices.methods,
+      resourceAccesses.methods,
+      redlockCriticalSections.methods,
       typeOrmPersistence.methods,
       typeOrmRawSql.methods,
     ),
@@ -561,6 +603,19 @@ export async function scanRepository(
     interactionHandlerBranchEffects,
     authorizationMetadata: authorizationExtraction.metadata,
     authorizationEnforcements: authorizationExtraction.enforcements,
+    resourceAccesses: [
+      ...resourceAccesses.resourceAccesses,
+      ...redlockCriticalSections.resourceAccesses,
+    ],
+    resourceAccessAnalysis: {
+      supportedTechnologies: [...RESOURCE_TECHNOLOGIES],
+      enabledTechnologies: [...RESOURCE_TECHNOLOGIES],
+      state:
+        resourceAccesses.state === 'incomplete' || redlockCriticalSections.state === 'incomplete'
+          ? 'incomplete'
+          : 'complete',
+    },
+    criticalSections,
     interactionAnalysis: {
       schemaKinds: [...INTERACTION_KINDS],
       supportedKinds: [...SUPPORTED_INTERACTION_KINDS],

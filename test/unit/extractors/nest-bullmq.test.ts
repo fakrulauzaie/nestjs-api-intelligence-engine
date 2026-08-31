@@ -92,7 +92,7 @@ describe('Nest BullMQ extraction', () => {
       });
 
       const result = await scanRepository({ repositoryRoot: project.path });
-      if (result.analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (result.analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       expect(result.analysis.interactions.filter(({ kind }) => kind === 'job_queue')).toEqual([
         expect.objectContaining({
           target: {
@@ -115,7 +115,7 @@ describe('Nest BullMQ extraction', () => {
     const { project, result } = await scanFixture('colocated');
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       const interactions = analysis.interactions.filter(
         (record): record is JobQueueInteractionRecord => record.kind === 'job_queue',
       );
@@ -178,7 +178,7 @@ describe('Nest BullMQ extraction', () => {
         ]);
       }
       const graph = buildGraphReportDocument({ analysis });
-      expect(graph.schemaVersion).toBe('6.0.0');
+      expect(graph.schemaVersion).toBe('9.0.0');
       expect(graph.interactionHandlers).toEqual([
         expect.objectContaining({
           kind: 'job_queue',
@@ -277,10 +277,10 @@ describe('Nest BullMQ extraction', () => {
     const consumer = await scanFixture('consumer-only');
     try {
       if (
-        producer.result.analysis.schemaVersion !== '5.0.0' ||
-        consumer.result.analysis.schemaVersion !== '5.0.0'
+        producer.result.analysis.schemaVersion !== '7.0.0' ||
+        consumer.result.analysis.schemaVersion !== '7.0.0'
       ) {
-        throw new Error('Expected analysis v5.');
+        throw new Error('Expected analysis v7.');
       }
       const producerInteractions = producer.result.analysis.interactions.filter(
         ({ kind }) => kind === 'job_queue',
@@ -326,7 +326,7 @@ describe('Nest BullMQ extraction', () => {
     const { project, result } = await scanFixture('branch-filtering');
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       const interactions = analysis.interactions.filter(
         (record): record is JobQueueInteractionRecord => record.kind === 'job_queue',
       );
@@ -443,7 +443,7 @@ describe('Nest BullMQ extraction', () => {
     const second = await scanFixture('negatives');
     try {
       const { analysis } = first.result;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       const interactions = analysis.interactions.filter(
         (record): record is JobQueueInteractionRecord => record.kind === 'job_queue',
       );

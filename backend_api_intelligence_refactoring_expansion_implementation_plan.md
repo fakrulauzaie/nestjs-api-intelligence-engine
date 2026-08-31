@@ -204,7 +204,7 @@ Completion record:
 
 ### Phase 42 — Architecture overview and bounded refactoring metrics
 
-Status: pending
+Status: complete
 
 Goal: add a repository-level overview alongside endpoint and handler scenes.
 
@@ -218,11 +218,33 @@ Deliverables:
 6. Offer `not_reached_from_supported_roots`; never label records dead or safe to
    delete.
 
+Completion record:
+
+- Kept analysis v5 frozen and added a pure derived architecture engine over validated
+  assertions plus existing bounded endpoint and interaction-handler traces.
+- Published exact direct call fan-in/fan-out and separate endpoint, handler, and
+  combined supported-root reach counts for methods, tables, and interactions.
+  Resolved-only connectivity prevents ambiguous paths from lending downstream reach.
+- Added deterministic nearest-rank p50/p75/p90 legends, exact numeric output, and
+  explicit `not_reached_from_supported_roots` labeling without dead-code or deletion
+  claims.
+- Derived module ownership only from supported declaration assertions. Unique,
+  multiple, missing, incomplete, and unavailable ownership remain distinct; exports
+  never become ownership.
+- Published graph v7 with a bounded repository architecture scene, compound module
+  clusters, complete untruncated metric/ownership arrays, exact omission counts, and
+  corruption-detecting validation.
+- Added an offline architecture view with selectable heat metrics, visible legends and
+  exact values, root navigation, honesty guidance, and an accessible table equivalent.
+- Focused Phase 42 verification passed 6 files and 14 tests. The final one-worker suite
+  passed 125 files and 323 tests. Typecheck, build, lint with zero warnings, and
+  formatting checks passed.
+
 ## Milestone R3: Cache and lock resource access
 
 ### Phase 43 — Resource-access substrate and cache extraction
 
-Status: pending
+Status: complete
 
 Goal: represent non-relational resources without forcing them into communication
 interaction semantics.
@@ -242,9 +264,36 @@ Deliverables:
 Pipelines, transactions, scripts, pub/sub, and arbitrary wrappers remain explicit
 gaps until dedicated fixtures exist.
 
+Completion record:
+
+- Published analysis v6 with strict `ResourceAccessRecord` and resource-analysis
+  metadata families. Analysis v1-v5 remain readable; the v6-only
+  `METHOD_ACCESSES_RESOURCE` predicate and BullMQ `accesses_resource` branch effect are
+  rejected by historical runtime schemas.
+- Added package-proven extraction for `cache-manager` `get`/`set`/`del`/`wrap` and
+  selected direct `ioredis` string, hash, delete, expiry, and bounded scan operations
+  inside Nest controllers, injectable providers, and BullMQ processors. Same-named
+  lookalikes and arbitrary wrappers do not become facts.
+- Added exact, template, symbolic, and explicit dynamic structural targets, bounded
+  variadic delete expansion, scan selectors, empty Redis-key support, and diagnostics
+  for dynamic/oversized targets and package-proven unsupported operations. Payloads,
+  runtime configuration values, and callback results are excluded from resource
+  evidence.
+- Propagated resource terminals through endpoint, independent handler, local-event,
+  and branch-filtered distributed worker traces. Comparison v5, potential impact,
+  Markdown catalogues/traces, graph v8, and architecture supported-root metrics consume
+  the same canonical assertions without changing interaction semantics.
+- Added the frozen resource corpus, package declaration stubs, focused extraction,
+  redaction, determinism, comparison, graph, handler, empty-key, and BullMQ branch
+  tests. Documentation Gate D1 and current generated examples now describe analysis
+  v6, diff v5, and graph v8.
+- Verification completed on 2026-08-30: the focused Phase 43 tests passed; the complete
+  single-worker suite passed 127 files and 326 tests; typecheck, production build,
+  ESLint with zero warnings, and formatting checks passed.
+
 ### Phase 44 — Redlock and bounded critical sections
 
-Status: pending
+Status: complete
 
 Goal: identify known distributed-lock dependencies and bounded callback regions.
 
@@ -258,6 +307,24 @@ Deliverables:
 
 Gate L0: custom lock-wrapper adapters are deferred until Redlock fixtures demonstrate
 that wrapper propagation can remain symbol-proven and fail closed.
+
+Completion record:
+
+- Analysis schema `7.0.0` adds package-proven Redlock resource assertions and bounded
+  critical-section records while schemas v1-v6 remain readable and strictly validated.
+- The extractor supports `redlock` `using()` calls with bounded direct or immutable
+  constant resource arrays and inline arrow/function callbacks. Dynamic targets remain
+  explicit and diagnosed; unsupported callbacks and local lookalikes fail closed.
+- Calls, relational/non-relational resource effects, endpoint traces, handler traces,
+  causal summaries, Markdown, comparison v5, impact v2, and graph v9 preserve the
+  `critical_section_conditional` boundary without claiming acquisition, exclusivity,
+  timing, contention, callback execution, or release success.
+- Frozen fixtures, semantic expectations, focused extractor tests, integrity and
+  determinism checks, compatibility tests, and living documentation cover the feature.
+  Gate L0 remains closed; custom lock wrappers are not adopted.
+- Verification completed on 2026-08-31: the complete single-worker suite passed 129
+  files and 328 tests; typecheck, production build, ESLint with zero warnings, and
+  formatting checks passed.
 
 ## Milestone R4: Cross-service artifact stitching
 

@@ -1,0 +1,93 @@
+import { Controller, Inject, Injectable, Post } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Repository } from 'typeorm';
+import Redlock from 'redlock';
+
+const ORDER_LOCKS = ['locks:orders'] as const;
+
+@Entity('audit_log')
+class AuditLog {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  action!: string;
+}
+
+@Injectable()
+class AuditService {
+  constructor(@InjectRepository(AuditLog) private readonly audit: Repository<AuditLog>) {}
+
+  async record(action: string): Promise<void> {
+    await this.audit.save({ action });
+  }
+}
+
+@Injectable()
+class OrderService {
+  constructor(
+    private readonly redlock: Redlock,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly audit: AuditService,
+  ) {}
+
+  async place(orderId: string): Promise<void> {
+    await this.redlock.using(
+      [`locks:order:${orderId}`, 'locks:orders'],
+      5_000,
+      async () => {
+        await this.cache.set(`order:${orderId}`, { privatePayload: 'must-not-be-retained' });
+        await this.audit.record('placed');
+      },
+    );
+  }
+
+  async reconcile(): Promise<void> {
+    await this.redlock.using(ORDER_LOCKS, 10_000, { retryCount: 2 }, async function () {
+      await Promise.resolve();
+    });
+  }
+
+  async outsideLock(): Promise<void> {
+    await this.audit.record('ordinary');
+  }
+
+  async dynamic(resources: string[]): Promise<void> {
+    await this.redlock.using(resources, 5_000, async () => {
+      await this.audit.record('dynamic');
+    });
+  }
+
+  private readonly callback = async (): Promise<void> => this.audit.record('method-reference');
+
+  async unsupportedCallback(): Promise<void> {
+    await this.redlock.using(ORDER_LOCKS, 5_000, this.callback);
+  }
+}
+
+class RedlockLookalike {
+  using(resources: readonly string[], duration: number, callback: () => Promise<void>) {
+    return callback();
+  }
+}
+
+@Injectable()
+class LookalikeService {
+  constructor(private readonly redlock: RedlockLookalike) {}
+
+  async ignored(): Promise<void> {
+    await this.redlock.using(['lookalike'], 1, async () => undefined);
+  }
+}
+
+@Controller('orders')
+class OrdersController {
+  constructor(private readonly orders: OrderService) {}
+
+  @Post(':id')
+  place(): Promise<void> {
+    return this.orders.place('runtime-id');
+  }
+}

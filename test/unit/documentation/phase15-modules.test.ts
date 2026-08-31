@@ -21,7 +21,7 @@ describe('Phase 15 module and global-guard documentation', () => {
     expect(modules).toContain('never means `public`');
     expect(modules).toContain('strict `1.0.0` and `2.0.0` schemas');
     expect(architecture).toContain('Nest module + global-guard extractor');
-    expect(comparison).toContain('analysis schemas `1.0.0` through `5.0.0`');
+    expect(comparison).toContain('analysis schemas `1.0.0` through `7.0.0`');
     expect(model).toContain('global guard registration');
   });
 });

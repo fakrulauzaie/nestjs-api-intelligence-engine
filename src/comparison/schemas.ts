@@ -3,6 +3,7 @@ import {
   ANALYSIS_RESULT_STATES,
   GUARD_SCOPES,
   TABLE_ACCESS_DIRECTIONS,
+  TRACE_CAUSAL_CLASSES,
 } from '../model/analysis.js';
 import { ASSERTION_PREDICATES, ASSERTION_STATUSES } from '../model/assertions.js';
 import { DIAGNOSTIC_CODES, DIAGNOSTIC_SEVERITIES } from '../model/diagnostics.js';
@@ -24,6 +25,11 @@ import {
   JOB_QUEUE_HANDLER_DISPATCH_STATES,
 } from '../model/job-queue-branches.js';
 import {
+  RESOURCE_KINDS,
+  RESOURCE_OPERATIONS,
+  RESOURCE_TECHNOLOGIES,
+} from '../model/resource-access.js';
+import {
   authorizationValueShapeSchema,
   jobQueueBranchSelectorSchema,
   stableIdSchema,
@@ -37,6 +43,7 @@ import {
   DIFF_SCHEMA_V2_VERSION,
   DIFF_SCHEMA_V3_VERSION,
   DIFF_SCHEMA_V4_VERSION,
+  DIFF_SCHEMA_V5_VERSION,
   ENDPOINT_CHANGE_KINDS,
   ENDPOINT_CHANGE_REASONS,
   FACT_AVAILABILITY_STATES,
@@ -86,6 +93,7 @@ export const diffInputSnapshotSchema = z
         assertions: factAvailabilitySchema,
         diagnostics: factAvailabilitySchema,
         authorization: factAvailabilitySchema.optional(),
+        resourceAccesses: factAvailabilitySchema.optional(),
       })
       .strict(),
   })
@@ -138,6 +146,20 @@ const terminalFactSchema = z
   })
   .strict();
 
+const resourceAccessFactSchema = z
+  .object({
+    resourceAccessId: stableIdSchema,
+    key: semanticKeySchema,
+    resourceKind: z.enum(RESOURCE_KINDS),
+    operation: z.enum(RESOURCE_OPERATIONS),
+    technology: z.enum(RESOURCE_TECHNOLOGIES),
+    api: nonEmptyStringSchema,
+    targetKey: nonEmptyStringSchema,
+    selectorKey: nonEmptyStringSchema.nullable(),
+    causalClass: z.enum(TRACE_CAUSAL_CLASSES),
+  })
+  .strict();
+
 const authorizationFactSchema = z
   .object({
     metadataId: stableIdSchema,
@@ -175,6 +197,13 @@ const endpointSnapshotSchema = z
       .object({
         availability: factAvailabilitySchema,
         requirements: z.array(authorizationFactSchema),
+      })
+      .strict()
+      .optional(),
+    resourceAccesses: z
+      .object({
+        availability: factAvailabilitySchema,
+        values: z.array(resourceAccessFactSchema),
       })
       .strict()
       .optional(),
@@ -386,6 +415,7 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
       DIFF_SCHEMA_V2_VERSION,
       DIFF_SCHEMA_V3_VERSION,
       DIFF_SCHEMA_V4_VERSION,
+      DIFF_SCHEMA_V5_VERSION,
     ]),
     before: diffInputSnapshotSchema,
     after: diffInputSnapshotSchema,
@@ -415,7 +445,8 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
     const hasInteractionDiff =
       document.schemaVersion === DIFF_SCHEMA_V2_VERSION ||
       document.schemaVersion === DIFF_SCHEMA_V3_VERSION ||
-      document.schemaVersion === DIFF_SCHEMA_V4_VERSION;
+      document.schemaVersion === DIFF_SCHEMA_V4_VERSION ||
+      document.schemaVersion === DIFF_SCHEMA_V5_VERSION;
     if (
       hasInteractionDiff
         ? v2Fields.some((value) => value === undefined)
@@ -423,7 +454,18 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Diff schema v2-v4 requires interaction changes; schema v1 must omit them.',
+        message: 'Diff schema v2-v5 requires interaction changes; schema v1 must omit them.',
+      });
+    }
+    if (
+      document.schemaVersion !== DIFF_SCHEMA_V5_VERSION &&
+      document.jobQueueBranchEffectChanges?.some((change) =>
+        [change.before, change.after].some((snapshot) => snapshot?.kind === 'accesses_resource'),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Only diff schema v5 may contain resource-access branch effects.',
       });
     }
     const v3Fields = [
@@ -442,16 +484,19 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
     ];
     if (
       document.schemaVersion === DIFF_SCHEMA_V3_VERSION ||
-      document.schemaVersion === DIFF_SCHEMA_V4_VERSION
+      document.schemaVersion === DIFF_SCHEMA_V4_VERSION ||
+      document.schemaVersion === DIFF_SCHEMA_V5_VERSION
         ? v3Fields.some((value) => value === undefined)
         : v3Fields.some((value) => value !== undefined)
     ) {
       context.addIssue({
         code: 'custom',
-        message: 'Diff schema v3/v4 requires branch changes; schema v1/v2 must omit them.',
+        message: 'Diff schema v3-v5 requires branch changes; schema v1/v2 must omit them.',
       });
     }
-    const hasAuthorizationDiff = document.schemaVersion === DIFF_SCHEMA_V4_VERSION;
+    const hasAuthorizationDiff =
+      document.schemaVersion === DIFF_SCHEMA_V4_VERSION ||
+      document.schemaVersion === DIFF_SCHEMA_V5_VERSION;
     const authorizationFields = [
       document.before.facts.authorization,
       document.after.facts.authorization,
@@ -472,6 +517,30 @@ export const diffDocumentSchema: z.ZodType<DiffDocument> = z
         code: 'custom',
         message:
           'Diff schema v4 requires authorization availability and endpoint facts; earlier schemas must omit them.',
+      });
+    }
+    const hasResourceAccessDiff = document.schemaVersion === DIFF_SCHEMA_V5_VERSION;
+    const resourceAvailabilityFields = [
+      document.before.facts.resourceAccesses,
+      document.after.facts.resourceAccesses,
+    ];
+    const endpointResourceMismatch = document.endpointChanges.some((change) =>
+      hasResourceAccessDiff
+        ? (change.before !== null && change.before.resourceAccesses === undefined) ||
+          (change.after !== null && change.after.resourceAccesses === undefined)
+        : change.before?.resourceAccesses !== undefined ||
+          change.after?.resourceAccesses !== undefined,
+    );
+    if (
+      (hasResourceAccessDiff
+        ? resourceAvailabilityFields.some((value) => value === undefined)
+        : resourceAvailabilityFields.some((value) => value !== undefined)) ||
+      endpointResourceMismatch
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message:
+          'Diff schema v5 requires resource-access availability and endpoint facts; earlier schemas must omit them.',
       });
     }
   }) as z.ZodType<DiffDocument>;

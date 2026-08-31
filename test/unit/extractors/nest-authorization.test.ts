@@ -128,7 +128,7 @@ describe('NestJS authorization metadata and composite decorators', () => {
           },
         },
       });
-      expect(result.analysis.schemaVersion).toBe('5.0.0');
+      expect(result.analysis.schemaVersion).toBe('7.0.0');
       expect(analysisHasAuthorizationFacts(result.analysis)).toBe(true);
       if (!analysisHasAuthorizationFacts(result.analysis)) return;
 
@@ -256,13 +256,13 @@ describe('NestJS authorization metadata and composite decorators', () => {
       ).toHaveLength(1);
 
       const graph = buildGraphReportDocument({ analysis: result.analysis });
-      expect(graph.schemaVersion).toBe('6.0.0');
+      expect(graph.schemaVersion).toBe('9.0.0');
       expect(
         graph.endpoints.find(({ path }) => path === '/auth/composite')?.authorizationRequirements,
       ).toHaveLength(1);
 
       const diff = compareAnalysisDocuments(result.analysis, result.analysis);
-      expect(diff.schemaVersion).toBe('4.0.0');
+      expect(diff.schemaVersion).toBe('5.0.0');
       expect(diff.before.facts.authorization).toBe('available');
       expect(analyzePotentialImpact(result.analysis, result.analysis).schemaVersion).toBe('2.0.0');
     } finally {

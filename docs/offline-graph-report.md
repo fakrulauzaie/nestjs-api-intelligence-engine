@@ -55,15 +55,19 @@ Automated tests inject launcher fakes and never open a real browser.
 The graph command never scans source, starts NestJS, imports target modules, connects
 to a database, or reads repository state outside its explicit inputs. Its independently
 versioned `GraphReportDocument` schema is `1.0.0` for analysis v1/v2 reports,
-`4.0.0` for analysis v3, `5.0.0` for analysis v4, and `6.0.0` for current analysis v5
-reports. Historical graph
+`4.0.0` for analysis v3, `5.0.0` for analysis v4, `7.0.0` for analysis v5, and
+`8.0.0` for analysis v6 and `9.0.0` for current analysis v7 reports. Historical graph
 schemas `2.0.0` and `3.0.0` remain readable but are no longer emitted. Graph v4 adds
 one bounded handler-rooted scene per canonical interaction handler. Graph v5 adds
 BullMQ branch nodes, branch-effect edges, and selected endpoint branch IDs. Graph v6
-adds redacted endpoint authorization requirements and enforcement states. The
+adds redacted endpoint authorization requirements and enforcement states. Graph v7
+retains those facts and adds the bounded architecture overview. Graph v8 retains that
+overview and adds canonical cache/Redis resource-access nodes to endpoint, handler,
+and architecture views. Graph v9 adds Redlock resource and bounded critical-section
+scope nodes. The
 HTML is a rendering of the validated document, not a second fact graph.
 
-## Endpoint and handler exploration
+## Endpoint, handler, and architecture exploration
 
 The report initially opens one endpoint-centered scene. A view selector exposes
 handler-rooted scenes for every canonical in-process event, BullMQ, and Nest
@@ -80,12 +84,20 @@ related endpoint when one is present. The sidebar supports:
 - policy pass/fail/unknown/not-applicable filtering when policy results are supplied;
 - direct, potential, unknown, and no-impact filtering when impact results are supplied.
 
+Graph v9 includes the repository Architecture overview choice introduced in v7. Its heat selector switches
+among direct call fan-in/fan-out and endpoint, handler, or combined supported-root
+reach. Nearest-rank p50/p75/p90 thresholds, exact selected values, heat bands, and
+module-ownership states remain visible without relying on color. Unique module
+declarations form compound clusters; multiple or uncertain ownership remains labeled
+rather than assigned to a guessed module. See
+[Architecture Overview and Bounded Refactoring Metrics](architecture-overview.md).
+
 Selecting a node or edge highlights its proven predecessor/successor path and displays
 its retained evidence. Evidence uses a selectable repository-relative
 `path:line:column` location rather than a `file://` link. Snippets remain bounded and
 redacted exactly as they were in canonical analysis.
 
-The endpoint → handler → called method → table, outbound-HTTP, or local-event path is
+The endpoint → handler → called method → table, resource access, outbound-HTTP, or local-event path is
 built from the existing endpoint trace. Graph v4 separates the initiating method,
 interaction record, process boundary, external HTTP target, local handler declaration,
 and implementing handler method. HTTP producer labels show activation/timing while the
@@ -141,10 +153,16 @@ Defaults are 120 nodes and 180 edges per scene. `--max-nodes` accepts 10-500 and
 selected edge limit plus 100, ensuring room for at least one retained evidence record
 per displayed evidence-backed graph item under the configured bounds.
 
-Edges are selected deterministically in assertion, effective-guard, then provenance
+Endpoint/handler edges are selected deterministically in assertion, effective-guard, then provenance
 order. The endpoint or handler root is always retained. The report publishes omitted node, edge,
 and evidence counts both in its strict view model and in the UI. An omitted item is not
 presented as absent from analysis.
+
+The architecture scene uses the same bounds, retains its repository root and any
+compound parent nodes needed by selected children, and prioritizes supported roots and
+higher percentile bands. Its complete metric and ownership arrays are not truncated by
+scene limits. `not_reached_from_supported_roots` is never presented as dead or safe to
+delete.
 
 ## Offline and injection boundary
 
@@ -178,7 +196,8 @@ Graph facts and the evidence inspector remain ordinary selectable text.
 
 - No hosted application, local HTTP server, account, storage, telemetry, or CDN.
 - No client-side parsing of `analysis.json` and no source rescan.
-- No whole-repository graph rendered on initial load.
+- No whole-repository graph rendered on initial load; the architecture scene is
+  explicitly selected and bounded.
 - No guessed edges for unresolved targets and no flattened uncertainty.
 - No executable source snippets or target-code links.
 - No Git-facing workflow or repository-provider integration.

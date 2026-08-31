@@ -49,11 +49,17 @@ export const JOB_QUEUE_BRANCH_CONTROL_FLOWS = [
 ] as const;
 export type JobQueueBranchControlFlow = (typeof JOB_QUEUE_BRANCH_CONTROL_FLOWS)[number];
 
-export const JOB_QUEUE_BRANCH_EFFECT_KINDS = [
+/** Frozen analysis-v4/v5 branch-effect vocabulary. */
+export const JOB_QUEUE_BRANCH_EFFECT_KINDS_V4 = [
   'calls_method',
   'reads_table',
   'writes_table',
   'initiates_interaction',
+] as const;
+
+export const JOB_QUEUE_BRANCH_EFFECT_KINDS = [
+  ...JOB_QUEUE_BRANCH_EFFECT_KINDS_V4,
+  'accesses_resource',
 ] as const;
 export type JobQueueBranchEffectKind = (typeof JOB_QUEUE_BRANCH_EFFECT_KINDS)[number];
 

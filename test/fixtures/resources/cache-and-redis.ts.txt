@@ -1,0 +1,67 @@
+import { Controller, Get, Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+import Redis from 'ioredis';
+import { OnEvent } from '@nestjs/event-emitter';
+
+const EXACT_CACHE_KEY = 'cache:exact';
+
+@Injectable()
+export class ResourceService {
+  private readonly cachePrefix: string;
+
+  constructor(
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly redis: Redis,
+  ) {
+    this.cachePrefix = 'runtime-prefix';
+  }
+
+  async useResources(id: string, dynamicKey: string): Promise<void> {
+    await this.cache.get(EXACT_CACHE_KEY);
+    await this.cache.set(`user:${id}`, { secretPayload: dynamicKey });
+    await this.cache.del(this.cachePrefix);
+    await this.cache.wrap(dynamicKey, async () => 'payload-not-retained');
+
+    await this.redis.get('redis:exact');
+    await this.redis.get('');
+    await this.redis.set(`redis:${id}`, dynamicKey);
+    await this.redis.hgetall('profile:hash');
+    await this.redis.hset(`profile:${id}`, 'token', dynamicKey);
+    await this.redis.del('redis:a', 'redis:b');
+    await this.redis.expire('redis:a', 60);
+    await this.redis.scan('0', 'MATCH', 'redis:*', 'COUNT', 50);
+    await this.redis.hscan(`profile:${id}`, '0', 'MATCH', 'field:*');
+
+    this.redis.pipeline();
+    await this.redis.publish('events', dynamicKey);
+    await this.redis.keys('*');
+  }
+
+  @OnEvent('cache.warm')
+  async warmCache(): Promise<void> {
+    await this.cache.set('cache:warm', 'handler-payload-not-retained');
+  }
+}
+
+@Controller('resources')
+export class ResourceController {
+  constructor(private readonly resources: ResourceService) {}
+
+  @Get(':id')
+  async read(): Promise<void> {
+    await this.resources.useResources('id', 'runtime');
+  }
+}
+
+class CacheLookalike {
+  get(_key: string): void {}
+}
+
+@Injectable()
+export class LookalikeService {
+  constructor(private readonly cache: CacheLookalike) {}
+  ignored(): void {
+    this.cache.get('lookalike');
+  }
+}

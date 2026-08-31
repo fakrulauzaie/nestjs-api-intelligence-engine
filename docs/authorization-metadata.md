@@ -74,7 +74,7 @@ policy outcome `unknown`; endpoints without supported metadata are not applicabl
 it. A configured relationship can coexist with a proven ordinary guard declaration,
 so the guard rule may pass while authorization enforcement stays configured/unknown.
 
-Endpoint catalogues, Markdown traces, comparison v4, control/OpenAPI v5, and graph v6
+Endpoint catalogues, Markdown traces, comparison v5, control/OpenAPI v5, and graph v8
 show metadata keys, scopes, redacted shapes, states, and exact guard names where
 available. They never render metadata values.
 

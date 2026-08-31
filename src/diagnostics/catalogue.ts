@@ -220,6 +220,34 @@ export const DIAGNOSTIC_CATALOGUE: Readonly<Record<DiagnosticCode, DiagnosticDef
     summary:
       'A request-response pattern has multiple in-repository handler candidates; none is selected or traversed.',
   },
+  RESOURCE_ACCESS_TARGET_DYNAMIC: {
+    defaultSeverity: 'warning',
+    summary:
+      'A package-proven cache or Redis operation has a key outside the bounded structural target rules.',
+  },
+  RESOURCE_ACCESS_TARGET_LIMIT_EXCEEDED: {
+    defaultSeverity: 'warning',
+    summary: 'A cache or Redis target exceeded the structural key safety limits.',
+  },
+  RESOURCE_ACCESS_OPERATION_UNSUPPORTED: {
+    defaultSeverity: 'info',
+    summary:
+      'A package-proven cache or Redis operation crosses an unsupported pipeline, script, pub/sub, wrapper, or command boundary.',
+  },
+  CRITICAL_SECTION_TARGET_DYNAMIC: {
+    defaultSeverity: 'warning',
+    summary:
+      'A package-proven Redlock critical section has a resource list outside the bounded structural target rules.',
+  },
+  CRITICAL_SECTION_TARGET_LIMIT_EXCEEDED: {
+    defaultSeverity: 'warning',
+    summary: 'A package-proven Redlock critical section exceeded the bounded resource-key limit.',
+  },
+  CRITICAL_SECTION_CALLBACK_UNSUPPORTED: {
+    defaultSeverity: 'warning',
+    summary:
+      'A package-proven Redlock using() call has a callback form whose lexical effects cannot be bounded safely.',
+  },
 };
 
 export function createDiagnostic(input: {

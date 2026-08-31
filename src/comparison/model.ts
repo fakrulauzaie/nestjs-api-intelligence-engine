@@ -1,4 +1,4 @@
-import type { AnalysisResultState } from '../model/analysis.js';
+import type { AnalysisResultState, TraceCausalClass } from '../model/analysis.js';
 import type { AssertionPredicate, AssertionStatus } from '../model/assertions.js';
 import type { DiagnosticCode, DiagnosticSeverity } from '../model/diagnostics.js';
 import type { GuardScope, TableAccessDirection } from '../model/index.js';
@@ -22,16 +22,23 @@ import type {
   AuthorizationValueShape,
 } from '../model/authorization.js';
 import type { SemanticKey } from './semantic-key.js';
+import type {
+  ResourceKind,
+  ResourceOperation,
+  ResourceTechnology,
+} from '../model/resource-access.js';
 
 export const DIFF_SCHEMA_VERSION = '1.0.0' as const;
 export const DIFF_SCHEMA_V2_VERSION = '2.0.0' as const;
 export const DIFF_SCHEMA_V3_VERSION = '3.0.0' as const;
 export const DIFF_SCHEMA_V4_VERSION = '4.0.0' as const;
+export const DIFF_SCHEMA_V5_VERSION = '5.0.0' as const;
 export type DiffSchemaVersion =
   | typeof DIFF_SCHEMA_VERSION
   | typeof DIFF_SCHEMA_V2_VERSION
   | typeof DIFF_SCHEMA_V3_VERSION
-  | typeof DIFF_SCHEMA_V4_VERSION;
+  | typeof DIFF_SCHEMA_V4_VERSION
+  | typeof DIFF_SCHEMA_V5_VERSION;
 export const FACT_AVAILABILITY_STATES = ['available', 'unavailable'] as const;
 export type FactAvailability = (typeof FACT_AVAILABILITY_STATES)[number];
 
@@ -45,6 +52,7 @@ export const ENDPOINT_CHANGE_REASONS = [
   'effective_guards',
   'terminals',
   'authorization',
+  'resource_accesses',
 ] as const;
 export type EndpointChangeReason = (typeof ENDPOINT_CHANGE_REASONS)[number];
 
@@ -86,6 +94,7 @@ export interface DiffInputSnapshot {
     readonly assertions: FactAvailability;
     readonly diagnostics: FactAvailability;
     readonly authorization?: FactAvailability | undefined;
+    readonly resourceAccesses?: FactAvailability | undefined;
   };
 }
 
@@ -128,6 +137,18 @@ export interface EndpointTerminalFact {
   readonly contributors: readonly EndpointTerminalContributor[];
 }
 
+export interface EndpointResourceAccessFact {
+  readonly resourceAccessId: string;
+  readonly key: SemanticKey;
+  readonly resourceKind: ResourceKind;
+  readonly operation: ResourceOperation;
+  readonly technology: ResourceTechnology;
+  readonly api: string;
+  readonly targetKey: string;
+  readonly selectorKey: string | null;
+  readonly causalClass: TraceCausalClass;
+}
+
 export interface EndpointSnapshot {
   readonly endpointId: string;
   readonly httpMethod: HttpMethod;
@@ -152,6 +173,12 @@ export interface EndpointSnapshot {
     | {
         readonly availability: FactAvailability;
         readonly requirements: readonly EndpointAuthorizationFact[];
+      }
+    | undefined;
+  readonly resourceAccesses?:
+    | {
+        readonly availability: FactAvailability;
+        readonly values: readonly EndpointResourceAccessFact[];
       }
     | undefined;
 }

@@ -14,6 +14,7 @@ flowchart TD
   P --> X6["Opt-in TypeORM PostgreSQL raw-SQL extractor"]
   P --> X7["Contract + bounded provenance extractors"]
   P --> X8["HTTP, local-event, BullMQ, and Nest microservice interaction extractors"]
+  P --> X9["Cache-manager and direct ioredis resource extractor"]
   X1 --> M["Typed record merge"]
   X2 --> M
   X3 --> M
@@ -22,6 +23,7 @@ flowchart TD
   X6 --> M
   X7 --> M
   X8 --> M
+  X9 --> M
   M --> C["Canonical ordering"]
   C --> V["Zod schema + cross-record integrity validation"]
   V --> A["analysis.json"]
@@ -76,6 +78,12 @@ candidate assertions through the same merge/validation boundary. Queue candidate
 remain open-world and distributed-conditional; no extractor contacts a network or
 broker.
 
+The resource extractor separately proves package-backed `cache-manager` and direct
+`ioredis` operations inside supported Nest classes. It publishes structural key/hash/
+keyspace targets through `METHOD_ACCESSES_RESOURCE`; payload arguments and runtime
+values are excluded. Pipelines, transactions, scripts, pub/sub, arbitrary wrappers,
+and lock semantics remain outside this bounded pass.
+
 The Nest contract extractor inventories supported request decorators and declared or
 checker-derived response shapes. It resolves referenced in-repository class/interface
 fields without executing mapped-type or validator code. TypeORM persistence extraction
@@ -127,7 +135,7 @@ flowchart LR
   PV --> CE
   CE --> CJ["validated control-evidence.json"]
   CJ --> CC["formula-safe CSV"]
-  A --> GV["validated endpoint/handler graph views"]
+  A --> GV["validated endpoint/handler/architecture graph views"]
   PV --> GV
   IV --> GV
   GV --> GH["self-contained offline HTML"]
@@ -189,7 +197,11 @@ The offline graph projection consumes validated analysis plus optional same-snap
 policy and impact documents. It reuses endpoint catalogue, endpoint and interaction-
 handler traces, effective-guard, and request-provenance views; it cannot import
 extractor internals or create canonical relationships. Every endpoint and canonical
-interaction handler receives one bounded scene with explicit omitted counts.
+interaction handler receives one bounded scene with explicit omitted counts. Current
+analysis v5 also receives one derived repository architecture overview. Its direct-call
+degree, supported endpoint/handler trace reach, percentile legends, and module
+declaration ownership are recomputed from canonical assertions and bounded traces;
+they do not become analysis facts.
 The renderer safely embeds the validated view and pinned Cytoscape browser asset in one
 HTML file, authorizes exact inline bytes with CSP hashes, blocks connections, and
 provides a semantic table fallback. The HTML performs no source scan or client-side
@@ -228,7 +240,7 @@ phases.
 New facts should enter through a deterministic
 extractor and the same canonical validation boundary before any reporter consumes them.
 
-### Analysis v5 interaction, branch, and authorization boundary
+### Analysis v7 interaction, branch, authorization, resource, and critical-section boundary
 
 The current scanner supports `outbound_http`, `in_process_event`, `job_queue`, and
 `microservice_message`. The chronology below
@@ -309,6 +321,30 @@ an exact guard declaration while a configured mapping can reference an already p
 endpoint or application-global guard. Metadata values are reduced to redacted shape.
 The report, comparison, policy, and graph layers consume the relationship state without
 turning metadata into a guard or claiming runtime authorization.
+
+Phase 42 keeps analysis v5 frozen and publishes graph v7. A derived architecture pass
+counts resolved direct call edges and the number of bounded endpoint/handler traces
+that connect to each method, table, or interaction. It clusters only classes and
+methods with exactly one resolved Nest module declaration; multiple, incomplete, and
+unavailable ownership remain explicit. Percentile heat is a within-snapshot display
+aid. Zero supported-root reach is named `not_reached_from_supported_roots`, never dead
+or safe to delete.
+
+Phase 43 publishes analysis v6 and adds canonical non-relational resource-access
+records without broadening interaction kinds. Endpoint and handler traces, comparison
+v5, impact, Markdown, graph v8, and architecture reach metrics consume the same
+`METHOD_ACCESSES_RESOURCE` assertion. This preserves structural key identity and
+causal class without claiming command execution, success, runtime values, or cache
+semantics.
+
+Phase 44 publishes analysis v7. A package-proven Redlock pass runs before generic
+call, TypeORM, raw-SQL, and resource extraction and supplies only the exact inline
+callbacks they may enter. The merged assertion graph is then projected back onto
+`CriticalSectionRecord.effectAssertionIds` by call-site evidence containment. Traces
+remove those assertions from the ordinary synchronous path and traverse them under
+`critical_section_conditional`; graph v9 renders the lexical scope explicitly. This
+pipeline reports dependency and bounded scope without inferring acquisition,
+exclusivity, timing, contention, callback execution, or release.
 
 Phase 36 activates `microservice_message`. It inventories direct microservice and
 bounded hybrid roots, static TCP/Redis/RMQ/Kafka transports, checker-proven

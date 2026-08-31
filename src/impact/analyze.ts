@@ -485,7 +485,8 @@ function pathsForResolution(index: SideIndex, assertion: AssertionRecord): Impac
   if (
     assertion.predicate === 'METHOD_CALLS_METHOD' ||
     assertion.predicate === 'METHOD_READS_TABLE' ||
-    assertion.predicate === 'METHOD_WRITES_TABLE'
+    assertion.predicate === 'METHOD_WRITES_TABLE' ||
+    assertion.predicate === 'METHOD_ACCESSES_RESOURCE'
   ) {
     return appendAssertionToPaths(
       index.graph,

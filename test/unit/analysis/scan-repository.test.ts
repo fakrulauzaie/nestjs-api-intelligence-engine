@@ -26,8 +26,8 @@ describe('canonical repository scan assembly', () => {
 
       const result = await scanRepository({ repositoryRoot: project.path });
 
-      expect(result.analysis.schemaVersion).toBe('5.0.0');
-      if (result.analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      expect(result.analysis.schemaVersion).toBe('7.0.0');
+      if (result.analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       expect(result.analysis.applications).toEqual([]);
       expect(result.analysis.interactions).toEqual([]);
       expect(result.analysis.interactionHandlers).toEqual([]);

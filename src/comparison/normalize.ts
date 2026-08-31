@@ -8,6 +8,8 @@ export const SUPPORTED_COMPARISON_ANALYSIS_SCHEMA_VERSIONS = [
   '3.0.0',
   '4.0.0',
   '5.0.0',
+  '6.0.0',
+  '7.0.0',
 ] as const;
 
 export interface NormalizedComparisonAnalysis {
@@ -16,8 +18,8 @@ export interface NormalizedComparisonAnalysis {
 }
 
 /**
- * This is the only analysis-schema boundary used by comparison. v1 and v2 decode into
- * one private view; missing v1 effective-guard facts remain unavailable.
+ * This is the only analysis-schema boundary used by comparison. Missing historical
+ * fact families remain unavailable rather than becoming proven-empty collections.
  */
 export function normalizeAnalysisForComparison(input: unknown): NormalizedComparisonAnalysis {
   const normalized = normalizeAnalysisDocument(input);
@@ -45,6 +47,9 @@ export function normalizeAnalysisForComparison(input: unknown): NormalizedCompar
         diagnostics: 'available',
         ...(normalized.facts.authorizationFamilies === 'available'
           ? { authorization: 'available' as const }
+          : {}),
+        ...(normalized.facts.resourceAccessFamilies === 'available'
+          ? { resourceAccesses: 'available' as const }
           : {}),
       },
     },

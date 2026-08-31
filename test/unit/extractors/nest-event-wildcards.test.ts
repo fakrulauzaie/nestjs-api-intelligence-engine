@@ -70,7 +70,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       const methodNames = new Map(
         analysis.methods.map(({ id, qualifiedName }) => [id, qualifiedName]),
       );
@@ -185,7 +185,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
         ),
       });
       const modifiedDiff = compareAnalysisDocuments(analysis, modified);
-      expect(modifiedDiff.schemaVersion).toBe('4.0.0');
+      expect(modifiedDiff.schemaVersion).toBe('5.0.0');
       expect(modifiedDiff.summary).toMatchObject({
         interactionsModified: 1,
         interactionHandlersModified: 1,
@@ -304,7 +304,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
 
       const graph = buildGraphReportDocument({ analysis });
       const createdGraph = graph.endpoints.find(({ path }) => path === '/wildcards/dot-created')!;
-      expect(graph.schemaVersion).toBe('6.0.0');
+      expect(graph.schemaVersion).toBe('9.0.0');
       expect(createdGraph.dbWrites).toEqual([]);
       expect(createdGraph.localCausalEffects).toHaveLength(5);
       expect(

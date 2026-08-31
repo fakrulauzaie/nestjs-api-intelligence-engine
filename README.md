@@ -8,8 +8,14 @@ causal database effects, and bounded BullMQ queue/worker candidate paths whose
 database effects remain distributed-conditional. It also inventories bounded Nest
 `ClientProxy` `send`/`emit` interactions and transport-compatible
 `@MessagePattern`/`@EventPattern` delivery candidates under the
-`microservice_message` kind. Its
+`microservice_message` kind. Analysis v7 also records package-proven `cache-manager`
+and direct `ioredis` key/hash access as non-relational resource facts, keeping key
+structure while excluding payload and runtime values, plus package-proven Redlock
+`using()` dependencies and bounded callback scopes. Its
 output is deterministic, runtime-validated, evidence-backed, and explicit about gaps.
+The offline graph also provides a bounded repository architecture view with numeric
+call/reach metrics and exact Nest module-ownership states; it never turns zero supported
+root reach into a dead-code claim.
 
 The MVP analyzes source; it does not start the target application, import target
 modules, connect to its database, or invoke its package scripts.
@@ -36,7 +42,7 @@ POST /users
   -> WRITE user
 ```
 
-Each edge cites repository-relative source coordinates. See the current v4
+Each edge cites repository-relative source coordinates. See the current v7
 [endpoint catalogue](docs/examples/current/endpoints.md),
 [read trace](docs/examples/current/read-trace.md),
 [write trace](docs/examples/current/write-trace.md), and
@@ -186,6 +192,9 @@ Exact OpenAPI enrichment and deterministic control-evidence JSON/CSV are documen
 Endpoint- and handler-rooted interaction views, offline/CSP protections, limits, and
 accessible fallback are documented in the
 [Offline Interactive Graph Report](docs/offline-graph-report.md).
+Metric definitions, percentile heat, module clustering, and the zero-reach honesty
+boundary are documented in
+[Architecture Overview and Bounded Refactoring Metrics](docs/architecture-overview.md).
 
 ## Result states
 
@@ -245,6 +254,9 @@ cancellation have distinct exit codes documented in the CLI workflow.
   scalar/plain-JSON patterns, controller `@MessagePattern()`/`@EventPattern()`
   candidates, cold-send activation, open-world topologies, and
   distributed-conditional handler effects.
+- Package-proven `cache-manager` `get`/`set`/`del`/`wrap` and bounded direct
+  `ioredis` string, hash, delete, expiry, and scan operations, with exact, template,
+  symbolic, or explicit dynamic resource targets and no retained payload values.
 - Exact OpenAPI 3.0/3.1 JSON enrichment plus strict match/evidence sidecars, and
   one-row-per-endpoint control-evidence JSON/CSV exports.
 - A self-contained offline Cytoscape.js report over validated endpoint and interaction-
@@ -272,6 +284,9 @@ canonical rule to executable tests.
   outside the current interaction extractors. The frozen Distributed Gate D0 corpus
   is the semantic contract consumed by the supported BullMQ and Nest microservice
   subsets.
+- Cache/Redis pipelines, transactions, Lua scripts, pub/sub, arbitrary client
+  wrappers, lock semantics, runtime keys/values, and command-success claims are
+  outside the current non-relational resource extractor.
 - Request-field influence is modeled as `direct`, `derived`, or `unknown` within one
   method and through bounded direct injected-member calls. Polymorphic/interface
   dispatch, callbacks, spread/rest mappings, pipes, runtime validation/transformation,
@@ -298,7 +313,7 @@ relationship from a similar name.
 flowchart LR
   A["Local repository"] --> B["Safe inventory"]
   B --> C["TypeScript Program + TypeChecker"]
-  C --> D["Narrow NestJS / TypeORM / HTTP extractors"]
+  C --> D["Narrow NestJS / TypeORM / interaction / resource extractors"]
   D --> E["Merge + canonical ordering"]
   E --> F["Schema + cross-record integrity validation"]
   F --> G["analysis.json"]
@@ -313,7 +328,7 @@ no absolute checkout path or timing; volatile run metadata is separate. Publicat
 stages complete files, commits canonical analysis last, and preserves unrelated files.
 See [Architecture](docs/architecture.md) and the [Canonical Model Contract](docs/model-contract.md).
 
-The current scanner publishes strict analysis schema `5.0.0` and advertises
+The current scanner publishes strict analysis schema `7.0.0` and advertises
 `outbound_http`, `in_process_event`, `job_queue`, and `microservice_message` as
 supported and enabled. Phase 30 originally introduced empty
 interaction collections; frozen v1/v2 documents remain readable, and missing
@@ -329,6 +344,17 @@ value shapes. Package-proven composite decorators can connect metadata to an exa
 `UseGuards()` class; configured mappings stay `configured_relationship`, and metadata
 alone stays `enforcement_unknown`. These facts never claim runtime authorization
 success and do not make metadata satisfy the existing guard-on-write policy.
+
+Analysis v6 separately inventories bounded `cache-manager` and direct `ioredis`
+resource access. `METHOD_ACCESSES_RESOURCE` facts flow through endpoint and independent
+handler traces, comparison v5, impact, Markdown, and graph v8. They prove only a
+package-resolved static access expression—not execution, command success, cache hits,
+atomicity, or runtime values. See [Non-Relational Resource Access](docs/non-relational-resource-access.md).
+
+Analysis v7 adds package-proven Redlock `using()` resources and explicit bounded
+critical-section records. Callback-contained calls and data/resource effects remain
+`critical_section_conditional`; the records do not prove acquisition, exclusivity,
+contention, timing, or release. See [Redlock Critical Sections](docs/redlock-critical-sections.md).
 
 ## Reproducible official-sample demo
 

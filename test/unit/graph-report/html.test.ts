@@ -9,7 +9,10 @@ import {
 } from '../../../src/graph-report/html.js';
 import { OFFLINE_GRAPH_REPORT_STYLES } from '../../../src/graph-report/styles.js';
 import { makeAssertionId, makeEndpointId } from '../../../src/model/ids.js';
-import { createMinimalAnalysisDocument } from '../../helpers/minimal-analysis.js';
+import {
+  createMinimalAnalysisDocument,
+  createMinimalAnalysisDocumentV5,
+} from '../../helpers/minimal-analysis.js';
 
 describe('Phase 23 self-contained HTML rendering', () => {
   it('is byte-deterministic, CSP-hardened, offline, keyboard-oriented, and accessible', async () => {
@@ -88,5 +91,16 @@ describe('Phase 23 self-contained HTML rendering', () => {
     expect(html).not.toContain('</script><img');
     expect(html).toContain('\\u003c/script\\u003e\\u003cimg');
     expect(html).toContain('&lt;img src=x onerror=alert(2)&gt;');
+  });
+
+  it('renders the graph-v7 architecture selector, percentile metric UI, and honest boundary', async () => {
+    const html = await renderOfflineGraphReport(
+      buildGraphReportDocument({ analysis: createMinimalAnalysisDocumentV5() }),
+    );
+    expect(html).toContain('<option value="architecture">Architecture overview</option>');
+    expect(html).toContain('Architecture heat');
+    expect(html).toContain('not_reached_from_supported_roots');
+    expect(html).toContain('Zero reach is not dead code');
+    expect(html).toContain('Architecture heat is also published numerically');
   });
 });

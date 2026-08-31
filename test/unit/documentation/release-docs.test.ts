@@ -48,7 +48,7 @@ describe('MVP release documentation', () => {
     expect(packageJson.scripts?.demo).toBe('node scripts/demo.mjs');
   });
 
-  it('ships readable current-v5 catalogue, read/write traces, and JSON summary', async () => {
+  it('ships readable current-v6 catalogue, read/write traces, and JSON summary', async () => {
     const exampleRoot = resolve('docs/examples/current');
     const [catalogue, readTrace, writeTrace, analysisSummaryText] = await Promise.all([
       readFile(resolve(exampleRoot, 'endpoints.md'), 'utf8'),
@@ -70,7 +70,7 @@ describe('MVP release documentation', () => {
       readonly interactionAnalysis?: { readonly supportedKinds?: readonly string[] };
     };
     expect(summary.resultState).toBe('completed_with_gaps');
-    expect(summary.schemaVersion).toBe('5.0.0');
+    expect(summary.schemaVersion).toBe('7.0.0');
     expect(summary.interactionAnalysis?.supportedKinds).toEqual([
       'in_process_event',
       'job_queue',

@@ -296,8 +296,11 @@ function operationRuleId(operation: string): string {
   return `typeorm.repository.${operation}.v1`;
 }
 
-function isNestedThisBoundary(node: ts.Node): boolean {
-  return ts.isFunctionLike(node) && !ts.isArrowFunction(node);
+function isNestedThisBoundary(
+  node: ts.Node,
+  allowedNestedFunctions: ReadonlySet<ts.Node>,
+): boolean {
+  return ts.isFunctionLike(node) && !ts.isArrowFunction(node) && !allowedNestedFunctions.has(node);
 }
 
 export function extractTypeOrmPersistence(input: {
@@ -305,7 +308,9 @@ export function extractTypeOrmPersistence(input: {
   checker: ts.TypeChecker;
   repositoryRevision: string | null;
   evidenceSnippetLimit: number;
+  allowedNestedFunctions?: ReadonlySet<ts.Node>;
 }): TypeOrmPersistenceExtraction {
+  const allowedNestedFunctions = input.allowedNestedFunctions ?? new Set();
   const classByNode = new Map<ts.ClassDeclaration, LocatedClass>();
   const sourceByAbsolutePath = new Map<string, IndexedSourceFile>();
   for (const source of input.sourceIndex.sourceFiles) {
@@ -998,7 +1003,7 @@ export function extractTypeOrmPersistence(input: {
       const body = sourceMethod.node.body;
       if (body === undefined) continue;
       const visit = (node: ts.Node): void => {
-        if (node !== body && isNestedThisBoundary(node)) return;
+        if (node !== body && isNestedThisBoundary(node, allowedNestedFunctions)) return;
         if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
           const calledProperty = node.expression;
           const receiver = calledProperty.expression;

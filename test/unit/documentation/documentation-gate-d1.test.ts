@@ -12,8 +12,8 @@ import { openApiCommand } from '../../../src/cli/commands/openapi.js';
 import { reportCommand } from '../../../src/cli/commands/report.js';
 import { scanCommand } from '../../../src/cli/commands/scan.js';
 import { traceCommand } from '../../../src/cli/commands/trace.js';
-import { DIFF_SCHEMA_V4_VERSION } from '../../../src/comparison/model.js';
-import { GRAPH_REPORT_SCHEMA_V6_VERSION } from '../../../src/graph-report/model.js';
+import { DIFF_SCHEMA_V5_VERSION } from '../../../src/comparison/model.js';
+import { GRAPH_REPORT_SCHEMA_V9_VERSION } from '../../../src/graph-report/model.js';
 import { IMPACT_SCHEMA_V2_VERSION } from '../../../src/impact/model.js';
 import { CURRENT_ANALYSIS_SCHEMA_VERSION } from '../../../src/model/analysis.js';
 import { INTERACTION_KINDS } from '../../../src/model/interactions.js';
@@ -76,10 +76,10 @@ describe('Documentation Gate D1 conformance', () => {
     expect(index).toContain('Source-of-truth hierarchy');
     const normalizedModel = normalizeWhitespace(model);
     expect(normalizedModel).toContain(`analysis.json\` | \`${CURRENT_ANALYSIS_SCHEMA_VERSION}`);
-    expect(normalizedModel).toContain(`diff.json\` | \`${DIFF_SCHEMA_V4_VERSION}`);
+    expect(normalizedModel).toContain(`diff.json\` | \`${DIFF_SCHEMA_V5_VERSION}`);
     expect(normalizedModel).toContain(`impact.json\` | \`${IMPACT_SCHEMA_V2_VERSION}`);
     expect(normalizedModel).toContain(`policy-results.json\` | \`${POLICY_RESULTS_SCHEMA_VERSION}`);
-    expect(normalizedModel).toContain(`graph view | \`${GRAPH_REPORT_SCHEMA_V6_VERSION}`);
+    expect(normalizedModel).toContain(`graph view | \`${GRAPH_REPORT_SCHEMA_V9_VERSION}`);
     expect(normalizedModel).toContain(
       `OpenAPI enrichment sidecar | \`${OPENAPI_ENRICHMENT_SCHEMA_V5_VERSION}`,
     );

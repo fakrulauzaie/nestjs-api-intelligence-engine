@@ -43,15 +43,26 @@ import type {
   AuthorizationMetadataRecord,
 } from './authorization.js';
 import type { NormalizedPolicyRuleConfiguration } from '../policy/model.js';
+import type {
+  ResourceAccessAnalysisMetadata,
+  ResourceAccessRecord,
+  ResourceKind,
+  ResourceOperation,
+  ResourceTarget,
+  ResourceTechnology,
+} from './resource-access.js';
+import type { CriticalSectionRecord } from './critical-sections.js';
 
 export const ANALYSIS_SCHEMA_V1_VERSION = '1.0.0' as const;
 export const ANALYSIS_SCHEMA_V2_VERSION = '2.0.0' as const;
 export const ANALYSIS_SCHEMA_V3_VERSION = '3.0.0' as const;
 export const ANALYSIS_SCHEMA_V4_VERSION = '4.0.0' as const;
 export const ANALYSIS_SCHEMA_V5_VERSION = '5.0.0' as const;
+export const ANALYSIS_SCHEMA_V6_VERSION = '6.0.0' as const;
+export const ANALYSIS_SCHEMA_V7_VERSION = '7.0.0' as const;
 /** Frozen v1 authoring constant retained for compatibility fixtures. */
 export const ANALYSIS_SCHEMA_VERSION = ANALYSIS_SCHEMA_V1_VERSION;
-export const CURRENT_ANALYSIS_SCHEMA_VERSION = ANALYSIS_SCHEMA_V5_VERSION;
+export const CURRENT_ANALYSIS_SCHEMA_VERSION = ANALYSIS_SCHEMA_V7_VERSION;
 
 export const ANALYSIS_RESULT_STATES = [
   'completed',
@@ -167,17 +178,72 @@ export interface AnalysisDocumentV5 extends AnalysisDocumentBase {
   readonly authorizationEnforcements: readonly AuthorizationEnforcementRecord[];
 }
 
+export interface AnalysisDocumentV6 extends AnalysisDocumentBase {
+  readonly schemaVersion: typeof ANALYSIS_SCHEMA_V6_VERSION;
+  readonly modules: readonly ModuleRecord[];
+  readonly globalGuardRegistrations: readonly GlobalGuardRegistrationRecord[];
+  readonly globalGuardAnalysis: GlobalGuardAnalysis;
+  readonly contractTypes: readonly ContractTypeRecord[];
+  readonly contractFields: readonly ContractFieldRecord[];
+  readonly requestParameters: readonly RequestParameterRecord[];
+  readonly responseContracts: readonly ResponseContractRecord[];
+  readonly entityColumns: readonly EntityColumnRecord[];
+  readonly requestFieldOrigins: readonly RequestFieldOriginRecord[];
+  readonly columnInfluences: readonly ColumnInfluenceRecord[];
+  readonly applications: readonly ApplicationRecord[];
+  readonly interactions: readonly InteractionRecord[];
+  readonly interactionHandlers: readonly InteractionHandlerRecord[];
+  readonly interactionAnalysis: InteractionAnalysisMetadata;
+  readonly interactionHandlerDispatches: readonly JobQueueHandlerDispatchRecord[];
+  readonly interactionHandlerBranches: readonly JobQueueHandlerBranchRecord[];
+  readonly interactionHandlerBranchEffects: readonly JobQueueHandlerBranchEffectRecord[];
+  readonly authorizationMetadata: readonly AuthorizationMetadataRecord[];
+  readonly authorizationEnforcements: readonly AuthorizationEnforcementRecord[];
+  readonly resourceAccesses: readonly ResourceAccessRecord[];
+  readonly resourceAccessAnalysis: ResourceAccessAnalysisMetadata;
+}
+
+export interface AnalysisDocumentV7 extends AnalysisDocumentBase {
+  readonly schemaVersion: typeof ANALYSIS_SCHEMA_V7_VERSION;
+  readonly modules: readonly ModuleRecord[];
+  readonly globalGuardRegistrations: readonly GlobalGuardRegistrationRecord[];
+  readonly globalGuardAnalysis: GlobalGuardAnalysis;
+  readonly contractTypes: readonly ContractTypeRecord[];
+  readonly contractFields: readonly ContractFieldRecord[];
+  readonly requestParameters: readonly RequestParameterRecord[];
+  readonly responseContracts: readonly ResponseContractRecord[];
+  readonly entityColumns: readonly EntityColumnRecord[];
+  readonly requestFieldOrigins: readonly RequestFieldOriginRecord[];
+  readonly columnInfluences: readonly ColumnInfluenceRecord[];
+  readonly applications: readonly ApplicationRecord[];
+  readonly interactions: readonly InteractionRecord[];
+  readonly interactionHandlers: readonly InteractionHandlerRecord[];
+  readonly interactionAnalysis: InteractionAnalysisMetadata;
+  readonly interactionHandlerDispatches: readonly JobQueueHandlerDispatchRecord[];
+  readonly interactionHandlerBranches: readonly JobQueueHandlerBranchRecord[];
+  readonly interactionHandlerBranchEffects: readonly JobQueueHandlerBranchEffectRecord[];
+  readonly authorizationMetadata: readonly AuthorizationMetadataRecord[];
+  readonly authorizationEnforcements: readonly AuthorizationEnforcementRecord[];
+  readonly resourceAccesses: readonly ResourceAccessRecord[];
+  readonly resourceAccessAnalysis: ResourceAccessAnalysisMetadata;
+  readonly criticalSections: readonly CriticalSectionRecord[];
+}
+
 export type InteractionAnalysisDocument =
   | AnalysisDocumentV3
   | AnalysisDocumentV4
-  | AnalysisDocumentV5;
+  | AnalysisDocumentV5
+  | AnalysisDocumentV6
+  | AnalysisDocumentV7;
 
 export type AnalysisDocument =
   | AnalysisDocumentV1
   | AnalysisDocumentV2
   | AnalysisDocumentV3
   | AnalysisDocumentV4
-  | AnalysisDocumentV5;
+  | AnalysisDocumentV5
+  | AnalysisDocumentV6
+  | AnalysisDocumentV7;
 
 export function analysisHasInteractionFacts(
   analysis: AnalysisDocument,
@@ -185,20 +251,43 @@ export function analysisHasInteractionFacts(
   return (
     analysis.schemaVersion === '3.0.0' ||
     analysis.schemaVersion === '4.0.0' ||
-    analysis.schemaVersion === '5.0.0'
+    analysis.schemaVersion === '5.0.0' ||
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0'
   );
 }
 
 export function analysisHasJobQueueBranchFacts(
   analysis: AnalysisDocument,
-): analysis is AnalysisDocumentV4 | AnalysisDocumentV5 {
-  return analysis.schemaVersion === '4.0.0' || analysis.schemaVersion === '5.0.0';
+): analysis is AnalysisDocumentV4 | AnalysisDocumentV5 | AnalysisDocumentV6 | AnalysisDocumentV7 {
+  return (
+    analysis.schemaVersion === '4.0.0' ||
+    analysis.schemaVersion === '5.0.0' ||
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0'
+  );
 }
 
 export function analysisHasAuthorizationFacts(
   analysis: AnalysisDocument,
-): analysis is AnalysisDocumentV5 {
-  return analysis.schemaVersion === '5.0.0';
+): analysis is AnalysisDocumentV5 | AnalysisDocumentV6 | AnalysisDocumentV7 {
+  return (
+    analysis.schemaVersion === '5.0.0' ||
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0'
+  );
+}
+
+export function analysisHasResourceAccessFacts(
+  analysis: AnalysisDocument,
+): analysis is AnalysisDocumentV6 | AnalysisDocumentV7 {
+  return analysis.schemaVersion === '6.0.0' || analysis.schemaVersion === '7.0.0';
+}
+
+export function analysisHasCriticalSectionFacts(
+  analysis: AnalysisDocument,
+): analysis is AnalysisDocumentV7 {
+  return analysis.schemaVersion === '7.0.0';
 }
 
 export const PROJECT_CONFIGURATION_SOURCE_KINDS = ['none', 'discovered', 'explicit'] as const;
@@ -297,6 +386,7 @@ export const TRACE_CAUSAL_CLASSES = [
   'synchronous',
   'local_interaction_synchronous',
   'local_interaction_asynchronous',
+  'critical_section_conditional',
   'distributed_conditional',
 ] as const;
 export type TraceCausalClass = (typeof TRACE_CAUSAL_CLASSES)[number];
@@ -308,6 +398,18 @@ export interface EndpointTraceTerminal {
   readonly tableName: string;
   /** Present on v3/v4 traces; omitted by frozen v1/v2 views. */
   readonly causalClass?: TraceCausalClass | undefined;
+}
+
+export interface ResourceAccessTraceTerminal {
+  readonly methodId: RecordId;
+  readonly resourceAccessId: RecordId;
+  readonly resourceKind: ResourceKind;
+  readonly operation: ResourceOperation;
+  readonly technology: ResourceTechnology;
+  readonly target: ResourceTarget;
+  readonly selector: ResourceTarget | null;
+  /** Present on v6 traces and preserves synchronous/local/distributed path semantics. */
+  readonly causalClass: TraceCausalClass;
 }
 
 export interface EndpointTraceView {
@@ -324,12 +426,15 @@ export interface EndpointTraceView {
   readonly guards: readonly EndpointTraceGuard[];
   readonly steps: readonly EndpointTraceStep[];
   readonly terminals: readonly EndpointTraceTerminal[];
+  /** Present only when resource-access facts are available (analysis v6+). */
+  readonly resourceTerminals?: readonly ResourceAccessTraceTerminal[] | undefined;
   readonly diagnosticIds: readonly RecordId[];
   /** Present only on v3/v4 endpoint traces. */
   readonly causalSummary?:
     | {
         readonly synchronousEffects: readonly EndpointTraceTerminal[];
         readonly localInteractionEffects: readonly EndpointTraceTerminal[];
+        readonly criticalSectionConditionalEffects?: readonly EndpointTraceTerminal[] | undefined;
         readonly distributedConditionalEffects: readonly EndpointTraceTerminal[];
         readonly outboundInteractionIds: readonly RecordId[];
         readonly localInteractionIds: readonly RecordId[];
@@ -351,5 +456,7 @@ export interface InteractionHandlerTraceView {
   readonly handler: InteractionHandlerRecord;
   readonly steps: readonly EndpointTraceStep[];
   readonly terminals: readonly EndpointTraceTerminal[];
+  /** Present only when resource-access facts are available (analysis v6+). */
+  readonly resourceTerminals?: readonly ResourceAccessTraceTerminal[] | undefined;
   readonly diagnosticIds: readonly RecordId[];
 }

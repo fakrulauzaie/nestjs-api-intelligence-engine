@@ -46,6 +46,23 @@ function terminals(snapshot: EndpointSnapshot | null): string {
     .join('<br>');
 }
 
+function resourceAccesses(snapshot: EndpointSnapshot | null): string {
+  if (snapshot === null) return '-';
+  if (
+    snapshot.resourceAccesses === undefined ||
+    snapshot.resourceAccesses.availability === 'unavailable'
+  ) {
+    return 'unavailable';
+  }
+  if (snapshot.resourceAccesses.values.length === 0) return 'none';
+  return snapshot.resourceAccesses.values
+    .map(
+      (access) =>
+        `${access.technology} ${access.operation} ${escapeMarkdown(access.targetKey)} (${access.causalClass})`,
+    )
+    .join('<br>');
+}
+
 function diagnosticLabel(snapshot: DiagnosticSnapshot | null): string {
   if (snapshot === null) return '-';
   return `\`${snapshot.code}\` ${escapeMarkdown(snapshot.message)} (\`${snapshot.diagnosticId}\`)`;
@@ -104,14 +121,19 @@ export function renderDiffMarkdown(input: DiffDocument): string {
   if (diff.endpointChanges.length === 0) {
     lines.push('No semantic endpoint changes.');
   } else {
+    const includesResourceAccesses = diff.endpointChanges.some(
+      (change) =>
+        change.before?.resourceAccesses !== undefined ||
+        change.after?.resourceAccesses !== undefined,
+    );
     lines.push(
-      '| Change | Endpoint | Reasons | Before handler | After handler | Before guards | After guards | Before terminals | After terminals |',
-      '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+      `| Change | Endpoint | Reasons | Before handler | After handler | Before guards | After guards | Before terminals | After terminals |${includesResourceAccesses ? ' Before resource access | After resource access |' : ''}`,
+      `| --- | --- | --- | --- | --- | --- | --- | --- | --- |${includesResourceAccesses ? ' --- | --- |' : ''}`,
     );
     for (const change of diff.endpointChanges) {
       const snapshot = change.before ?? change.after!;
       lines.push(
-        `| ${change.change} | \`${escapeMarkdown(endpointLabel(snapshot))}\` | ${change.reasons.join(', ')} | ${handlers(change.before)} | ${handlers(change.after)} | ${guards(change.before)} | ${guards(change.after)} | ${terminals(change.before)} | ${terminals(change.after)} |`,
+        `| ${change.change} | \`${escapeMarkdown(endpointLabel(snapshot))}\` | ${change.reasons.join(', ')} | ${handlers(change.before)} | ${handlers(change.after)} | ${guards(change.before)} | ${guards(change.after)} | ${terminals(change.before)} | ${terminals(change.after)} |${includesResourceAccesses ? ` ${resourceAccesses(change.before)} | ${resourceAccesses(change.after)} |` : ''}`,
       );
     }
     lines.push('', '### Canonical endpoint references', '');

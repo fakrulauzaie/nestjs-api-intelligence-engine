@@ -1,17 +1,23 @@
 import {
   analysisHasAuthorizationFacts,
+  analysisHasCriticalSectionFacts,
   analysisHasInteractionFacts,
   analysisHasJobQueueBranchFacts,
+  analysisHasResourceAccessFacts,
   type AnalysisDocument,
 } from '../model/analysis.js';
 import type { ImpactDocument, ImpactGraphSide } from '../impact/model.js';
 import type { PolicyResultsDocument } from '../policy/model.js';
 import type { GraphReportDocument } from './model.js';
+import { buildArchitectureOverview } from '../architecture/overview.js';
 import {
   GRAPH_REPORT_SCHEMA_VERSION,
   GRAPH_REPORT_SCHEMA_V4_VERSION,
   GRAPH_REPORT_SCHEMA_V5_VERSION,
   GRAPH_REPORT_SCHEMA_V6_VERSION,
+  GRAPH_REPORT_SCHEMA_V7_VERSION,
+  GRAPH_REPORT_SCHEMA_V8_VERSION,
+  GRAPH_REPORT_SCHEMA_V9_VERSION,
 } from './model.js';
 import { graphReportDocumentSchema } from './schemas.js';
 
@@ -41,7 +47,11 @@ export function graphImpactSide(
 
 function expectedSummary(document: GraphReportDocument): GraphReportDocument['summary'] {
   const handlers = document.interactionHandlers ?? [];
-  const views = [...document.endpoints, ...handlers];
+  const scenes = [
+    ...document.endpoints.map(({ scene }) => scene),
+    ...handlers.map(({ scene }) => scene),
+    ...(document.architecture === undefined ? [] : [document.architecture.scene]),
+  ];
   return {
     endpoints: document.endpoints.length,
     endpointsWithGuards: document.endpoints.filter(({ guards }) => guards.length > 0).length,
@@ -49,17 +59,31 @@ function expectedSummary(document: GraphReportDocument): GraphReportDocument['su
       .length,
     endpointsWithWrites: document.endpoints.filter(({ dbWrites }) => dbWrites.length > 0).length,
     impactedEndpoints: document.endpoints.filter(({ impact }) => impact !== 'none').length,
-    omittedNodes: views.reduce((total, view) => total + view.scene.omitted.nodes, 0),
-    omittedEdges: views.reduce((total, view) => total + view.scene.omitted.edges, 0),
-    omittedEvidence: views.reduce((total, view) => total + view.scene.omitted.evidence, 0),
+    omittedNodes: scenes.reduce((total, scene) => total + scene.omitted.nodes, 0),
+    omittedEdges: scenes.reduce((total, scene) => total + scene.omitted.edges, 0),
+    omittedEvidence: scenes.reduce((total, scene) => total + scene.omitted.evidence, 0),
     ...(document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION ||
     document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
-    document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION
       ? {
           interactionHandlers: handlers.length,
           handlersWithDiagnostics: handlers.filter(({ diagnostics }) => diagnostics.length > 0)
             .length,
           handlersWithWrites: handlers.filter(({ dbWrites }) => dbWrites.length > 0).length,
+        }
+      : {}),
+    ...((document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION) &&
+    document.architecture !== undefined
+      ? {
+          architectureRecords: document.architecture.summary.metricRecords,
+          notReachedFromSupportedRoots: document.architecture.summary.notReachedFromSupportedRoots,
+          uniquelyOwnedClasses: document.architecture.summary.uniquelyOwnedClasses,
+          multipleOwnerClasses: document.architecture.summary.multipleOwnerClasses,
         }
       : {}),
   };
@@ -73,13 +97,17 @@ export function assertValidGraphReportDocument(input: {
 }): GraphReportDocument {
   const document = graphReportDocumentSchema.parse(input.document);
   const issues: string[] = [];
-  const expectedSchemaVersion = analysisHasAuthorizationFacts(input.analysis)
-    ? GRAPH_REPORT_SCHEMA_V6_VERSION
-    : analysisHasJobQueueBranchFacts(input.analysis)
-      ? GRAPH_REPORT_SCHEMA_V5_VERSION
-      : analysisHasInteractionFacts(input.analysis)
-        ? GRAPH_REPORT_SCHEMA_V4_VERSION
-        : GRAPH_REPORT_SCHEMA_VERSION;
+  const expectedSchemaVersion = analysisHasCriticalSectionFacts(input.analysis)
+    ? GRAPH_REPORT_SCHEMA_V9_VERSION
+    : analysisHasResourceAccessFacts(input.analysis)
+      ? GRAPH_REPORT_SCHEMA_V8_VERSION
+      : analysisHasAuthorizationFacts(input.analysis)
+        ? GRAPH_REPORT_SCHEMA_V7_VERSION
+        : analysisHasJobQueueBranchFacts(input.analysis)
+          ? GRAPH_REPORT_SCHEMA_V5_VERSION
+          : analysisHasInteractionFacts(input.analysis)
+            ? GRAPH_REPORT_SCHEMA_V4_VERSION
+            : GRAPH_REPORT_SCHEMA_VERSION;
   if (document.schemaVersion !== expectedSchemaVersion) {
     issues.push('The graph report schema version does not match its interaction content.');
   }
@@ -331,6 +359,164 @@ export function assertValidGraphReportDocument(input: {
       if (values.join('|') !== sortedUnique(values).join('|')) {
         issues.push(`Handler ${handler.handlerId} contains a non-canonical string set.`);
         break;
+      }
+    }
+  }
+
+  if (
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+    document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION
+  ) {
+    const architecture = document.architecture;
+    if (architecture === undefined) {
+      issues.push('Graph v7 is missing its architecture overview.');
+    } else {
+      const expected = buildArchitectureOverview(input.analysis);
+      const expectedRecordById = new Map(
+        expected.records.map((record) => [record.recordId, record]),
+      );
+      const reportRecordById = new Map(
+        architecture.records.map((record) => [record.recordId, record]),
+      );
+      const expectedOwnershipById = new Map(
+        expected.moduleOwnership.map((record) => [
+          `${record.recordKind}:${record.recordId}`,
+          record,
+        ]),
+      );
+      const reportOwnershipById = new Map(
+        architecture.moduleOwnership.map((record) => [
+          `${record.recordKind}:${record.recordId}`,
+          record,
+        ]),
+      );
+      if (
+        expected.records.length !== reportRecordById.size ||
+        [...expectedRecordById].some(
+          ([id, record]) => JSON.stringify(reportRecordById.get(id)) !== JSON.stringify(record),
+        )
+      ) {
+        issues.push('The architecture metric projection does not match canonical trace facts.');
+      }
+      if (
+        expected.moduleOwnership.length !== reportOwnershipById.size ||
+        [...expectedOwnershipById].some(
+          ([id, record]) => JSON.stringify(reportOwnershipById.get(id)) !== JSON.stringify(record),
+        )
+      ) {
+        issues.push('The architecture ownership projection does not match module facts.');
+      }
+      if (
+        JSON.stringify(architecture.rootCapabilities) !==
+          JSON.stringify(expected.rootCapabilities) ||
+        JSON.stringify(architecture.supportedRoots) !== JSON.stringify(expected.supportedRoots) ||
+        JSON.stringify(architecture.summary) !== JSON.stringify(expected.summary) ||
+        JSON.stringify(architecture.metricLegends) !== JSON.stringify(expected.metricLegends)
+      ) {
+        issues.push('The architecture overview summary or legend is inconsistent.');
+      }
+      const nodeIds = architecture.scene.nodes.map(({ id }) => id);
+      const edgeIds = architecture.scene.edges.map(({ id }) => id);
+      const evidenceIds = architecture.scene.evidence.map(({ id }) => id);
+      const nodes = new Set(nodeIds);
+      if (
+        new Set(nodeIds).size !== nodeIds.length ||
+        new Set(edgeIds).size !== edgeIds.length ||
+        new Set(evidenceIds).size !== evidenceIds.length
+      ) {
+        issues.push('The architecture scene repeats a node, edge, or evidence ID.');
+      }
+      if (!nodes.has(architecture.rootId)) {
+        issues.push('The architecture scene is missing its repository root node.');
+      }
+      const rootNode = architecture.scene.nodes.find(({ id }) => id === architecture.rootId);
+      if (rootNode?.kind !== 'repository') {
+        issues.push('The architecture root node must retain repository kind.');
+      }
+      const canonicalArchitectureIds = new Set([
+        architecture.rootId,
+        ...input.analysis.classes.map(({ id }) => id),
+        ...input.analysis.methods.map(({ id }) => id),
+        ...input.analysis.endpoints.map(({ id }) => id),
+        ...input.analysis.tables.map(({ id }) => id),
+        ...(input.analysis.schemaVersion === '1.0.0'
+          ? []
+          : input.analysis.modules.map(({ id }) => id)),
+        ...(analysisHasInteractionFacts(input.analysis)
+          ? [
+              ...input.analysis.interactions.map(({ id }) => id),
+              ...input.analysis.interactionHandlers.map(({ id }) => id),
+            ]
+          : []),
+        ...(analysisHasResourceAccessFacts(input.analysis)
+          ? input.analysis.resourceAccesses.map(({ id }) => id)
+          : []),
+      ]);
+      if (architecture.scene.nodes.some(({ id }) => !canonicalArchitectureIds.has(id))) {
+        issues.push('The architecture scene contains a non-canonical record node.');
+      }
+      if (
+        architecture.scene.edges.some(
+          ({ source, target }) => !nodes.has(source) || !nodes.has(target),
+        ) ||
+        architecture.scene.nodes.some(
+          ({ parentId }) => parentId !== undefined && parentId !== null && !nodes.has(parentId),
+        )
+      ) {
+        issues.push('The architecture scene has an edge or cluster parent with a missing node.');
+      }
+      for (const node of architecture.scene.nodes) {
+        const expectedRecord = expectedRecordById.get(node.id);
+        if (
+          (expectedRecord !== undefined &&
+            (JSON.stringify(node.architectureMetrics) !== JSON.stringify(expectedRecord.metrics) ||
+              node.architectureReachability !== expectedRecord.reachability)) ||
+          (expectedRecord === undefined &&
+            (node.architectureMetrics !== undefined || node.architectureReachability !== undefined))
+        ) {
+          issues.push(`Architecture node ${node.id} has inconsistent metric facts.`);
+        }
+        if (node.kind === 'class' || node.kind === 'method') {
+          const expectedOwnership = expectedOwnershipById.get(`${node.kind}:${node.id}`);
+          if (
+            expectedOwnership === undefined ||
+            node.moduleOwnership === undefined ||
+            JSON.stringify(node.moduleOwnership) !==
+              JSON.stringify({
+                state: expectedOwnership.state,
+                moduleIds: expectedOwnership.moduleIds,
+              })
+          ) {
+            issues.push(`Architecture node ${node.id} has inconsistent module ownership.`);
+          }
+        }
+      }
+      const sceneEvidence = new Set(evidenceIds);
+      if (
+        architecture.scene.nodes
+          .flatMap(({ evidenceIds: ids }) => ids)
+          .concat(architecture.scene.edges.flatMap(({ evidenceIds: ids }) => ids))
+          .some((id) => !canonicalEvidence.has(id) || !sceneEvidence.has(id))
+      ) {
+        issues.push('The architecture scene has incomplete canonical evidence closure.');
+      }
+      if (
+        architecture.scene.nodes.length > document.limits.maxNodesPerEndpoint ||
+        architecture.scene.edges.length > document.limits.maxEdgesPerEndpoint ||
+        architecture.scene.evidence.length > document.limits.maxEvidencePerEndpoint
+      ) {
+        issues.push('The architecture scene exceeds the declared display limits.');
+      }
+      const canonicalModules = new Set(
+        input.analysis.schemaVersion === '1.0.0' ? [] : input.analysis.modules.map(({ id }) => id),
+      );
+      if (
+        architecture.moduleOwnership.some(({ moduleIds }) =>
+          moduleIds.some((id) => !canonicalModules.has(id)),
+        )
+      ) {
+        issues.push('The architecture overview references a non-canonical module.');
       }
     }
   }

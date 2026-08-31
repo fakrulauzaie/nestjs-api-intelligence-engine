@@ -1,10 +1,12 @@
 import {
   analysisHasInteractionFacts,
   analysisHasJobQueueBranchFacts,
+  analysisHasResourceAccessFacts,
   type AnalysisDocument,
   type EndpointTraceView,
 } from '../model/analysis.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
+import { resourceAccessLabel } from '../model/resource-access.js';
 import { buildEndpointAuthorization } from '../authorization/endpoint-authorization.js';
 import {
   inProcessEventTargetLabel,
@@ -27,6 +29,10 @@ function recordLabel(analysis: AnalysisDocument, id: string | null): string {
   if (table !== undefined) return table.name;
   const guard = analysis.guards.find((record) => record.id === id);
   if (guard !== undefined) return guard.displayName;
+  if (analysisHasResourceAccessFacts(analysis)) {
+    const resourceAccess = analysis.resourceAccesses.find((record) => record.id === id);
+    if (resourceAccess !== undefined) return resourceAccessLabel(resourceAccess);
+  }
   if (analysisHasInteractionFacts(analysis)) {
     const interaction = analysis.interactions.find((record) => record.id === id);
     if (interaction?.kind === 'outbound_http') {
@@ -271,6 +277,11 @@ export function renderEndpointTraceMarkdown(input: {
         '',
         `Synchronous effects: ${trace.causalSummary.synchronousEffects.length}  `,
         `Local interaction effects: ${trace.causalSummary.localInteractionEffects.length}  `,
+        ...(trace.causalSummary.criticalSectionConditionalEffects === undefined
+          ? []
+          : [
+              `Critical-section conditional effects: ${trace.causalSummary.criticalSectionConditionalEffects.length}<br>`,
+            ]),
         `Distributed conditional effects: ${trace.causalSummary.distributedConditionalEffects.length}  `,
         `Outbound interactions: ${trace.causalSummary.outboundInteractionIds.length}  `,
         `Local interactions: ${trace.causalSummary.localInteractionIds.length}  `,
@@ -337,6 +348,27 @@ export function renderEndpointTraceMarkdown(input: {
           `| ${escapeTableCell(recordLabel(analysis, terminal.methodId))} | ${terminal.direction} | ${escapeTableCell(terminal.tableName)} |`,
       ),
     );
+  }
+
+  if (trace.resourceTerminals !== undefined) {
+    const accessById = new Map(
+      analysisHasResourceAccessFacts(analysis)
+        ? analysis.resourceAccesses.map((access) => [access.id, access])
+        : [],
+    );
+    lines.push('', '## Non-relational resource access', '');
+    if (trace.resourceTerminals.length === 0) {
+      lines.push('No supported cache or Redis access was reached.');
+    } else {
+      lines.push(
+        '| Method | Resource access | Kind | API | Causal class |',
+        '|---|---|---|---|---|',
+        ...trace.resourceTerminals.map((terminal) => {
+          const access = accessById.get(terminal.resourceAccessId);
+          return `| ${escapeTableCell(recordLabel(analysis, terminal.methodId))} | ${escapeTableCell(access === undefined ? terminal.resourceAccessId : resourceAccessLabel(access))} | ${terminal.resourceKind} | ${access?.api ?? 'unknown'} | ${terminal.causalClass} |`;
+        }),
+      );
+    }
   }
 
   lines.push('', '## Diagnostics', '');

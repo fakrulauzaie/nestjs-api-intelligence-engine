@@ -18,6 +18,74 @@ export function canonicalizeGraphReportDocument(
 ): GraphReportDocument {
   return {
     ...document,
+    ...(document.architecture === undefined
+      ? {}
+      : {
+          architecture: {
+            ...document.architecture,
+            metricLegends: [...document.architecture.metricLegends].sort((left, right) =>
+              compare(left.metric, right.metric),
+            ),
+            records: [...document.architecture.records]
+              .map((record) => ({
+                ...record,
+                metrics: [...record.metrics].sort((left, right) =>
+                  compare(left.metric, right.metric),
+                ),
+              }))
+              .sort((left, right) =>
+                compare(
+                  `${left.recordKind}:${left.recordId}`,
+                  `${right.recordKind}:${right.recordId}`,
+                ),
+              ),
+            moduleOwnership: [...document.architecture.moduleOwnership]
+              .map((ownership) => ({
+                ...ownership,
+                moduleIds: unique(ownership.moduleIds),
+              }))
+              .sort((left, right) =>
+                compare(
+                  `${left.recordKind}:${left.recordId}`,
+                  `${right.recordKind}:${right.recordId}`,
+                ),
+              ),
+            scene: {
+              ...document.architecture.scene,
+              nodes: [...document.architecture.scene.nodes]
+                .map((node) => ({
+                  ...node,
+                  evidenceIds: unique(node.evidenceIds),
+                  ...(node.architectureMetrics === undefined
+                    ? {}
+                    : {
+                        architectureMetrics: [...node.architectureMetrics].sort((left, right) =>
+                          compare(left.metric, right.metric),
+                        ),
+                      }),
+                  ...(node.moduleOwnership === undefined
+                    ? {}
+                    : {
+                        moduleOwnership: {
+                          ...node.moduleOwnership,
+                          moduleIds: unique(node.moduleOwnership.moduleIds),
+                        },
+                      }),
+                }))
+                .sort((left, right) =>
+                  compare(`${left.kind}:${left.id}`, `${right.kind}:${right.id}`),
+                ),
+              edges: [...document.architecture.scene.edges]
+                .map((edge) => ({ ...edge, evidenceIds: unique(edge.evidenceIds) }))
+                .sort((left, right) =>
+                  compare(`${left.kind}:${left.id}`, `${right.kind}:${right.id}`),
+                ),
+              evidence: [...document.architecture.scene.evidence].sort((left, right) =>
+                compare(left.id, right.id),
+              ),
+            },
+          },
+        }),
     ...(document.interactionHandlers === undefined
       ? {}
       : {

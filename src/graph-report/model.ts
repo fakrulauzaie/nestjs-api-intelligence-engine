@@ -32,6 +32,12 @@ import type {
   EndpointLocalCausalEffect,
   MutationClassification,
 } from '../structured-exports/model.js';
+import type {
+  ArchitectureMetricValue,
+  ArchitectureOverview,
+  ArchitectureReachabilityState,
+  ModuleOwnershipState,
+} from '../architecture/model.js';
 
 export const GRAPH_REPORT_SCHEMA_VERSION = '1.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V2_VERSION = '2.0.0' as const;
@@ -39,13 +45,19 @@ export const GRAPH_REPORT_SCHEMA_V3_VERSION = '3.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V4_VERSION = '4.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V5_VERSION = '5.0.0' as const;
 export const GRAPH_REPORT_SCHEMA_V6_VERSION = '6.0.0' as const;
+export const GRAPH_REPORT_SCHEMA_V7_VERSION = '7.0.0' as const;
+export const GRAPH_REPORT_SCHEMA_V8_VERSION = '8.0.0' as const;
+export const GRAPH_REPORT_SCHEMA_V9_VERSION = '9.0.0' as const;
 export type GraphReportSchemaVersion =
   | typeof GRAPH_REPORT_SCHEMA_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V2_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V3_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V4_VERSION
   | typeof GRAPH_REPORT_SCHEMA_V5_VERSION
-  | typeof GRAPH_REPORT_SCHEMA_V6_VERSION;
+  | typeof GRAPH_REPORT_SCHEMA_V6_VERSION
+  | typeof GRAPH_REPORT_SCHEMA_V7_VERSION
+  | typeof GRAPH_REPORT_SCHEMA_V8_VERSION
+  | typeof GRAPH_REPORT_SCHEMA_V9_VERSION;
 export const DEFAULT_GRAPH_NODE_LIMIT = 120;
 export const DEFAULT_GRAPH_EDGE_LIMIT = 180;
 export const MIN_GRAPH_DISPLAY_LIMIT = 10;
@@ -63,17 +75,22 @@ export const GRAPH_NODE_KINDS_V1 = [
   'gap',
 ] as const;
 export const GRAPH_NODE_KINDS_V2 = [...GRAPH_NODE_KINDS_V1, 'interaction'] as const;
-export const GRAPH_NODE_KINDS = [
+export const GRAPH_NODE_KINDS_V7 = [
   ...GRAPH_NODE_KINDS_V2,
   'interaction_handler',
   'external_target',
   'boundary',
   'interaction_branch',
+  'repository',
+  'module',
+  'class',
 ] as const;
+export const GRAPH_NODE_KINDS_V8 = [...GRAPH_NODE_KINDS_V7, 'resource_access'] as const;
+export const GRAPH_NODE_KINDS = [...GRAPH_NODE_KINDS_V8, 'critical_section'] as const;
 export type GraphNodeKind = (typeof GRAPH_NODE_KINDS)[number];
 
 export const GRAPH_EDGE_KINDS_V2 = ['assertion', 'guard', 'provenance'] as const;
-export const GRAPH_EDGE_KINDS = [...GRAPH_EDGE_KINDS_V2, 'interaction'] as const;
+export const GRAPH_EDGE_KINDS = [...GRAPH_EDGE_KINDS_V2, 'interaction', 'architecture'] as const;
 export type GraphEdgeKind = (typeof GRAPH_EDGE_KINDS)[number];
 
 export const GRAPH_UNCERTAINTY_STATES = [
@@ -101,6 +118,15 @@ export interface GraphReportNode {
   readonly uncertainty: GraphUncertaintyState;
   readonly impact: GraphImpactState;
   readonly evidenceIds: readonly string[];
+  readonly parentId?: string | null | undefined;
+  readonly architectureMetrics?: readonly ArchitectureMetricValue[] | undefined;
+  readonly architectureReachability?: ArchitectureReachabilityState | undefined;
+  readonly moduleOwnership?:
+    | {
+        readonly state: ModuleOwnershipState;
+        readonly moduleIds: readonly string[];
+      }
+    | undefined;
 }
 
 export interface GraphReportEdge {
@@ -218,6 +244,11 @@ export interface GraphReportJobQueueDispatch {
   }[];
 }
 
+export interface GraphReportArchitectureOverview extends ArchitectureOverview {
+  readonly rootId: string;
+  readonly scene: GraphReportScene;
+}
+
 export interface GraphReportDocument {
   readonly schemaVersion: GraphReportSchemaVersion;
   readonly analysis: {
@@ -250,9 +281,14 @@ export interface GraphReportDocument {
     readonly interactionHandlers?: number | undefined;
     readonly handlersWithDiagnostics?: number | undefined;
     readonly handlersWithWrites?: number | undefined;
+    readonly architectureRecords?: number | undefined;
+    readonly notReachedFromSupportedRoots?: number | undefined;
+    readonly uniquelyOwnedClasses?: number | undefined;
+    readonly multipleOwnerClasses?: number | undefined;
   };
   readonly endpoints: readonly GraphReportEndpoint[];
   readonly interactionHandlers?: readonly GraphReportInteractionHandler[] | undefined;
+  readonly architecture?: GraphReportArchitectureOverview | undefined;
 }
 
 export function graphUncertaintyFromAssertion(status: AssertionStatus): GraphUncertaintyState {

@@ -39,8 +39,9 @@ in different files do not collide.
 ## Diff document
 
 `DiffDocument` uses independent schema `1.0.0` for v1/v2-only comparisons,
-`2.0.0` when either input is analysis v3, and `3.0.0` when either input is analysis
-v4. The shared fields store:
+`2.0.0` when either input is analysis v3, `3.0.0` when either input is analysis v4,
+`4.0.0` when either input is analysis v5, and `5.0.0` when either input is analysis
+v6. The shared fields store:
 
 - input analysis IDs, schema versions, result states, configurations, and fact availability;
 - added, removed, and modified endpoints;
@@ -73,6 +74,12 @@ pattern, client token, transport, and application context participate in semanti
 identity. Activation/boundary/rule changes remain modifications. A local pattern
 candidate is never interpreted as broker delivery.
 
+Schema `5.0.0` additionally compares canonical non-relational resource-access facts
+and each endpoint's reachable resource set. Identity uses technology, API, operation,
+resource kind, structural target/selector, and source method. A reachable-set change
+is the endpoint modification reason `resource_accesses`; payload values and runtime
+keys never participate because they are not canonical facts.
+
 The document contains no timestamp or absolute input path. Arrays and object keys are
 canonically ordered before JSON publication. Markdown is rendered only after the
 `DiffDocument` passes its own strict schema and integrity checks.
@@ -96,16 +103,18 @@ can match while changed evidence content remains visible.
 
 ## Current compatibility boundary
 
-The normalization boundary accepts analysis schemas `1.0.0` through `5.0.0`.
+The normalization boundary accepts analysis schemas `1.0.0` through `7.0.0`.
 V1 module and effective-global-guard facts normalize to explicit unavailable/unknown
-state; v2-v5 facts remain evidence-backed and available. Interaction families are
-explicitly unavailable in v1/v2 and available, possibly empty, in v3-v5. Branch
-families are unavailable in v1-v3 and available in v4/v5. Authorization families are
-unavailable in v1-v4 and available, possibly empty, only in v5. Authorization metadata,
+state; v2-v7 facts remain evidence-backed and available. Interaction families are
+explicitly unavailable in v1/v2 and available, possibly empty, in v3-v7. Branch
+families are unavailable in v1-v3 and available in v4-v7. Authorization families are
+unavailable in v1-v4 and available, possibly empty, in v5-v7. Resource-access
+families are unavailable in v1-v5 and available, possibly empty, in v6/v7. Critical-section
+families are unavailable in v1-v6 and available only in v7. Authorization metadata,
 redacted value shape, and enforcement-state changes are endpoint modification reasons.
 Unknown
 analysis or diff schema versions are rejected rather than interpreted best-effort.
-Frozen schema `1.0.0` bytes remain unchanged for comparisons that contain no v3-v5
+Frozen schema `1.0.0` bytes remain unchanged for comparisons that contain no v3-v7
 input.
 
 ## Exit behavior

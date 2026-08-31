@@ -51,7 +51,7 @@ describe('eager outbound HTTP extraction', () => {
         configuration: { maxCallDepth: 1 },
       });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method.qualifiedName]));
       const outbound = analysis.interactions.filter(
         (interaction) => interaction.kind === 'outbound_http',
@@ -201,7 +201,7 @@ describe('eager outbound HTTP extraction', () => {
       expect(directEndpoint?.outboundHttpInteractions).toHaveLength(6);
       expect(renderEndpointCatalogueMarkdown(catalogue)).toContain('## Outbound HTTP interactions');
       const graph = buildGraphReportDocument({ analysis });
-      expect(graph.schemaVersion).toBe('6.0.0');
+      expect(graph.schemaVersion).toBe('9.0.0');
       const directGraph = graph.endpoints.find(({ path }) => path === '/gateway/direct');
       expect(directGraph?.scene.nodes.filter(({ kind }) => kind === 'interaction')).toHaveLength(6);
       expect(
@@ -272,7 +272,7 @@ describe('eager outbound HTTP extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       expect(analysis.interactions).toHaveLength(1);
       expect(analysis.interactions[0]).toMatchObject({
         kind: 'outbound_http',

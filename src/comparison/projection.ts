@@ -3,6 +3,7 @@ import {
   analysisHasAuthorizationFacts,
   analysisHasInteractionFacts,
   analysisHasJobQueueBranchFacts,
+  analysisHasResourceAccessFacts,
   type AnalysisDocument,
 } from '../model/analysis.js';
 import { buildEndpointAuthorization } from '../authorization/endpoint-authorization.js';
@@ -13,7 +14,9 @@ import {
   canonicalizeJobQueueBranchSelector,
   jobQueueBranchSelectorKey,
 } from '../model/job-queue-branches.js';
+import { resourceTargetKey } from '../model/resource-access.js';
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
+import { buildEndpointTrace } from '../tracing/endpoint-trace.js';
 import type {
   AssertionSnapshot,
   DiagnosticSnapshot,
@@ -22,6 +25,7 @@ import type {
   EndpointAuthorizationFact,
   EndpointHandlerFact,
   EndpointSnapshot,
+  EndpointResourceAccessFact,
   EndpointTerminalContributor,
   EndpointTerminalFact,
   InteractionHandlerSnapshot,
@@ -455,6 +459,32 @@ export function buildAnalysisSemanticProjection(
       );
     }
   }
+  if (analysisHasResourceAccessFacts(analysis)) {
+    for (const access of analysis.resourceAccesses) {
+      const locationKeys = access.evidenceIds
+        .flatMap((evidenceId) => {
+          const evidence = evidenceById.get(evidenceId);
+          return evidence?.role === 'call_site'
+            ? [evidenceLocationKey(evidence, sourcePathById).encoded]
+            : [];
+        })
+        .sort(compareStrings);
+      register(
+        access.id,
+        'resource_access',
+        createSemanticKey('resource_access', [
+          semanticKeyById.get(access.sourceMethodId)!.encoded,
+          access.technology,
+          access.resourceKind,
+          access.operation,
+          access.api,
+          resourceTargetKey(access.target),
+          access.selector === null ? null : resourceTargetKey(access.selector),
+          ...locationKeys,
+        ]),
+      );
+    }
+  }
   for (const evidence of analysis.evidence) {
     register(evidence.id, 'evidence', fullEvidenceKey(evidence, sourcePathById));
   }
@@ -572,6 +602,42 @@ export function buildAnalysisSemanticProjection(
         evidenceIds: sortedUnique(requirement.evidenceIds),
       }),
     );
+    const resourceAccessFacts: EndpointResourceAccessFact[] = [];
+    if (analysisHasResourceAccessFacts(analysis)) {
+      const traceResult = buildEndpointTrace(analysis, {
+        httpMethod: endpoint.httpMethod,
+        path: endpoint.path,
+      });
+      if (traceResult.status === 'resolved') {
+        const accessById = new Map(analysis.resourceAccesses.map((access) => [access.id, access]));
+        for (const terminal of traceResult.trace.resourceTerminals ?? []) {
+          const access = accessById.get(terminal.resourceAccessId);
+          if (access === undefined) continue;
+          const targetKey = resourceTargetKey(access.target);
+          const selectorKey = access.selector === null ? null : resourceTargetKey(access.selector);
+          resourceAccessFacts.push({
+            resourceAccessId: access.id,
+            key: createSemanticKey('endpoint_resource_terminal', [
+              access.technology,
+              access.resourceKind,
+              access.operation,
+              access.api,
+              targetKey,
+              selectorKey,
+              terminal.causalClass,
+            ]),
+            resourceKind: access.resourceKind,
+            operation: access.operation,
+            technology: access.technology,
+            api: access.api,
+            targetKey,
+            selectorKey,
+            causalClass: terminal.causalClass,
+          });
+        }
+        resourceAccessFacts.sort((left, right) => compareSemanticKeys(left.key, right.key));
+      }
+    }
 
     return {
       endpointId: endpoint.id,
@@ -602,6 +668,14 @@ export function buildAnalysisSemanticProjection(
             authorization: {
               availability: 'available' as const,
               requirements: authorizationRequirements,
+            },
+          }
+        : {}),
+      ...(analysisHasResourceAccessFacts(analysis)
+        ? {
+            resourceAccesses: {
+              availability: 'available' as const,
+              values: resourceAccessFacts,
             },
           }
         : {}),

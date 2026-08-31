@@ -20,16 +20,16 @@ replace or add facts to `AnalysisDocument`.
 
 ## Current version matrix
 
-| Artifact                   | Current writer behavior                                                      |
-| -------------------------- | ---------------------------------------------------------------------------- |
-| `analysis.json`            | `5.0.0`; v1-v4 remain readable and frozen                                    |
-| `diff.json`                | `4.0.0` for analysis v5; older analyses use capability-appropriate v1-v3     |
-| `impact.json`              | `2.0.0` for analysis v4/v5, otherwise `1.0.0`                                |
-| `policy-results.json`      | `1.0.0`                                                                      |
-| graph view                 | `6.0.0` for analysis v5; older analyses use capability-appropriate v1-v5     |
-| OpenAPI enrichment sidecar | `5.0.0` for analysis v5; historical writers use capability-appropriate v1-v4 |
-| control-evidence JSON/CSV  | `5.0.0` for analysis v5; historical writers use capability-appropriate v1-v4 |
-| `bundle.json`              | `1.0.0`                                                                      |
+| Artifact                   | Current writer behavior                                                     |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `analysis.json`            | `7.0.0`; v1-v6 remain readable and frozen                                   |
+| `diff.json`                | `5.0.0` for analysis v6/v7; older analyses use capability-appropriate v1-v4 |
+| `impact.json`              | `2.0.0` for analysis v4-v7, otherwise `1.0.0`                               |
+| `policy-results.json`      | `1.0.0`                                                                     |
+| graph view                 | `9.0.0` for analysis v7; older analyses use capability-appropriate v1-v8    |
+| OpenAPI enrichment sidecar | `5.0.0` for analysis v5-v7; older analyses use capability-appropriate v1-v4 |
+| control-evidence JSON/CSV  | `5.0.0` for analysis v5-v7; older analyses use capability-appropriate v1-v4 |
+| `bundle.json`              | `1.0.0`                                                                     |
 
 The scanner currently supports and enables `outbound_http`, `in_process_event`,
 `job_queue`, and `microservice_message`.
@@ -62,7 +62,9 @@ Important identity inputs include:
 - authorization metadata: endpoint, scope, exact metadata key, decorator identity,
   evidence, and extraction rule; and
 - authorization enforcement: metadata identity, state, exact guard/assertion identity,
-  and rule.
+  and rule; and
+- resource access: source method, package-proven technology/API, operation, resource
+  kind, structural target/selector, call-site evidence, and extraction rule.
 
 The integrity validator rejects repeated IDs. It distinguishes an identical duplicate
 from an unequal-content stable-ID collision; neither is silently overwritten.
@@ -154,6 +156,43 @@ without upgrading it to proof. `enforcement_unknown` is explicit when neither co
 holds. None of these states proves authentication, authorization success, runtime
 container registration, or guard execution.
 
+## Analysis v6 non-relational resource access
+
+Analysis v6 preserves every v5 fact family and adds `resourceAccesses` plus
+`resourceAccessAnalysis`. `METHOD_ACCESSES_RESOURCE` connects a source method to each
+canonical resource record. Current extraction is package-proven and bounded to
+`cache-manager` `get`/`set`/`del`/`wrap` and selected direct `ioredis` string, hash,
+delete, expiry, and scan commands.
+
+Targets retain only structural identity: exact text, bounded template segments,
+symbolic tokens such as a proven `this.member`, or `dynamic`. Payload arguments,
+callback results, Redis values, credentials, and runtime configuration values are not
+retained. `scan` records the supported `MATCH` structure rather than treating the
+cursor as a resource identity; `hscan` separates the hash key from its field selector.
+
+Pipelines, transactions, Lua scripts, pub/sub, unbounded key commands, arbitrary
+wrappers, and unsupported client packages produce explicit diagnostics or no fact. A
+resource record proves only a package-resolved static access expression. It does not
+prove cache hit/miss, command success, atomicity, expiry behavior, key existence,
+network delivery, or a runtime value.
+
+## Analysis v7 Redlock critical sections
+
+Analysis v7 preserves every v6 family, extends resource technology with `redlock`,
+and adds `criticalSections`. Package-proven `Redlock.using()` calls produce one
+`distributed_lock` / `critical_section` resource per bounded structural key. Direct
+arrays and immutable const arrays are supported up to 16 entries; spread, dynamic,
+or oversized resource lists remain diagnosed without guessed keys.
+
+Each critical-section record identifies the source method, lock resource records,
+inline arrow/function callback evidence, and the exact canonical assertion IDs whose
+call sites lie inside that callback. Traces exclude those assertions from the ordinary
+synchronous path and reintroduce them under `critical_section_conditional`. Downstream
+calls preserve that causal class; an existing `distributed_conditional` boundary
+remains dominant. The record proves lexical scope and package dependency only. It does
+not prove acquisition, mutual exclusion, contention, timing, callback execution, or
+release. Custom lock-wrapper propagation remains outside the supported boundary.
+
 ## Result-state policy
 
 `completed` means the analysis encountered no diagnosed gap; this includes a genuinely
@@ -221,8 +260,8 @@ matrix JSON; spreadsheet formula neutralization does not alter the underlying fa
 ## Offline graph-view contract
 
 The graph view is independently versioned: schema `1.0.0` remains readable for
-analysis v1/v2, historical interaction reports may use `2.0.0` through `5.0.0`, and
-current analysis v5 reports emit graph schema `6.0.0`. Cross-record validation requires
+analysis v1/v2, historical interaction reports may use `2.0.0` through `7.0.0`, and
+current analysis v7 reports emit graph schema `9.0.0`. Cross-record validation requires
 snapshot identity, exactly one view per canonical endpoint, exactly one view per
 canonical interaction handler, unique node/edge/evidence IDs, complete scene
 references, canonical evidence closure, declared display limits, and summary
@@ -240,7 +279,15 @@ readable for compatibility. Graph v4 scenes represent outbound HTTP, local event
 BullMQ, and Nest microservice interaction/handler/boundary nodes. Graph v5 additionally
 renders canonical BullMQ branch nodes and branch-effect edges; candidate edges remain
 labeled as candidates rather than delivery. Graph v6 adds endpoint authorization
-requirements with redacted value shapes and explicit enforcement states.
+requirements with redacted value shapes and explicit enforcement states. Graph v7
+uses graph schema `7.0.0` and
+retains those facts and adds one bounded repository architecture overview with complete
+numeric metric/ownership arrays, percentile legends, and an independently limited
+scene. Graph v8 adds resource-access nodes and reach metrics without treating them as
+communication interactions. The overview remains derived and does not change canonical
+analysis facts.
+Graph v9 adds explicit critical-section scope nodes and connects callback-contained
+assertion edges through that scope without claiming runtime lock behavior.
 
 ## Analysis v3 interaction substrate
 

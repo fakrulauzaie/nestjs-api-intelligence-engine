@@ -37,7 +37,11 @@ export const ASSERTION_PREDICATES_V3 = [
   'INTERACTION_MATCHES_LOCAL_HANDLER',
   'HANDLER_IMPLEMENTED_BY',
 ] as const;
-export const ASSERTION_PREDICATES = ASSERTION_PREDICATES_V3;
+export const ASSERTION_PREDICATES_V6 = [
+  ...ASSERTION_PREDICATES_V3,
+  'METHOD_ACCESSES_RESOURCE',
+] as const;
+export const ASSERTION_PREDICATES = ASSERTION_PREDICATES_V6;
 export type AssertionPredicate = (typeof ASSERTION_PREDICATES)[number];
 
 export interface AssertionRecord {

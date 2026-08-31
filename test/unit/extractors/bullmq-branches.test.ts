@@ -41,7 +41,7 @@ describe('Phase 40 BullMQ branch extraction and propagation', () => {
     );
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       expect(analysis.interactionHandlerDispatches).toEqual([
         expect.objectContaining({ state: 'complete' }),
       ]);
@@ -128,7 +128,7 @@ describe('Phase 40 BullMQ branch extraction and propagation', () => {
       );
 
       const graph = buildGraphReportDocument({ analysis });
-      expect(graph.schemaVersion).toBe('6.0.0');
+      expect(graph.schemaVersion).toBe('9.0.0');
       expect(
         graph.endpoints
           .find(({ path }) => path === '/reports/generate')
@@ -161,7 +161,7 @@ describe('Phase 40 BullMQ branch extraction and propagation', () => {
       };
       expect(validateAnalysisDocument(after)).toMatchObject({ success: true });
       const diff = compareAnalysisDocuments(analysis, after);
-      expect(diff.schemaVersion).toBe('4.0.0');
+      expect(diff.schemaVersion).toBe('5.0.0');
       expect(diff.jobQueueBranchEffectChanges).toEqual([
         expect.objectContaining({ change: 'removed' }),
       ]);
@@ -184,7 +184,7 @@ describe('Phase 40 BullMQ branch extraction and propagation', () => {
     const { project, result } = await scanSource('test/fixtures/phase39/bullmq/unsupported.ts.txt');
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '5.0.0') throw new Error('Expected analysis v5.');
+      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
       expect(analysis.interactionHandlerDispatches.map(({ state }) => state).sort()).toEqual([
         'partial',
         'partial',

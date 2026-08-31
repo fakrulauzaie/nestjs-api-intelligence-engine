@@ -33,18 +33,30 @@ import {
 } from '../policy/model.js';
 import { MUTATION_CLASSIFICATIONS } from '../structured-exports/model.js';
 import {
+  ARCHITECTURE_HEAT_BANDS,
+  ARCHITECTURE_METRIC_KINDS,
+  ARCHITECTURE_REACHABILITY_STATES,
+  ARCHITECTURE_RECORD_KINDS,
+  MODULE_OWNERSHIP_STATES,
+} from '../architecture/model.js';
+import {
   GRAPH_EDGE_KINDS,
   GRAPH_EDGE_KINDS_V2,
   GRAPH_IMPACT_STATES,
   GRAPH_NODE_KINDS,
   GRAPH_NODE_KINDS_V1,
   GRAPH_NODE_KINDS_V2,
+  GRAPH_NODE_KINDS_V7,
+  GRAPH_NODE_KINDS_V8,
   GRAPH_REPORT_SCHEMA_VERSION,
   GRAPH_REPORT_SCHEMA_V2_VERSION,
   GRAPH_REPORT_SCHEMA_V3_VERSION,
   GRAPH_REPORT_SCHEMA_V4_VERSION,
   GRAPH_REPORT_SCHEMA_V5_VERSION,
   GRAPH_REPORT_SCHEMA_V6_VERSION,
+  GRAPH_REPORT_SCHEMA_V7_VERSION,
+  GRAPH_REPORT_SCHEMA_V8_VERSION,
+  GRAPH_REPORT_SCHEMA_V9_VERSION,
   GRAPH_UNCERTAINTY_STATES,
   type GraphReportDocument,
 } from './model.js';
@@ -85,6 +97,26 @@ const nodeSchema = z
     uncertainty: z.enum(GRAPH_UNCERTAINTY_STATES),
     impact: z.enum(GRAPH_IMPACT_STATES),
     evidenceIds: z.array(nonEmpty),
+    parentId: nonEmpty.nullable().optional(),
+    architectureMetrics: z
+      .array(
+        z
+          .object({
+            metric: z.enum(ARCHITECTURE_METRIC_KINDS),
+            value: nonNegativeInteger,
+            heat: z.enum(ARCHITECTURE_HEAT_BANDS),
+          })
+          .strict(),
+      )
+      .optional(),
+    architectureReachability: z.enum(ARCHITECTURE_REACHABILITY_STATES).optional(),
+    moduleOwnership: z
+      .object({
+        state: z.enum(MODULE_OWNERSHIP_STATES),
+        moduleIds: z.array(nonEmpty),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
@@ -189,6 +221,78 @@ const sceneSchema = z
   })
   .strict();
 
+const architectureOverviewSchema = z
+  .object({
+    rootId: nonEmpty,
+    rootCapabilities: z
+      .object({
+        endpoints: z.literal('available'),
+        interactionHandlers: z.enum(['available', 'unavailable']),
+      })
+      .strict(),
+    supportedRoots: z
+      .object({
+        endpoints: nonNegativeInteger,
+        interactionHandlers: nonNegativeInteger,
+      })
+      .strict(),
+    summary: z
+      .object({
+        metricRecords: nonNegativeInteger,
+        notReachedFromSupportedRoots: nonNegativeInteger,
+        uniquelyOwnedClasses: nonNegativeInteger,
+        multipleOwnerClasses: nonNegativeInteger,
+        ownershipUnknownClasses: nonNegativeInteger,
+      })
+      .strict(),
+    metricLegends: z.array(
+      z
+        .object({
+          metric: z.enum(ARCHITECTURE_METRIC_KINDS),
+          eligibleRecords: nonNegativeInteger,
+          maximum: nonNegativeInteger,
+          percentiles: z
+            .object({
+              p50: nonNegativeInteger,
+              p75: nonNegativeInteger,
+              p90: nonNegativeInteger,
+            })
+            .strict(),
+        })
+        .strict(),
+    ),
+    records: z.array(
+      z
+        .object({
+          recordId: nonEmpty,
+          recordKind: z.enum(ARCHITECTURE_RECORD_KINDS),
+          metrics: z.array(
+            z
+              .object({
+                metric: z.enum(ARCHITECTURE_METRIC_KINDS),
+                value: nonNegativeInteger,
+                heat: z.enum(ARCHITECTURE_HEAT_BANDS),
+              })
+              .strict(),
+          ),
+          reachability: z.enum(ARCHITECTURE_REACHABILITY_STATES),
+        })
+        .strict(),
+    ),
+    moduleOwnership: z.array(
+      z
+        .object({
+          recordId: nonEmpty,
+          recordKind: z.enum(['class', 'method']),
+          state: z.enum(MODULE_OWNERSHIP_STATES),
+          moduleIds: z.array(nonEmpty),
+        })
+        .strict(),
+    ),
+    scene: sceneSchema,
+  })
+  .strict();
+
 export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
   .object({
     schemaVersion: z.enum([
@@ -198,6 +302,9 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
       GRAPH_REPORT_SCHEMA_V4_VERSION,
       GRAPH_REPORT_SCHEMA_V5_VERSION,
       GRAPH_REPORT_SCHEMA_V6_VERSION,
+      GRAPH_REPORT_SCHEMA_V7_VERSION,
+      GRAPH_REPORT_SCHEMA_V8_VERSION,
+      GRAPH_REPORT_SCHEMA_V9_VERSION,
     ]),
     analysis: z
       .object({
@@ -244,6 +351,10 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
         interactionHandlers: nonNegativeInteger.optional(),
         handlersWithDiagnostics: nonNegativeInteger.optional(),
         handlersWithWrites: nonNegativeInteger.optional(),
+        architectureRecords: nonNegativeInteger.optional(),
+        notReachedFromSupportedRoots: nonNegativeInteger.optional(),
+        uniquelyOwnedClasses: nonNegativeInteger.optional(),
+        multipleOwnerClasses: nonNegativeInteger.optional(),
       })
       .strict(),
     endpoints: z.array(
@@ -299,6 +410,7 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
           .strict(),
       )
       .optional(),
+    architecture: architectureOverviewSchema.optional(),
   })
   .strict()
   .superRefine((document, context) => {
@@ -343,7 +455,10 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
         document.schemaVersion === GRAPH_REPORT_SCHEMA_V3_VERSION ||
         document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION ||
         document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
-        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION;
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION;
       if (expectsLocalEffects !== (endpoint.localCausalEffects !== undefined)) {
         context.addIssue({
           code: 'custom',
@@ -355,7 +470,10 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
     const expectsHandlerScenes =
       document.schemaVersion === GRAPH_REPORT_SCHEMA_V4_VERSION ||
       document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
-      document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION;
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION;
     if (expectsHandlerScenes !== (document.interactionHandlers !== undefined)) {
       context.addIssue({
         code: 'custom',
@@ -366,7 +484,10 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
     for (const [index, endpoint] of document.endpoints.entries()) {
       if (
         document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
-        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION
           ? endpoint.jobQueueBranchIds === undefined
           : endpoint.jobQueueBranchIds !== undefined
       ) {
@@ -377,21 +498,27 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
         });
       }
       if (
-        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION
           ? endpoint.authorizationRequirements === undefined
           : endpoint.authorizationRequirements !== undefined
       ) {
         context.addIssue({
           code: 'custom',
           path: ['endpoints', index, 'authorizationRequirements'],
-          message: 'Graph v6 requires authorization requirements; graph v1-v5 must omit them.',
+          message: 'Graph v6-v7 require authorization requirements; graph v1-v5 must omit them.',
         });
       }
     }
     for (const [index, handler] of (document.interactionHandlers ?? []).entries()) {
       if (
         document.schemaVersion === GRAPH_REPORT_SCHEMA_V5_VERSION ||
-        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V6_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+        document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION
           ? handler.jobQueueDispatch === undefined
           : handler.jobQueueDispatch !== undefined
       ) {
@@ -405,6 +532,9 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
     if (
       document.schemaVersion !== GRAPH_REPORT_SCHEMA_V5_VERSION &&
       document.schemaVersion !== GRAPH_REPORT_SCHEMA_V6_VERSION &&
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V7_VERSION &&
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V8_VERSION &&
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V9_VERSION &&
       [...document.endpoints, ...(document.interactionHandlers ?? [])].some((view) =>
         view.scene.nodes.some(({ kind }) => kind === 'interaction_branch'),
       )
@@ -412,7 +542,7 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
       context.addIssue({
         code: 'custom',
         path: ['endpoints'],
-        message: 'Only graph v5 may contain interaction-branch nodes.',
+        message: 'Only graph v5-v7 may contain interaction-branch nodes.',
       });
     }
     for (const field of [
@@ -427,5 +557,80 @@ export const graphReportDocumentSchema: z.ZodType<GraphReportDocument> = z
           message: 'Graph v4 requires handler summary fields; graph v1-v3 must omit them.',
         });
       }
+    }
+    const expectsArchitecture =
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V7_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V8_VERSION ||
+      document.schemaVersion === GRAPH_REPORT_SCHEMA_V9_VERSION;
+    if (expectsArchitecture !== (document.architecture !== undefined)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['architecture'],
+        message: 'Graph v7 requires one architecture overview; graph v1-v6 must omit it.',
+      });
+    }
+    for (const field of [
+      'architectureRecords',
+      'notReachedFromSupportedRoots',
+      'uniquelyOwnedClasses',
+      'multipleOwnerClasses',
+    ] as const) {
+      if (expectsArchitecture !== (document.summary[field] !== undefined)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['summary', field],
+          message: 'Graph v7 requires architecture summary fields; graph v1-v6 must omit them.',
+        });
+      }
+    }
+    const nonArchitectureViews = [...document.endpoints, ...(document.interactionHandlers ?? [])];
+    if (
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V8_VERSION &&
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V9_VERSION &&
+      [
+        ...nonArchitectureViews,
+        ...(document.architecture === undefined ? [] : [document.architecture]),
+      ].some((view) =>
+        view.scene.nodes.some(
+          (node) => !(GRAPH_NODE_KINDS_V7 as readonly string[]).includes(node.kind),
+        ),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['endpoints'],
+        message: 'Only graph v8 may contain resource-access nodes.',
+      });
+    }
+    if (
+      document.schemaVersion !== GRAPH_REPORT_SCHEMA_V9_VERSION &&
+      nonArchitectureViews.some((view) =>
+        view.scene.nodes.some(
+          (node) => !(GRAPH_NODE_KINDS_V8 as readonly string[]).includes(node.kind),
+        ),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['endpoints'],
+        message: 'Only graph v9 may contain critical-section nodes.',
+      });
+    }
+    if (
+      nonArchitectureViews.some((view) =>
+        view.scene.nodes.some(
+          (node) =>
+            node.parentId !== undefined ||
+            node.architectureMetrics !== undefined ||
+            node.architectureReachability !== undefined ||
+            node.moduleOwnership !== undefined,
+        ),
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['endpoints'],
+        message: 'Architecture-only node fields cannot appear in endpoint or handler scenes.',
+      });
     }
   }) as z.ZodType<GraphReportDocument>;

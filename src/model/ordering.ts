@@ -154,7 +154,7 @@ export function canonicalizeAnalysisDocument(analysis: AnalysisDocument): Analys
     ),
   };
   if (analysis.schemaVersion === '4.0.0') return orderedBranches;
-  return {
+  const orderedAuthorization = {
     ...orderedBranches,
     authorizationMetadata: sortById(analysis.authorizationMetadata).map((record) => ({
       ...record,
@@ -171,6 +171,33 @@ export function canonicalizeAnalysisDocument(analysis: AnalysisDocument): Analys
     })),
     authorizationEnforcements: sortById(analysis.authorizationEnforcements).map((record) => ({
       ...record,
+      evidenceIds: [...record.evidenceIds].sort(compareStrings),
+    })),
+  };
+  if (analysis.schemaVersion === '5.0.0') return orderedAuthorization;
+  const orderedResources = {
+    ...orderedAuthorization,
+    resourceAccesses: sortById(analysis.resourceAccesses).map((record) => ({
+      ...record,
+      evidenceIds: [...record.evidenceIds].sort(compareStrings),
+    })),
+    resourceAccessAnalysis: {
+      ...analysis.resourceAccessAnalysis,
+      supportedTechnologies: [...analysis.resourceAccessAnalysis.supportedTechnologies].sort(
+        compareStrings,
+      ),
+      enabledTechnologies: [...analysis.resourceAccessAnalysis.enabledTechnologies].sort(
+        compareStrings,
+      ),
+    },
+  };
+  if (analysis.schemaVersion === '6.0.0') return orderedResources;
+  return {
+    ...orderedResources,
+    criticalSections: sortById(analysis.criticalSections).map((record) => ({
+      ...record,
+      lockResourceAccessIds: [...record.lockResourceAccessIds].sort(compareStrings),
+      effectAssertionIds: [...record.effectAssertionIds].sort(compareStrings),
       evidenceIds: [...record.evidenceIds].sort(compareStrings),
     })),
   } as AnalysisDocument;
@@ -218,6 +245,15 @@ export function canonicalizeEndpointTrace(trace: EndpointTraceView): EndpointTra
     terminals: EndpointTraceView['terminals'],
   ): EndpointTraceView['terminals'] =>
     [...terminals].sort((left, right) => compareStrings(terminalKey(left), terminalKey(right)));
+  const sortResourceTerminals = (
+    terminals: NonNullable<EndpointTraceView['resourceTerminals']>,
+  ): NonNullable<EndpointTraceView['resourceTerminals']> =>
+    [...terminals].sort((left, right) =>
+      compareStrings(
+        `${left.methodId}:${left.resourceAccessId}:${left.causalClass}`,
+        `${right.methodId}:${right.resourceAccessId}:${right.causalClass}`,
+      ),
+    );
   return {
     ...trace,
     // Guard array order is semantic: application-global registrations execute before
@@ -235,6 +271,9 @@ export function canonicalizeEndpointTrace(trace: EndpointTraceView): EndpointTra
         ),
       ),
     terminals: sortTerminals(trace.terminals),
+    ...(trace.resourceTerminals === undefined
+      ? {}
+      : { resourceTerminals: sortResourceTerminals(trace.resourceTerminals) }),
     diagnosticIds: [...trace.diagnosticIds].sort(compareStrings),
     ...(trace.causalSummary === undefined
       ? {}
@@ -242,6 +281,13 @@ export function canonicalizeEndpointTrace(trace: EndpointTraceView): EndpointTra
           causalSummary: {
             synchronousEffects: sortTerminals(trace.causalSummary.synchronousEffects),
             localInteractionEffects: sortTerminals(trace.causalSummary.localInteractionEffects),
+            ...(trace.causalSummary.criticalSectionConditionalEffects === undefined
+              ? {}
+              : {
+                  criticalSectionConditionalEffects: sortTerminals(
+                    trace.causalSummary.criticalSectionConditionalEffects,
+                  ),
+                }),
             distributedConditionalEffects: sortTerminals(
               trace.causalSummary.distributedConditionalEffects,
             ),
@@ -293,6 +339,16 @@ export function canonicalizeInteractionHandlerTrace(
         `${right.methodId}:${right.direction}:${right.tableId}:${right.causalClass ?? ''}`,
       ),
     ),
+    ...(trace.resourceTerminals === undefined
+      ? {}
+      : {
+          resourceTerminals: [...trace.resourceTerminals].sort((left, right) =>
+            compareStrings(
+              `${left.methodId}:${left.resourceAccessId}:${left.causalClass}`,
+              `${right.methodId}:${right.resourceAccessId}:${right.causalClass}`,
+            ),
+          ),
+        }),
     diagnosticIds: [...trace.diagnosticIds].sort(compareStrings),
   };
 }

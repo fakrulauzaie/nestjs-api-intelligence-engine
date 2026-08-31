@@ -5,10 +5,16 @@ import type {
   EndpointTraceStep,
   EndpointTraceTerminal,
   InteractionHandlerTraceView,
+  ResourceAccessTraceTerminal,
   TraceCausalClass,
 } from '../model/analysis.js';
-import { analysisHasInteractionFacts } from '../model/analysis.js';
+import {
+  analysisHasCriticalSectionFacts,
+  analysisHasInteractionFacts,
+  analysisHasResourceAccessFacts,
+} from '../model/analysis.js';
 import type { AssertionRecord } from '../model/assertions.js';
+import type { CriticalSectionRecord } from '../model/critical-sections.js';
 import type { DiagnosticRecord } from '../model/diagnostics.js';
 import { canonicalizeInteractionHandlerTrace } from '../model/ordering.js';
 import { interactionHandlerTraceViewSchema } from '../model/schemas.js';
@@ -51,6 +57,7 @@ interface HandlerTraceState {
   readonly interactionHop: number;
   readonly causalClass: TraceCausalClass | null;
   readonly pathMethodIds: ReadonlySet<string>;
+  readonly directAssertionIds: ReadonlySet<string> | null;
 }
 
 export function buildInteractionHandlerTrace(
@@ -74,8 +81,34 @@ export function buildInteractionHandlerTrace(
   const interactions = new Map(analysis.interactions.map((record) => [record.id, record]));
   const handlers = new Map(analysis.interactionHandlers.map((record) => [record.id, record]));
   const tables = new Map(analysis.tables.map((record) => [record.id, record]));
+  const resourceAccesses = new Map(
+    analysisHasResourceAccessFacts(analysis)
+      ? analysis.resourceAccesses.map((record) => [record.id, record])
+      : [],
+  );
+  const scopedEffectAssertionIds = new Set(
+    analysisHasCriticalSectionFacts(analysis)
+      ? analysis.criticalSections.flatMap(({ effectAssertionIds }) => effectAssertionIds)
+      : [],
+  );
+  const lockAssertionIdsByAccessId = new Map(
+    analysis.assertions
+      .filter(
+        ({ predicate, objectId }) => predicate === 'METHOD_ACCESSES_RESOURCE' && objectId !== null,
+      )
+      .map((assertion) => [assertion.objectId!, assertion.id]),
+  );
+  const criticalSectionsByMethod = new Map<string, CriticalSectionRecord[]>();
+  if (analysisHasCriticalSectionFacts(analysis)) {
+    for (const section of analysis.criticalSections) {
+      const existing = criticalSectionsByMethod.get(section.sourceMethodId) ?? [];
+      existing.push(section);
+      criticalSectionsByMethod.set(section.sourceMethodId, existing);
+    }
+  }
   const steps = new Map<string, EndpointTraceStep>();
   const terminals = new Map<string, EndpointTraceTerminal>();
+  const resourceTerminals = new Map<string, ResourceAccessTraceTerminal>();
   const diagnostics = new Map<string, DiagnosticRecord>();
   const relevantIds = new Set([handler.id, handler.methodId]);
   const seenStates = new Set<string>();
@@ -85,7 +118,9 @@ export function buildInteractionHandlerTrace(
     diagnostics.set(diagnostic.id, diagnostic);
   };
   const enqueue = (state: HandlerTraceState, evidenceIds: readonly string[]): void => {
-    const key = `${state.methodId}:${state.depth}:${state.interactionHop}:${state.causalClass ?? 'unknown'}`;
+    const filterKey =
+      state.directAssertionIds === null ? '*' : [...state.directAssertionIds].sort().join(',');
+    const key = `${state.methodId}:${state.depth}:${state.interactionHop}:${state.causalClass ?? 'unknown'}:${filterKey}`;
     if (seenStates.has(key)) return;
     if (seenStates.size >= configuration.maxInteractionTraceStates) {
       if (!stateLimitReported) {
@@ -124,6 +159,7 @@ export function buildInteractionHandlerTrace(
         interactionHop: 0,
         causalClass: initialCausalClass,
         pathMethodIds: new Set([implementation.objectId!]),
+        directAssertionIds: null,
       },
       implementation.evidenceIds,
     );
@@ -131,7 +167,41 @@ export function buildInteractionHandlerTrace(
 
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
     const state = queue[cursor]!;
-    for (const assertion of indexes.tableAccessByMethod.get(state.methodId) ?? []) {
+    const appliesDirectly = (assertion: AssertionRecord): boolean =>
+      (state.directAssertionIds === null || state.directAssertionIds.has(assertion.id)) &&
+      (state.directAssertionIds !== null || !scopedEffectAssertionIds.has(assertion.id));
+    for (const section of criticalSectionsByMethod.get(state.methodId) ?? []) {
+      const lockAssertionIds = section.lockResourceAccessIds.flatMap((accessId) => {
+        const assertionId = lockAssertionIdsByAccessId.get(accessId);
+        return assertionId === undefined ? [] : [assertionId];
+      });
+      if (
+        section.effectAssertionIds.length === 0 ||
+        !lockAssertionIds.some((id) =>
+          state.directAssertionIds === null ? true : state.directAssertionIds.has(id),
+        )
+      ) {
+        continue;
+      }
+      relevantIds.add(section.id);
+      enqueue(
+        {
+          methodId: state.methodId,
+          depth: state.depth,
+          interactionHop: state.interactionHop,
+          causalClass:
+            state.causalClass === 'distributed_conditional'
+              ? 'distributed_conditional'
+              : 'critical_section_conditional',
+          pathMethodIds: state.pathMethodIds,
+          directAssertionIds: new Set(section.effectAssertionIds),
+        },
+        section.evidenceIds,
+      );
+    }
+    for (const assertion of (indexes.tableAccessByMethod.get(state.methodId) ?? []).filter(
+      appliesDirectly,
+    )) {
       steps.set(assertion.id, assertionStep(assertion));
       if (!traversable(assertion)) continue;
       const table = tables.get(assertion.objectId!);
@@ -149,8 +219,36 @@ export function buildInteractionHandlerTrace(
         terminal,
       );
     }
+    for (const assertion of (indexes.resourceAccessByMethod.get(state.methodId) ?? []).filter(
+      appliesDirectly,
+    )) {
+      steps.set(assertion.id, assertionStep(assertion));
+      if (!traversable(assertion)) continue;
+      const access = resourceAccesses.get(assertion.objectId!);
+      if (access === undefined) continue;
+      relevantIds.add(access.id);
+      const causalClass =
+        state.causalClass ??
+        (handler.kind === 'in_process_event'
+          ? 'local_interaction_synchronous'
+          : 'distributed_conditional');
+      const terminal: ResourceAccessTraceTerminal = {
+        methodId: state.methodId,
+        resourceAccessId: access.id,
+        resourceKind: access.resourceKind,
+        operation: access.operation,
+        technology: access.technology,
+        target: access.target,
+        selector: access.selector,
+        causalClass,
+      };
+      resourceTerminals.set(
+        `${terminal.methodId}:${terminal.resourceAccessId}:${causalClass}`,
+        terminal,
+      );
+    }
 
-    const calls = indexes.callsByMethod.get(state.methodId) ?? [];
+    const calls = (indexes.callsByMethod.get(state.methodId) ?? []).filter(appliesDirectly);
     if (state.depth >= analysis.analysisRun.configuration.maxCallDepth) {
       const evidenceIds = calls.filter(traversable).flatMap((assertion) => assertion.evidenceIds);
       if (evidenceIds.length > 0) {
@@ -174,13 +272,16 @@ export function buildInteractionHandlerTrace(
             interactionHop: state.interactionHop,
             causalClass: state.causalClass,
             pathMethodIds: new Set([...state.pathMethodIds, assertion.objectId!]),
+            directAssertionIds: null,
           },
           assertion.evidenceIds,
         );
       }
     }
 
-    for (const initiation of indexes.interactionsByMethod.get(state.methodId) ?? []) {
+    for (const initiation of (indexes.interactionsByMethod.get(state.methodId) ?? []).filter(
+      appliesDirectly,
+    )) {
       steps.set(initiation.id, assertionStep(initiation));
       if (!traversable(initiation)) continue;
       const interaction = interactions.get(initiation.objectId!);
@@ -254,12 +355,14 @@ export function buildInteractionHandlerTrace(
             interaction.kind === 'microservice_message' ||
             state.causalClass === 'distributed_conditional'
               ? 'distributed_conditional'
-              : interaction.dispatchTiming === 'asynchronous' ||
-                  matchedHandler.ruleId.includes('.async.')
-                ? 'local_interaction_asynchronous'
-                : matchedHandler.ruleId.includes('.sync.')
-                  ? 'local_interaction_synchronous'
-                  : null;
+              : state.causalClass === 'critical_section_conditional'
+                ? 'critical_section_conditional'
+                : interaction.dispatchTiming === 'asynchronous' ||
+                    matchedHandler.ruleId.includes('.async.')
+                  ? 'local_interaction_asynchronous'
+                  : matchedHandler.ruleId.includes('.sync.')
+                    ? 'local_interaction_synchronous'
+                    : null;
           enqueue(
             {
               methodId,
@@ -267,6 +370,7 @@ export function buildInteractionHandlerTrace(
               interactionHop: state.interactionHop + 1,
               causalClass,
               pathMethodIds: new Set([...state.pathMethodIds, methodId]),
+              directAssertionIds: null,
             },
             [...match.evidenceIds, ...implementation.evidenceIds],
           );
@@ -290,6 +394,9 @@ export function buildInteractionHandlerTrace(
       handler,
       steps: [...steps.values()],
       terminals: [...terminals.values()],
+      ...(analysisHasResourceAccessFacts(analysis)
+        ? { resourceTerminals: [...resourceTerminals.values()] }
+        : {}),
       diagnosticIds: orderedDiagnostics.map(({ id }) => id),
     }),
   );

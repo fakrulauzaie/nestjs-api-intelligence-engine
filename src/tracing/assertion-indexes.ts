@@ -5,6 +5,7 @@ export interface TraceAssertionIndexes {
   readonly guardsByEndpoint: ReadonlyMap<string, readonly AssertionRecord[]>;
   readonly callsByMethod: ReadonlyMap<string, readonly AssertionRecord[]>;
   readonly tableAccessByMethod: ReadonlyMap<string, readonly AssertionRecord[]>;
+  readonly resourceAccessByMethod: ReadonlyMap<string, readonly AssertionRecord[]>;
   readonly interactionsByMethod: ReadonlyMap<string, readonly AssertionRecord[]>;
 }
 
@@ -27,6 +28,7 @@ export function buildTraceAssertionIndexes(
   const guardsByEndpoint = new Map<string, AssertionRecord[]>();
   const callsByMethod = new Map<string, AssertionRecord[]>();
   const tableAccessByMethod = new Map<string, AssertionRecord[]>();
+  const resourceAccessByMethod = new Map<string, AssertionRecord[]>();
   const interactionsByMethod = new Map<string, AssertionRecord[]>();
 
   for (const assertion of assertions) {
@@ -47,6 +49,9 @@ export function buildTraceAssertionIndexes(
       case 'METHOD_INITIATES_INTERACTION':
         add(interactionsByMethod, assertion.subjectId, assertion);
         break;
+      case 'METHOD_ACCESSES_RESOURCE':
+        add(resourceAccessByMethod, assertion.subjectId, assertion);
+        break;
       default:
         break;
     }
@@ -56,12 +61,14 @@ export function buildTraceAssertionIndexes(
   sortValues(guardsByEndpoint);
   sortValues(callsByMethod);
   sortValues(tableAccessByMethod);
+  sortValues(resourceAccessByMethod);
   sortValues(interactionsByMethod);
   return {
     implementationsByEndpoint,
     guardsByEndpoint,
     callsByMethod,
     tableAccessByMethod,
+    resourceAccessByMethod,
     interactionsByMethod,
   };
 }

@@ -95,8 +95,11 @@ function ownerRoles(located: LocatedClass): readonly ClassRole[] {
   ];
 }
 
-function isNestedThisBoundary(node: ts.Node): boolean {
-  return ts.isFunctionLike(node) && !ts.isArrowFunction(node);
+function isNestedThisBoundary(
+  node: ts.Node,
+  allowedNestedFunctions: ReadonlySet<ts.Node>,
+): boolean {
+  return ts.isFunctionLike(node) && !ts.isArrowFunction(node) && !allowedNestedFunctions.has(node);
 }
 
 function unwrapExpression(expression: ts.Expression): ts.Expression {
@@ -204,7 +207,9 @@ export async function extractTypeOrmRawSql(input: {
   evidenceSnippetLimit: number;
   configuration?: RawSqlAnalysisConfiguration | undefined;
   signal?: AbortSignal | undefined;
+  allowedNestedFunctions?: ReadonlySet<ts.Node> | undefined;
 }): Promise<TypeOrmRawSqlExtraction> {
+  const allowedNestedFunctions = input.allowedNestedFunctions ?? new Set();
   const locatedClasses: LocatedClass[] = [];
   for (const source of input.sourceIndex.sourceFiles) {
     for (const indexedClass of source.classes) locatedClasses.push({ source, indexedClass });
@@ -294,7 +299,7 @@ export async function extractTypeOrmRawSql(input: {
       const body = method.node.body;
       if (body === undefined) continue;
       const visit = (node: ts.Node): void => {
-        if (node !== body && isNestedThisBoundary(node)) return;
+        if (node !== body && isNestedThisBoundary(node, allowedNestedFunctions)) return;
         if (
           ts.isCallExpression(node) &&
           ts.isPropertyAccessExpression(node.expression) &&

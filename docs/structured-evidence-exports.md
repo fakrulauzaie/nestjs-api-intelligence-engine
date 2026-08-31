@@ -17,7 +17,7 @@ are rejected as structured-input errors. The command writes:
 
 - `openapi.enriched.json`: a copy with one versioned `x-api-intel` object per operation;
 - `openapi-enrichment.json`: strict match/evidence sidecar (`1.0.0` for analysis
-  v1/v2, capability-appropriate v2-v4 for analysis v3/v4, and `5.0.0` for analysis v5).
+  v1/v2, capability-appropriate v2-v4 for analysis v3/v4, and `5.0.0` for analysis v5/v6).
 
 The input document is read-only and remains byte-identical. If its path would collide
 with either generated filename, publication is refused. Unrelated top-level, path,
@@ -95,7 +95,7 @@ snapshot. The command always writes both:
 
 - `control-evidence.json`: independently versioned strict schema (`1.0.0` for
   analysis v1/v2, capability-appropriate v2-v4 for analysis v3/v4, and `5.0.0` for
-  analysis v5);
+  analysis v5/v6);
 - `control-evidence.csv`: deterministic UTF-8 CSV with the same endpoint rows.
 
 There is exactly one row per canonical endpoint. Each row repeats snapshot/schema/tool
@@ -122,13 +122,18 @@ or supported unmatched branches selected by that endpoint trace. It may be empty
 older schemas mean branch capability is unavailable. Control CSV v4 adds the
 `job_queue_branch_ids` column.
 
-Schema `5.0.0` is emitted for analysis v5 and adds `authorizationRequirements` to
+Schema `5.0.0` is emitted for analysis v5/v6 and adds `authorizationRequirements` to
 resolved OpenAPI extensions and control rows. Each entry contains the exact metadata
 key, controller/method scope, source kind, redacted value shape, enforcement state,
 optional exact guard name, and evidence IDs. Control CSV v5 adds the
 `authorization_requirements` column without exporting metadata values. Empty arrays
 mean the authorization extractor completed without finding a supported requirement;
 older schemas mean that fact family is unavailable.
+
+Analysis v6 resource-access and v7 critical-section facts do not change this frozen v5 export shape. They are
+available in canonical analysis, endpoint/handler Markdown, comparison, impact, and
+graph v8; an export consumer must not interpret their absence here as proof that an
+endpoint has no cache or Redis access.
 
 `write` means at least one synchronous canonical write terminal is present. `non_write`
 means a unique supported synchronous trace has no write terminal or persistence-relevant gap. `unknown`

@@ -33,6 +33,8 @@ export const STABLE_ID_KINDS = [
   'interaction_handler_branch_effect',
   'authorization_metadata',
   'authorization_enforcement',
+  'resource_access',
+  'critical_section',
 ] as const;
 export type StableIdKind = (typeof STABLE_ID_KINDS)[number];
 
@@ -371,6 +373,44 @@ export function makeAuthorizationEnforcementId(input: {
     input.state,
     input.guardId,
     input.guardAssertionId,
+    input.ruleId,
+  ]);
+}
+
+export function makeResourceAccessId(input: {
+  sourceMethodId: string;
+  technology: string;
+  resourceKind: string;
+  operation: string;
+  api: string;
+  targetKey: string;
+  selectorKey: string | null;
+  callEvidenceId: string;
+  ruleId: string;
+}): string {
+  return createStableId('resource_access', [
+    input.sourceMethodId,
+    input.technology,
+    input.resourceKind,
+    input.operation,
+    input.api,
+    input.targetKey,
+    input.selectorKey,
+    input.callEvidenceId,
+    input.ruleId,
+  ]);
+}
+
+export function makeCriticalSectionId(input: {
+  sourceMethodId: string;
+  lockResourceAccessIds: readonly string[];
+  callbackEvidenceId: string;
+  ruleId: string;
+}): string {
+  return createStableId('critical_section', [
+    input.sourceMethodId,
+    ...[...input.lockResourceAccessIds].sort(),
+    input.callbackEvidenceId,
     input.ruleId,
   ]);
 }

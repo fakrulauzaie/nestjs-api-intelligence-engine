@@ -6,11 +6,12 @@ import type {
   GlobalGuardState,
   GuardScope,
 } from '../model/analysis.js';
-import { analysisHasInteractionFacts } from '../model/analysis.js';
+import { analysisHasInteractionFacts, analysisHasResourceAccessFacts } from '../model/analysis.js';
 import type { AssertionStatus } from '../model/assertions.js';
 import type { DiagnosticCode } from '../model/diagnostics.js';
 import type { HttpMethod } from '../model/entities.js';
 import { interactionTargetKey } from '../model/interactions.js';
+import { resourceAccessLabel } from '../model/resource-access.js';
 import { normalizeRoutePath } from '../extractors/route-paths.js';
 import { buildEffectiveEndpointGuards } from '../guards/effective.js';
 import {
@@ -98,6 +99,15 @@ export interface EndpointCatalogueEntry {
           | 'unknown';
         readonly handlerStates: readonly string[];
         readonly handlerCandidates: readonly string[];
+      }[]
+    | undefined;
+  readonly resourceAccesses?:
+    | readonly {
+        readonly resourceAccessId: string;
+        readonly label: string;
+        readonly resourceKind: string;
+        readonly operation: string;
+        readonly causalClass: string;
       }[]
     | undefined;
 }
@@ -308,6 +318,28 @@ export function buildEndpointCatalogue(
                   ]
                 : [];
             });
+      const resourceAccessById = new Map(
+        analysisHasResourceAccessFacts(analysis)
+          ? analysis.resourceAccesses.map((access) => [access.id, access])
+          : [],
+      );
+      const resourceAccesses =
+        trace?.status !== 'resolved'
+          ? []
+          : (trace.trace.resourceTerminals ?? []).flatMap((terminal) => {
+              const access = resourceAccessById.get(terminal.resourceAccessId);
+              return access === undefined
+                ? []
+                : [
+                    {
+                      resourceAccessId: access.id,
+                      label: resourceAccessLabel(access),
+                      resourceKind: access.resourceKind,
+                      operation: access.operation,
+                      causalClass: terminal.causalClass,
+                    },
+                  ];
+            });
 
       return {
         endpointId: endpoint.id,
@@ -352,6 +384,13 @@ export function buildEndpointCatalogue(
           : {
               microserviceMessageInteractions: microserviceMessageInteractions.sort((left, right) =>
                 left.interactionId.localeCompare(right.interactionId),
+              ),
+            }),
+        ...(resourceAccesses.length === 0
+          ? {}
+          : {
+              resourceAccesses: resourceAccesses.sort((left, right) =>
+                left.resourceAccessId.localeCompare(right.resourceAccessId),
               ),
             }),
       };
@@ -497,6 +536,23 @@ export function renderEndpointCatalogueMarkdown(catalogue: EndpointCatalogueView
       ...microserviceMessages.map(
         ({ endpoint, interaction }) =>
           `| ${endpoint.httpMethod} ${escapeTableCell(endpoint.path)} | ${escapeTableCell(interaction.label)} | ${interaction.activation} | ${interaction.boundary} | ${escapeTableCell(interaction.handlerCandidates.length === 0 ? 'none_proven' : interaction.handlerCandidates.join(', '))} |`,
+      ),
+    );
+  }
+
+  const resourceAccesses = catalogue.endpoints.flatMap((endpoint) =>
+    (endpoint.resourceAccesses ?? []).map((access) => ({ endpoint, access })),
+  );
+  if (resourceAccesses.length > 0) {
+    lines.push(
+      '',
+      '## Non-relational resource access',
+      '',
+      '| Endpoint | Resource access | Kind | Operation | Causal class |',
+      '|---|---|---|---|---|',
+      ...resourceAccesses.map(
+        ({ endpoint, access }) =>
+          `| ${endpoint.httpMethod} ${escapeTableCell(endpoint.path)} | ${escapeTableCell(access.label)} | ${access.resourceKind} | ${access.operation} | ${access.causalClass} |`,
       ),
     );
   }

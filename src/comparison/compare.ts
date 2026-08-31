@@ -4,6 +4,7 @@ import {
   DIFF_SCHEMA_V2_VERSION,
   DIFF_SCHEMA_V3_VERSION,
   DIFF_SCHEMA_V4_VERSION,
+  DIFF_SCHEMA_V5_VERSION,
   type AssertionSnapshot,
   type AssertionStatusChange,
   type DiagnosticChange,
@@ -142,6 +143,13 @@ function authorizationProjection(snapshot: EndpointSnapshot): unknown {
   };
 }
 
+function resourceAccessProjection(snapshot: EndpointSnapshot): unknown {
+  return {
+    availability: snapshot.resourceAccesses?.availability ?? 'unavailable',
+    values: (snapshot.resourceAccesses?.values ?? []).map(({ key }) => key.encoded),
+  };
+}
+
 function endpointModificationReasons(
   before: EndpointSnapshot,
   after: EndpointSnapshot,
@@ -181,6 +189,12 @@ function endpointModificationReasons(
   ) {
     reasons.push('authorization');
   }
+  if (
+    canonicalStringify(resourceAccessProjection(before)) !==
+    canonicalStringify(resourceAccessProjection(after))
+  ) {
+    reasons.push('resource_accesses');
+  }
   return reasons;
 }
 
@@ -189,6 +203,16 @@ function withAuthorizationAvailability(snapshot: EndpointSnapshot | null): Endpo
   return {
     ...snapshot,
     authorization: { availability: 'unavailable', requirements: [] },
+  };
+}
+
+function withResourceAccessAvailability(
+  snapshot: EndpointSnapshot | null,
+): EndpointSnapshot | null {
+  if (snapshot === null || snapshot.resourceAccesses !== undefined) return snapshot;
+  return {
+    ...snapshot,
+    resourceAccesses: { availability: 'unavailable', values: [] },
   };
 }
 
@@ -740,37 +764,63 @@ export function compareAnalysisDocuments(
     ),
   );
 
-  const v4 = beforeAnalysis.schemaVersion === '5.0.0' || afterAnalysis.schemaVersion === '5.0.0';
+  const v5 =
+    beforeAnalysis.schemaVersion === '6.0.0' ||
+    beforeAnalysis.schemaVersion === '7.0.0' ||
+    afterAnalysis.schemaVersion === '6.0.0' ||
+    afterAnalysis.schemaVersion === '7.0.0';
+  const v4 =
+    v5 || beforeAnalysis.schemaVersion === '5.0.0' || afterAnalysis.schemaVersion === '5.0.0';
   const v3 =
     v4 || beforeAnalysis.schemaVersion === '4.0.0' || afterAnalysis.schemaVersion === '4.0.0';
   const v2 =
     v3 || beforeAnalysis.schemaVersion === '3.0.0' || afterAnalysis.schemaVersion === '3.0.0';
   return assertValidDiffDocument({
-    schemaVersion: v4
-      ? DIFF_SCHEMA_V4_VERSION
-      : v3
-        ? DIFF_SCHEMA_V3_VERSION
-        : v2
-          ? DIFF_SCHEMA_V2_VERSION
-          : DIFF_SCHEMA_VERSION,
-    before: v4
+    schemaVersion: v5
+      ? DIFF_SCHEMA_V5_VERSION
+      : v4
+        ? DIFF_SCHEMA_V4_VERSION
+        : v3
+          ? DIFF_SCHEMA_V3_VERSION
+          : v2
+            ? DIFF_SCHEMA_V2_VERSION
+            : DIFF_SCHEMA_VERSION,
+    before: v5
       ? {
           ...before.input,
           facts: {
             ...before.input.facts,
             authorization: before.input.facts.authorization ?? 'unavailable',
+            resourceAccesses: before.input.facts.resourceAccesses ?? 'unavailable',
           },
         }
-      : before.input,
-    after: v4
+      : v4
+        ? {
+            ...before.input,
+            facts: {
+              ...before.input.facts,
+              authorization: before.input.facts.authorization ?? 'unavailable',
+            },
+          }
+        : before.input,
+    after: v5
       ? {
           ...after.input,
           facts: {
             ...after.input.facts,
             authorization: after.input.facts.authorization ?? 'unavailable',
+            resourceAccesses: after.input.facts.resourceAccesses ?? 'unavailable',
           },
         }
-      : after.input,
+      : v4
+        ? {
+            ...after.input,
+            facts: {
+              ...after.input.facts,
+              authorization: after.input.facts.authorization ?? 'unavailable',
+            },
+          }
+        : after.input,
     summary: {
       endpointsAdded: endpointChanges.filter(({ change }) => change === 'added').length,
       endpointsRemoved: endpointChanges.filter(({ change }) => change === 'removed').length,
@@ -830,23 +880,29 @@ export function compareAnalysisDocuments(
           }
         : {}),
     },
-    endpointChanges: v4
+    endpointChanges: v5
       ? endpointChanges.map((change) => ({
           ...change,
-          before: withAuthorizationAvailability(change.before),
-          after: withAuthorizationAvailability(change.after),
+          before: withResourceAccessAvailability(withAuthorizationAvailability(change.before)),
+          after: withResourceAccessAvailability(withAuthorizationAvailability(change.after)),
         }))
-      : endpointChanges.map((change) => ({
-          ...change,
-          before:
-            change.before === null
-              ? null
-              : (({ authorization: _authorization, ...snapshot }) => snapshot)(change.before),
-          after:
-            change.after === null
-              ? null
-              : (({ authorization: _authorization, ...snapshot }) => snapshot)(change.after),
-        })),
+      : v4
+        ? endpointChanges.map((change) => ({
+            ...change,
+            before: withAuthorizationAvailability(change.before),
+            after: withAuthorizationAvailability(change.after),
+          }))
+        : endpointChanges.map((change) => ({
+            ...change,
+            before:
+              change.before === null
+                ? null
+                : (({ authorization: _authorization, ...snapshot }) => snapshot)(change.before),
+            after:
+              change.after === null
+                ? null
+                : (({ authorization: _authorization, ...snapshot }) => snapshot)(change.after),
+          })),
     assertionStatusChanges,
     diagnosticChanges,
     ...(v2 ? { interactionChanges, interactionHandlerChanges } : {}),

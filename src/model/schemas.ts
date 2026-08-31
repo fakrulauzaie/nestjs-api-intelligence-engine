@@ -6,6 +6,8 @@ import {
   ANALYSIS_SCHEMA_V3_VERSION,
   ANALYSIS_SCHEMA_V4_VERSION,
   ANALYSIS_SCHEMA_V5_VERSION,
+  ANALYSIS_SCHEMA_V6_VERSION,
+  ANALYSIS_SCHEMA_V7_VERSION,
   DIRECT_GUARD_STATES,
   EFFECTIVE_GUARD_STATES,
   GLOBAL_ANALYSIS_COMPLETENESS_STATES,
@@ -23,6 +25,7 @@ import {
   ASSERTION_PREDICATES,
   ASSERTION_PREDICATES_V1,
   ASSERTION_PREDICATES_V2,
+  ASSERTION_PREDICATES_V3,
   ASSERTION_STATUSES,
 } from './assertions.js';
 import {
@@ -31,6 +34,8 @@ import {
   DIAGNOSTIC_CODES_V2,
   DIAGNOSTIC_CODES_V3,
   DIAGNOSTIC_CODES_V4,
+  DIAGNOSTIC_CODES_V5,
+  DIAGNOSTIC_CODES_V6,
   DIAGNOSTIC_SEVERITIES,
 } from './diagnostics.js';
 import {
@@ -79,6 +84,7 @@ import {
 import {
   JOB_QUEUE_BRANCH_CONTROL_FLOWS,
   JOB_QUEUE_BRANCH_EFFECT_KINDS,
+  JOB_QUEUE_BRANCH_EFFECT_KINDS_V4,
   JOB_QUEUE_HANDLER_DISPATCH_STATES,
 } from './job-queue-branches.js';
 import {
@@ -86,6 +92,15 @@ import {
   AUTHORIZATION_METADATA_SOURCES,
   AUTHORIZATION_SCALAR_TYPES,
 } from './authorization.js';
+import {
+  RESOURCE_KINDS,
+  RESOURCE_KINDS_V6,
+  RESOURCE_OPERATIONS,
+  RESOURCE_OPERATIONS_V6,
+  RESOURCE_TECHNOLOGIES,
+  RESOURCE_TECHNOLOGIES_V6,
+} from './resource-access.js';
+import { CRITICAL_SECTION_CALLBACK_KINDS } from './critical-sections.js';
 import { isNormalizedRepositoryRelativePath } from './paths.js';
 import { normalizedPolicyRuleConfigurationSchema } from '../policy/rule-config.js';
 
@@ -320,6 +335,10 @@ const assertionRecordV2Schema = assertionRecordSchema.extend({
   predicate: z.enum(ASSERTION_PREDICATES_V2),
 });
 
+const assertionRecordV3Schema = assertionRecordSchema.extend({
+  predicate: z.enum(ASSERTION_PREDICATES_V3),
+});
+
 export const evidenceRecordSchema = z
   .object({
     id: stableIdSchema,
@@ -359,6 +378,13 @@ const diagnosticRecordV3Schema = diagnosticRecordSchema.extend({
 
 const diagnosticRecordV4Schema = diagnosticRecordSchema.extend({
   code: z.enum(DIAGNOSTIC_CODES_V4),
+});
+
+const diagnosticRecordV5Schema = diagnosticRecordSchema.extend({
+  code: z.enum(DIAGNOSTIC_CODES_V5),
+});
+const diagnosticRecordV6Schema = diagnosticRecordSchema.extend({
+  code: z.enum(DIAGNOSTIC_CODES_V6),
 });
 
 export const moduleRecordSchema = z
@@ -774,33 +800,44 @@ export const jobQueueHandlerBranchRecordSchema = z
     }
   });
 
-export const jobQueueHandlerBranchEffectRecordSchema = z
-  .object({
-    id: kindPrefixedStableIdSchema('interaction_handler_branch_effect'),
-    branchId: kindPrefixedStableIdSchema('interaction_handler_branch'),
-    kind: z.enum(JOB_QUEUE_BRANCH_EFFECT_KINDS),
-    targetId: stableIdSchema,
-    sourceAssertionId: kindPrefixedStableIdSchema('assertion'),
-    status: z.enum(['resolved', 'ambiguous']),
-    ruleId: nonEmptyStringSchema,
-    evidenceIds: uniqueStableIdsSchema('evidence'),
-  })
-  .strict()
-  .superRefine((effect, context) => {
-    const targetKind =
-      effect.kind === 'calls_method'
-        ? 'method'
-        : effect.kind === 'initiates_interaction'
-          ? 'interaction'
-          : 'table';
-    if (!effect.targetId.startsWith(`${targetKind}:`)) {
-      context.addIssue({
-        code: 'custom',
-        path: ['targetId'],
-        message: `Effect ${effect.kind} requires a ${targetKind}-prefixed target.`,
-      });
-    }
-  });
+function buildJobQueueHandlerBranchEffectRecordSchema(kinds: readonly [string, ...string[]]) {
+  return z
+    .object({
+      id: kindPrefixedStableIdSchema('interaction_handler_branch_effect'),
+      branchId: kindPrefixedStableIdSchema('interaction_handler_branch'),
+      kind: z.enum(kinds),
+      targetId: stableIdSchema,
+      sourceAssertionId: kindPrefixedStableIdSchema('assertion'),
+      status: z.enum(['resolved', 'ambiguous']),
+      ruleId: nonEmptyStringSchema,
+      evidenceIds: uniqueStableIdsSchema('evidence'),
+    })
+    .strict()
+    .superRefine((effect, context) => {
+      const targetKind =
+        effect.kind === 'calls_method'
+          ? 'method'
+          : effect.kind === 'initiates_interaction'
+            ? 'interaction'
+            : effect.kind === 'accesses_resource'
+              ? 'resource_access'
+              : 'table';
+      if (!effect.targetId.startsWith(`${targetKind}:`)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['targetId'],
+          message: `Effect ${effect.kind} requires a ${targetKind}-prefixed target.`,
+        });
+      }
+    });
+}
+
+const jobQueueHandlerBranchEffectRecordV4Schema = buildJobQueueHandlerBranchEffectRecordSchema(
+  JOB_QUEUE_BRANCH_EFFECT_KINDS_V4,
+);
+export const jobQueueHandlerBranchEffectRecordSchema = buildJobQueueHandlerBranchEffectRecordSchema(
+  JOB_QUEUE_BRANCH_EFFECT_KINDS,
+);
 
 export const jobQueueBranchContractSchema = z
   .object({
@@ -954,6 +991,96 @@ export const authorizationEnforcementRecordSchema = z
     }
   });
 
+const resourceTargetSegmentSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('literal'), value: z.string().max(512) }).strict(),
+  z.object({ kind: z.literal('symbolic'), token: z.string().min(1).max(128) }).strict(),
+  z.object({ kind: z.literal('placeholder'), index: nonNegativeIntegerSchema }).strict(),
+]);
+
+export const resourceTargetSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('exact'), value: z.string().max(512) }).strict(),
+  z
+    .object({
+      kind: z.literal('template'),
+      segments: z.array(resourceTargetSegmentSchema).min(2).max(32),
+    })
+    .strict()
+    .superRefine((target, context) => {
+      if (!target.segments.some(({ kind }) => kind !== 'literal')) {
+        context.addIssue({
+          code: 'custom',
+          path: ['segments'],
+          message: 'A resource template must contain a symbolic or placeholder segment.',
+        });
+      }
+      const placeholders = target.segments
+        .filter((segment) => segment.kind === 'placeholder')
+        .map(({ index }) => index);
+      if (placeholders.some((index, position) => index !== position)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['segments'],
+          message: 'Resource template placeholder indexes must be contiguous from zero.',
+        });
+      }
+    }),
+  z.object({ kind: z.literal('symbolic'), token: z.string().min(1).max(128) }).strict(),
+  z.object({ kind: z.literal('dynamic') }).strict(),
+]);
+
+export const resourceAccessRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('resource_access'),
+    resourceKind: z.enum(RESOURCE_KINDS),
+    operation: z.enum(RESOURCE_OPERATIONS),
+    technology: z.enum(RESOURCE_TECHNOLOGIES),
+    api: nonEmptyStringSchema,
+    sourceMethodId: kindPrefixedStableIdSchema('method'),
+    target: resourceTargetSchema,
+    selector: resourceTargetSchema.nullable(),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence').min(1),
+  })
+  .strict();
+
+const resourceAccessRecordV6Schema = resourceAccessRecordSchema.extend({
+  resourceKind: z.enum(RESOURCE_KINDS_V6),
+  operation: z.enum(RESOURCE_OPERATIONS_V6),
+  technology: z.enum(RESOURCE_TECHNOLOGIES_V6),
+});
+
+export const resourceAccessAnalysisMetadataSchema = z
+  .object({
+    supportedTechnologies: z.array(z.enum(RESOURCE_TECHNOLOGIES)),
+    enabledTechnologies: z.array(z.enum(RESOURCE_TECHNOLOGIES)),
+    state: z.enum(['complete', 'incomplete']),
+  })
+  .strict();
+
+const resourceAccessAnalysisMetadataV6Schema = resourceAccessAnalysisMetadataSchema.extend({
+  supportedTechnologies: z.array(z.enum(RESOURCE_TECHNOLOGIES_V6)),
+  enabledTechnologies: z.array(z.enum(RESOURCE_TECHNOLOGIES_V6)),
+});
+
+export const criticalSectionRecordSchema = z
+  .object({
+    id: kindPrefixedStableIdSchema('critical_section'),
+    sourceMethodId: kindPrefixedStableIdSchema('method'),
+    lockResourceAccessIds: uniqueStableIdsSchema('resource_access').min(1).max(16),
+    callbackKind: z.enum(CRITICAL_SECTION_CALLBACK_KINDS),
+    callbackEvidenceId: kindPrefixedStableIdSchema('evidence'),
+    effectAssertionIds: z
+      .array(kindPrefixedStableIdSchema('assertion'))
+      .superRefine((values, context) => {
+        if (new Set(values).size !== values.length) {
+          context.addIssue({ code: 'custom', message: 'Expected unique stable ID references.' });
+        }
+      }),
+    ruleId: nonEmptyStringSchema,
+    evidenceIds: uniqueStableIdsSchema('evidence').min(2),
+  })
+  .strict();
+
 export const interactionAnalysisMetadataSchema = z
   .object({
     schemaKinds: z.array(z.enum(INTERACTION_KINDS)),
@@ -1020,7 +1147,7 @@ export const analysisDocumentV3Schema = z
     analysisRun: analysisRunRecordV3Schema,
     classes: z.array(classRecordSchema),
     tables: z.array(tableRecordSchema),
-    assertions: z.array(assertionRecordSchema),
+    assertions: z.array(assertionRecordV3Schema),
     diagnostics: z.array(diagnosticRecordV3Schema),
     modules: z.array(moduleRecordSchema),
     globalGuardRegistrations: z.array(globalGuardRegistrationRecordSchema),
@@ -1049,15 +1176,32 @@ export const analysisDocumentV4Schema = analysisDocumentV3Schema.extend({
   diagnostics: z.array(diagnosticRecordV4Schema),
   interactionHandlerDispatches: z.array(jobQueueHandlerDispatchRecordSchema),
   interactionHandlerBranches: z.array(jobQueueHandlerBranchRecordSchema),
-  interactionHandlerBranchEffects: z.array(jobQueueHandlerBranchEffectRecordSchema),
+  interactionHandlerBranchEffects: z.array(jobQueueHandlerBranchEffectRecordV4Schema),
 });
 
 export const analysisDocumentV5Schema = analysisDocumentV4Schema.extend({
   schemaVersion: z.literal(ANALYSIS_SCHEMA_V5_VERSION),
   analysisRun: analysisRunRecordSchema,
-  diagnostics: z.array(diagnosticRecordSchema),
+  diagnostics: z.array(diagnosticRecordV5Schema),
   authorizationMetadata: z.array(authorizationMetadataRecordSchema),
   authorizationEnforcements: z.array(authorizationEnforcementRecordSchema),
+});
+
+export const analysisDocumentV6Schema = analysisDocumentV5Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V6_VERSION),
+  assertions: z.array(assertionRecordSchema),
+  diagnostics: z.array(diagnosticRecordV6Schema),
+  interactionHandlerBranchEffects: z.array(jobQueueHandlerBranchEffectRecordSchema),
+  resourceAccesses: z.array(resourceAccessRecordV6Schema),
+  resourceAccessAnalysis: resourceAccessAnalysisMetadataV6Schema,
+});
+
+export const analysisDocumentV7Schema = analysisDocumentV6Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V7_VERSION),
+  diagnostics: z.array(diagnosticRecordSchema),
+  resourceAccesses: z.array(resourceAccessRecordSchema),
+  resourceAccessAnalysis: resourceAccessAnalysisMetadataSchema,
+  criticalSections: z.array(criticalSectionRecordSchema),
 });
 
 export const analysisDocumentSchema: z.ZodType<AnalysisDocument> = z.discriminatedUnion(
@@ -1068,6 +1212,8 @@ export const analysisDocumentSchema: z.ZodType<AnalysisDocument> = z.discriminat
     analysisDocumentV3Schema,
     analysisDocumentV4Schema,
     analysisDocumentV5Schema,
+    analysisDocumentV6Schema,
+    analysisDocumentV7Schema,
   ],
 ) as z.ZodType<AnalysisDocument>;
 
@@ -1230,6 +1376,16 @@ const runDocumentV5Schema = runDocumentV4Schema.extend({
   schemaVersion: z.literal(ANALYSIS_SCHEMA_V5_VERSION),
   configuration: analysisConfigurationSchema,
   projectConfiguration: effectiveProjectConfigurationV4Schema.optional(),
+  diagnostics: z.array(diagnosticRecordV5Schema),
+});
+
+const runDocumentV6Schema = runDocumentV5Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V6_VERSION),
+  diagnostics: z.array(diagnosticRecordV6Schema),
+});
+
+const runDocumentV7Schema = runDocumentV6Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V7_VERSION),
   diagnostics: z.array(diagnosticRecordSchema),
 });
 
@@ -1239,6 +1395,8 @@ export const runDocumentSchema: z.ZodType<RunDocument> = z.discriminatedUnion('s
   runDocumentV3Schema,
   runDocumentV4Schema,
   runDocumentV5Schema,
+  runDocumentV6Schema,
+  runDocumentV7Schema,
 ]) as z.ZodType<RunDocument>;
 
 const endpointTraceGuardSchema = z
@@ -1272,6 +1430,19 @@ const endpointTraceTerminalSchema = z
   })
   .strict();
 
+const resourceAccessTraceTerminalSchema = z
+  .object({
+    methodId: kindPrefixedStableIdSchema('method'),
+    resourceAccessId: kindPrefixedStableIdSchema('resource_access'),
+    resourceKind: z.enum(RESOURCE_KINDS),
+    operation: z.enum(RESOURCE_OPERATIONS),
+    technology: z.enum(RESOURCE_TECHNOLOGIES),
+    target: resourceTargetSchema,
+    selector: resourceTargetSchema.nullable(),
+    causalClass: z.enum(TRACE_CAUSAL_CLASSES),
+  })
+  .strict();
+
 export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
   .object({
     schemaVersion: z.enum([
@@ -1280,6 +1451,8 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
       ANALYSIS_SCHEMA_V3_VERSION,
       ANALYSIS_SCHEMA_V4_VERSION,
       ANALYSIS_SCHEMA_V5_VERSION,
+      ANALYSIS_SCHEMA_V6_VERSION,
+      ANALYSIS_SCHEMA_V7_VERSION,
     ]),
     analysisId: stableIdSchema,
     endpoint: z
@@ -1295,11 +1468,13 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
     guards: z.array(endpointTraceGuardSchema),
     steps: z.array(endpointTraceStepSchema),
     terminals: z.array(endpointTraceTerminalSchema),
+    resourceTerminals: z.array(resourceAccessTraceTerminalSchema).optional(),
     diagnosticIds: z.array(stableIdSchema),
     causalSummary: z
       .object({
         synchronousEffects: z.array(endpointTraceTerminalSchema),
         localInteractionEffects: z.array(endpointTraceTerminalSchema),
+        criticalSectionConditionalEffects: z.array(endpointTraceTerminalSchema).optional(),
         distributedConditionalEffects: z.array(endpointTraceTerminalSchema),
         outboundInteractionIds: z.array(stableIdSchema),
         localInteractionIds: z.array(stableIdSchema),
@@ -1325,6 +1500,8 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
           ANALYSIS_SCHEMA_V3_VERSION,
           ANALYSIS_SCHEMA_V4_VERSION,
           ANALYSIS_SCHEMA_V5_VERSION,
+          ANALYSIS_SCHEMA_V6_VERSION,
+          ANALYSIS_SCHEMA_V7_VERSION,
         ] as const
       ).includes(trace.schemaVersion as typeof ANALYSIS_SCHEMA_V3_VERSION) !==
       (trace.causalSummary !== undefined)
@@ -1332,7 +1509,19 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
       context.addIssue({
         code: 'custom',
         path: ['causalSummary'],
-        message: 'Only v3-v5 endpoint traces must carry an explicit causal summary.',
+        message: 'Only v3-v7 endpoint traces must carry an explicit causal summary.',
+      });
+    }
+    if (
+      ([ANALYSIS_SCHEMA_V6_VERSION, ANALYSIS_SCHEMA_V7_VERSION] as const).includes(
+        trace.schemaVersion as typeof ANALYSIS_SCHEMA_V6_VERSION,
+      ) !==
+      (trace.resourceTerminals !== undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['resourceTerminals'],
+        message: 'Only v6-v7 endpoint traces must carry resource-access terminals.',
       });
     }
   });
@@ -1345,11 +1534,28 @@ export const interactionHandlerTraceViewSchema: z.ZodType<InteractionHandlerTrac
       ANALYSIS_SCHEMA_V3_VERSION,
       ANALYSIS_SCHEMA_V4_VERSION,
       ANALYSIS_SCHEMA_V5_VERSION,
+      ANALYSIS_SCHEMA_V6_VERSION,
+      ANALYSIS_SCHEMA_V7_VERSION,
     ]),
     analysisId: stableIdSchema,
     handler: interactionHandlerRecordSchema,
     steps: z.array(endpointTraceStepSchema),
     terminals: z.array(endpointTraceTerminalSchema),
+    resourceTerminals: z.array(resourceAccessTraceTerminalSchema).optional(),
     diagnosticIds: z.array(stableIdSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((trace, context) => {
+    if (
+      ([ANALYSIS_SCHEMA_V6_VERSION, ANALYSIS_SCHEMA_V7_VERSION] as const).includes(
+        trace.schemaVersion as typeof ANALYSIS_SCHEMA_V6_VERSION,
+      ) !==
+      (trace.resourceTerminals !== undefined)
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['resourceTerminals'],
+        message: 'Only v6-v7 handler traces must carry resource-access terminals.',
+      });
+    }
+  });

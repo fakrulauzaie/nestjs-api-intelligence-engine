@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "7.0.0",
+  "criticalSections": 3,
+  "lockResources": 4,
+  "callbackKinds": ["inline_arrow", "inline_function"],
+  "diagnostics": ["CRITICAL_SECTION_CALLBACK_UNSUPPORTED", "CRITICAL_SECTION_TARGET_DYNAMIC"],
+  "mustNotInfer": [
+    "lock_acquired",
+    "mutual_exclusion_guaranteed",
+    "release_completed",
+    "contention_or_timing"
+  ],
+  "mustNotRetain": ["privatePayload", "5000", "10000"]
+}

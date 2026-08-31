@@ -1,7 +1,9 @@
 import {
   analysisHasAuthorizationFacts,
+  analysisHasCriticalSectionFacts,
   analysisHasInteractionFacts,
   analysisHasJobQueueBranchFacts,
+  analysisHasResourceAccessFacts,
   type AnalysisDocument,
   type EndpointTraceStep,
 } from '../model/analysis.js';
@@ -10,13 +12,16 @@ import type { ImpactDocument, ImpactGraphSide, ImpactedEndpoint } from '../impac
 import type { PolicyResultsDocument } from '../policy/model.js';
 import { buildEndpointTrace } from '../tracing/endpoint-trace.js';
 import { buildEndpointExportFacts } from '../structured-exports/endpoint-facts.js';
+import { buildArchitectureOverview } from '../architecture/overview.js';
 import {
   DEFAULT_GRAPH_EDGE_LIMIT,
   DEFAULT_GRAPH_NODE_LIMIT,
   GRAPH_REPORT_SCHEMA_VERSION,
   GRAPH_REPORT_SCHEMA_V4_VERSION,
   GRAPH_REPORT_SCHEMA_V5_VERSION,
-  GRAPH_REPORT_SCHEMA_V6_VERSION,
+  GRAPH_REPORT_SCHEMA_V7_VERSION,
+  GRAPH_REPORT_SCHEMA_V8_VERSION,
+  GRAPH_REPORT_SCHEMA_V9_VERSION,
   MAX_GRAPH_EDGE_LIMIT,
   MAX_GRAPH_NODE_LIMIT,
   MIN_GRAPH_DISPLAY_LIMIT,
@@ -40,6 +45,9 @@ import {
 import { canonicalizeGraphReportDocument } from './ordering.js';
 import { assertValidGraphReportDocument, graphImpactSide } from './validate.js';
 import { buildInteractionHandlerTrace } from '../tracing/interaction-handler-trace.js';
+import { buildGraphArchitectureOverview } from './architecture.js';
+import { resourceAccessLabel, type ResourceAccessRecord } from '../model/resource-access.js';
+import type { CriticalSectionRecord } from '../model/critical-sections.js';
 
 export class GraphReportInputStateError extends Error {
   constructor(message: string) {
@@ -119,6 +127,7 @@ function edgeLabel(predicate: AssertionRecord['predicate']): string {
     METHOD_INITIATES_INTERACTION: 'initiates',
     INTERACTION_MATCHES_LOCAL_HANDLER: 'matches local handler',
     HANDLER_IMPLEMENTED_BY: 'implemented by',
+    METHOD_ACCESSES_RESOURCE: 'accesses resource',
   };
   return labels[predicate] ?? predicate.toLowerCase().replaceAll('_', ' ');
 }
@@ -185,6 +194,51 @@ interface ProjectionIndexes {
   readonly assertions: ReadonlyMap<string, AssertionRecord>;
   readonly interactions: ReadonlyMap<string, InteractionRecord>;
   readonly interactionHandlers: ReadonlyMap<string, InteractionHandlerRecord>;
+  readonly resourceAccesses: ReadonlyMap<string, ResourceAccessRecord>;
+  readonly criticalSections: ReadonlyMap<string, CriticalSectionRecord>;
+  readonly criticalSectionByEffectAssertionId: ReadonlyMap<string, CriticalSectionRecord>;
+}
+
+function scopedAssertionSource(input: {
+  readonly assertion: AssertionRecord;
+  readonly indexes: ProjectionIndexes;
+  readonly nodes: Map<string, GraphReportNode>;
+  readonly edges: GraphReportEdge[];
+  readonly impact: GraphImpactState;
+}): string {
+  const section = input.indexes.criticalSectionByEffectAssertionId.get(input.assertion.id);
+  if (section === undefined) return input.assertion.subjectId;
+  addNode(input.nodes, canonicalNode(section.sourceMethodId, input.indexes, input.impact));
+  addNode(input.nodes, canonicalNode(section.id, input.indexes, input.impact));
+  const scopeEdgeId = `critical-scope:${section.id}`;
+  if (!input.edges.some(({ id }) => id === scopeEdgeId)) {
+    input.edges.push({
+      id: scopeEdgeId,
+      source: section.sourceMethodId,
+      target: section.id,
+      label: 'bounded critical callback',
+      kind: 'assertion',
+      relation: null,
+      uncertainty: 'resolved',
+      impact: input.impact,
+      evidenceIds: section.evidenceIds,
+    });
+    for (const accessId of section.lockResourceAccessIds) {
+      addNode(input.nodes, canonicalNode(accessId, input.indexes, input.impact));
+      input.edges.push({
+        id: `critical-lock:${section.id}:${accessId}`,
+        source: accessId,
+        target: section.id,
+        label: 'bounds callback',
+        kind: 'assertion',
+        relation: null,
+        uncertainty: 'resolved',
+        impact: input.impact,
+        evidenceIds: section.evidenceIds,
+      });
+    }
+  }
+  return section.id;
 }
 
 function canonicalNode(
@@ -224,6 +278,28 @@ function canonicalNode(
       uncertainty: 'resolved',
       impact,
       evidenceIds: guardClass === undefined ? [] : [guardClass.declarationEvidenceId],
+    };
+  }
+  const resourceAccess = indexes.resourceAccesses.get(id);
+  if (resourceAccess !== undefined) {
+    return {
+      id,
+      label: resourceAccessLabel(resourceAccess),
+      kind: 'resource_access',
+      uncertainty: resourceAccess.target.kind === 'dynamic' ? 'unknown' : 'resolved',
+      impact,
+      evidenceIds: resourceAccess.evidenceIds,
+    };
+  }
+  const criticalSection = indexes.criticalSections.get(id);
+  if (criticalSection !== undefined) {
+    return {
+      id,
+      label: `critical section (${criticalSection.lockResourceAccessIds.length} lock resource${criticalSection.lockResourceAccessIds.length === 1 ? '' : 's'})`,
+      kind: 'critical_section',
+      uncertainty: 'resolved',
+      impact,
+      evidenceIds: criticalSection.evidenceIds,
     };
   }
   const interaction = indexes.interactions.get(id);
@@ -553,6 +629,7 @@ function selectScene(input: {
       interaction: 1,
       guard: 2,
       provenance: 3,
+      architecture: 4,
     };
     return rank[left.kind] - rank[right.kind] || left.id.localeCompare(right.id);
   });
@@ -678,6 +755,19 @@ export function buildGraphReportDocument(input: {
     interactionHandlers: analysisHasInteractionFacts(analysis)
       ? new Map(analysis.interactionHandlers.map((record) => [record.id, record]))
       : new Map(),
+    resourceAccesses: analysisHasResourceAccessFacts(analysis)
+      ? new Map(analysis.resourceAccesses.map((record) => [record.id, record]))
+      : new Map(),
+    criticalSections: analysisHasCriticalSectionFacts(analysis)
+      ? new Map(analysis.criticalSections.map((record) => [record.id, record]))
+      : new Map(),
+    criticalSectionByEffectAssertionId: analysisHasCriticalSectionFacts(analysis)
+      ? new Map(
+          analysis.criticalSections.flatMap((section) =>
+            section.effectAssertionIds.map((assertionId) => [assertionId, section] as const),
+          ),
+        )
+      : new Map(),
   };
 
   const endpoints: GraphReportEndpoint[] = [];
@@ -719,9 +809,16 @@ export function buildGraphReportDocument(input: {
           } else {
             addNode(nodes, canonicalNode(step.toId, indexes, edgeImpact));
           }
+          const edgeSource = scopedAssertionSource({
+            assertion,
+            indexes,
+            nodes,
+            edges,
+            impact: edgeImpact,
+          });
           edges.push({
             id: assertion.id,
-            source: step.fromId,
+            source: edgeSource,
             target: targetId,
             label: edgeLabel(assertion.predicate),
             kind: 'assertion',
@@ -878,9 +975,16 @@ export function buildGraphReportDocument(input: {
         } else {
           addNode(nodes, canonicalNode(step.toId, indexes, 'none'));
         }
+        const edgeSource = scopedAssertionSource({
+          assertion,
+          indexes,
+          nodes,
+          edges,
+          impact: 'none',
+        });
         edges.push({
           id: assertion.id,
-          source: step.fromId,
+          source: edgeSource,
           target: targetId,
           label: edgeLabel(assertion.predicate),
           kind: 'assertion',
@@ -1016,14 +1120,32 @@ export function buildGraphReportDocument(input: {
     maxEdgesPerEndpoint: maxEdges,
     maxEvidencePerEndpoint: maxEvidence,
   };
+  const architecture = analysisHasAuthorizationFacts(analysis)
+    ? buildGraphArchitectureOverview({
+        analysis,
+        overview: buildArchitectureOverview(analysis),
+        maxNodes,
+        maxEdges,
+        maxEvidence,
+      })
+    : undefined;
+  const reportScenes = [
+    ...endpoints.map(({ scene }) => scene),
+    ...interactionHandlers.map(({ scene }) => scene),
+    ...(architecture === undefined ? [] : [architecture.scene]),
+  ];
   const document = canonicalizeGraphReportDocument({
-    schemaVersion: analysisHasAuthorizationFacts(analysis)
-      ? GRAPH_REPORT_SCHEMA_V6_VERSION
-      : analysisHasJobQueueBranchFacts(analysis)
-        ? GRAPH_REPORT_SCHEMA_V5_VERSION
-        : analysisHasInteractionFacts(analysis)
-          ? GRAPH_REPORT_SCHEMA_V4_VERSION
-          : GRAPH_REPORT_SCHEMA_VERSION,
+    schemaVersion: analysisHasCriticalSectionFacts(analysis)
+      ? GRAPH_REPORT_SCHEMA_V9_VERSION
+      : analysisHasResourceAccessFacts(analysis)
+        ? GRAPH_REPORT_SCHEMA_V8_VERSION
+        : analysisHasAuthorizationFacts(analysis)
+          ? GRAPH_REPORT_SCHEMA_V7_VERSION
+          : analysisHasJobQueueBranchFacts(analysis)
+            ? GRAPH_REPORT_SCHEMA_V5_VERSION
+            : analysisHasInteractionFacts(analysis)
+              ? GRAPH_REPORT_SCHEMA_V4_VERSION
+              : GRAPH_REPORT_SCHEMA_VERSION,
     analysis: {
       id: analysis.analysisRun.id,
       schemaVersion: analysis.schemaVersion,
@@ -1049,18 +1171,9 @@ export function buildGraphReportDocument(input: {
         .length,
       endpointsWithWrites: endpoints.filter(({ dbWrites }) => dbWrites.length > 0).length,
       impactedEndpoints: endpoints.filter(({ impact: state }) => state !== 'none').length,
-      omittedNodes: [...endpoints, ...interactionHandlers].reduce(
-        (total, view) => total + view.scene.omitted.nodes,
-        0,
-      ),
-      omittedEdges: [...endpoints, ...interactionHandlers].reduce(
-        (total, view) => total + view.scene.omitted.edges,
-        0,
-      ),
-      omittedEvidence: [...endpoints, ...interactionHandlers].reduce(
-        (total, view) => total + view.scene.omitted.evidence,
-        0,
-      ),
+      omittedNodes: reportScenes.reduce((total, scene) => total + scene.omitted.nodes, 0),
+      omittedEdges: reportScenes.reduce((total, scene) => total + scene.omitted.edges, 0),
+      omittedEvidence: reportScenes.reduce((total, scene) => total + scene.omitted.evidence, 0),
       ...(analysisHasInteractionFacts(analysis)
         ? {
             interactionHandlers: interactionHandlers.length,
@@ -1071,9 +1184,18 @@ export function buildGraphReportDocument(input: {
               .length,
           }
         : {}),
+      ...(architecture === undefined
+        ? {}
+        : {
+            architectureRecords: architecture.summary.metricRecords,
+            notReachedFromSupportedRoots: architecture.summary.notReachedFromSupportedRoots,
+            uniquelyOwnedClasses: architecture.summary.uniquelyOwnedClasses,
+            multipleOwnerClasses: architecture.summary.multipleOwnerClasses,
+          }),
     },
     endpoints,
     ...(analysisHasInteractionFacts(analysis) ? { interactionHandlers } : {}),
+    ...(architecture === undefined ? {} : { architecture }),
   });
   return assertValidGraphReportDocument({
     document,

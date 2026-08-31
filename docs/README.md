@@ -2,7 +2,7 @@
 
 This index separates current product documentation from historical evidence. Unless a
 document is explicitly marked historical, it describes the current `0.1.0` tool,
-analysis schema `5.0.0`, and the capabilities listed in
+analysis schema `7.0.0`, and the capabilities listed in
 [Supported Static-Analysis Patterns](supported-patterns.md).
 
 ## Source-of-truth hierarchy
@@ -42,6 +42,7 @@ references.
 - [Selected scan bundles](selected-scan-bundles.md)
 - [Structured evidence exports](structured-evidence-exports.md)
 - [Offline interactive graph](offline-graph-report.md)
+- [Architecture overview and bounded refactoring metrics](architecture-overview.md)
 - [Distributed policy and graph hardening](phase37-distributed-policy-report-hardening.md)
 
 ## Analysis feature guides
@@ -58,6 +59,8 @@ references.
 - [In-process events](in-process-events.md)
 - [BullMQ queue interactions](bullmq-interactions.md)
 - [Nest microservice interactions](nest-microservices.md)
+- [Non-relational resource access](non-relational-resource-access.md)
+- [Redlock critical sections](redlock-critical-sections.md)
 
 ## Historical and non-normative records
 
