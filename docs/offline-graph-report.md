@@ -1,5 +1,13 @@
 # Offline Interactive Graph Report
 
+This guide describes the single-repository `api-intel-graph.html`. Phase 47 also
+publishes `api-intel-system-graph.html` from `stitch --with-graph`; its independent
+system-report schema, conditional path rules, system policies, and service/broker
+clusters are documented in [Conditional System Graph and Policies](system-report.md).
+Both artifacts are self-contained, use hash-authorized CSP resources with
+`connect-src 'none'`, expose an accessible graph table, set the Cytoscape container to
+`position: relative`, and retain the library's default wheel sensitivity.
+
 The `graph` command generates one self-contained HTML file for exploring validated endpoint facts
 without a server, hosted account, telemetry, or another analysis engine.
 

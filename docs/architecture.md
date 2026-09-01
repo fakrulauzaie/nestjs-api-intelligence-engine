@@ -34,6 +34,28 @@ flowchart TD
   R --> RUN["run.json: path, timing, versions, result"]
 ```
 
+Cross-service correlation is a separate artifact pipeline. It cannot feed facts back
+into any source analysis:
+
+```mermaid
+flowchart LR
+  A["named validated analysis.json"] --> S["artifact-only stitch projection"]
+  B["second named validated analysis.json"] --> S
+  T["optional strict topology manifest"] --> S
+  S --> V["separate SystemAnalysisDocument validation boundary"]
+  V --> J["system-analysis.json"]
+  V --> M["system-analysis.md"]
+  V --> R["bounded system-report projection"]
+  A --> R
+  B --> R
+  R --> G["system-report.json / .md"]
+  R --> H["self-contained conditional system graph"]
+```
+
+The stitcher reads no repository source or source-control state. Topology supplies
+only explicit realm premises; it cannot prove deployment, connection, routing,
+delivery, acknowledgement, or consumer execution.
+
 The analyzer does not load target JavaScript modules. Inventory reads eligible source
 bytes, then the TypeScript compiler creates syntax trees and a checker. Type
 declarations from installed dependencies are used for semantic identity, but target
@@ -345,6 +367,25 @@ remove those assertions from the ordinary synchronous path and traverse them und
 `critical_section_conditional`; graph v9 renders the lexical scope explicitly. This
 pipeline reports dependency and bounded scope without inferring acquisition,
 exclusivity, timing, contention, callback execution, or release.
+
+Phase 45 leaves this repository-analysis pipeline unchanged. It introduces a separate
+`SystemAnalysisDocument` validation boundary for artifact-only stitching.
+Source analyses remain independently validated and are referenced through explicit
+service namespaces plus namespaced source-record IDs; their record collections are
+never merged. Broker realms come only from declared environment/broker aliases and
+structural destination fields. Correlation states preserve declared-realm candidates,
+target-only candidates, ambiguity, and unmatched inventory, with no delivery or
+cross-service causal claim. Phase 46 adds strict named artifact/topology loaders, a
+deterministic correlation projection, independent system-document validation, and
+atomic JSON/Markdown publication. It never re-enters the scanner or source pipeline.
+Phase 47 keeps `SystemAnalysisDocument` schema `1.0.0` frozen and derives a separate
+validated `SystemReportDocument` schema `1.0.0` from that document plus the exact
+already-loaded source artifacts. Source-local endpoint/handler traces contribute HTTP
+roots, namespaced provenance, diagnostics, and worker table/resource effects. Only a
+declared-realm candidate can connect producer, broker destination, and candidate
+handler; the distributed segment and every downstream effect remain explicitly
+conditional. Global node/edge limits affect display only. Typed system policies read
+only system-document correlation states and cannot invent deployment facts.
 
 Phase 36 activates `microservice_message`. It inventories direct microservice and
 bounded hybrid roots, static TCP/Redis/RMQ/Kafka transports, checker-proven

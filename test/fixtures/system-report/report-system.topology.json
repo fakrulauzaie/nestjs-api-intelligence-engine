@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0.0",
+  "systemName": "report-system",
+  "brokerRealms": [
+    {
+      "brokerAlias": "reports-rmq",
+      "environmentAlias": "test",
+      "technology": "nest_microservices",
+      "transport": "rmq",
+      "destination": { "kind": "queue", "value": "reports_queue" },
+      "prefix": null,
+      "namespace": null
+    }
+  ],
+  "bindings": [
+    {
+      "serviceNamespace": "report-api",
+      "role": "producer",
+      "contract": {
+        "targetKind": "microservice_message",
+        "mode": "request_response",
+        "patternKind": "scalar",
+        "canonicalPattern": "\"report.generate\""
+      },
+      "analysisRecordId": null,
+      "brokerAlias": "reports-rmq",
+      "environmentAlias": "test"
+    },
+    {
+      "serviceNamespace": "report-worker",
+      "role": "consumer",
+      "contract": {
+        "targetKind": "microservice_message",
+        "mode": "request_response",
+        "patternKind": "scalar",
+        "canonicalPattern": "\"report.generate\""
+      },
+      "analysisRecordId": null,
+      "brokerAlias": "reports-rmq",
+      "environmentAlias": "test"
+    }
+  ]
+}

@@ -183,4 +183,79 @@ describe('class injection and direct-call extraction', () => {
       await project.cleanup();
     }
   }, 15_000);
+
+  it('proves same-class wrappers and only directly invoked bound callback parameters', async () => {
+    const project = await createTestTypeScriptProject();
+    try {
+      await writeFakeNestCommon(project);
+      await project.write(
+        'src/bound-callback.ts',
+        [
+          "import { Controller, Injectable } from '@nestjs/common';",
+          '@Injectable()',
+          'class WorkerService {',
+          "  work(value: string): string { return 'worked:' + value; }",
+          "  retained(value: string): string { return 'retained:' + value; }",
+          '}',
+          '@Controller()',
+          'class WorkerController {',
+          '  constructor(private readonly worker: WorkerService) {}',
+          '  private invoke(callback: (value: string) => string, value: string): string {',
+          '    return callback(value);',
+          '  }',
+          '  private retain(callback: (value: string) => string): unknown {',
+          '    return callback;',
+          '  }',
+          "  run(): string { return this.invoke(this.worker.work.bind(this.worker), 'value'); }",
+          '  keep(): unknown { return this.retain(this.worker.retained.bind(this.worker)); }',
+          '}',
+        ].join('\n'),
+      );
+      await writeBasicTsconfig(project);
+
+      const { analysis } = await scanRepository({ repositoryRoot: project.path });
+      const methods = new Map(analysis.methods.map((method) => [method.id, method.qualifiedName]));
+      const calls = analysis.assertions
+        .filter(({ predicate }) => predicate === 'METHOD_CALLS_METHOD')
+        .map((assertion) => ({
+          from: methods.get(assertion.subjectId),
+          to: assertion.objectId === null ? null : methods.get(assertion.objectId),
+          ruleId: assertion.ruleId,
+          status: assertion.status,
+        }));
+      expect(calls).toEqual(
+        expect.arrayContaining([
+          {
+            from: 'WorkerController.run',
+            to: 'WorkerController.invoke',
+            ruleId: 'nest.call.same-class-method.v1',
+            status: 'resolved',
+          },
+          {
+            from: 'WorkerController.run',
+            to: 'WorkerService.work',
+            ruleId: 'nest.call.bound-callback-forward.v1',
+            status: 'resolved',
+          },
+          {
+            from: 'WorkerController.keep',
+            to: 'WorkerController.retain',
+            ruleId: 'nest.call.same-class-method.v1',
+            status: 'resolved',
+          },
+        ]),
+      );
+      expect(
+        calls.some(
+          ({ from, to, ruleId }) =>
+            from === 'WorkerController.keep' &&
+            to === 'WorkerService.retained' &&
+            ruleId === 'nest.call.bound-callback-forward.v1',
+        ),
+      ).toBe(false);
+      expect(validateAnalysisDocument(analysis)).toMatchObject({ success: true });
+    } finally {
+      await project.cleanup();
+    }
+  }, 15_000);
 });

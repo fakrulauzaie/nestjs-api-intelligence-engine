@@ -23,7 +23,7 @@ describe('Phase 13 comparison documentation', () => {
     expect(comparison).toContain('`3.0.0` when either input is analysis');
     expect(architecture).toContain('semantic projection');
     expect(architecture).toContain('validated diff.json');
-    expect(workflow).toContain('ten complete commands');
+    expect(workflow).toContain('eleven complete commands');
     expect(workflow).toContain('api-intel diff <before-analysis.json> <after-analysis.json>');
     expect(semanticKeyAdr).toContain('Repository binding');
   });

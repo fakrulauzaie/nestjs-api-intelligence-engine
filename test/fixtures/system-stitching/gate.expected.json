@@ -1,0 +1,629 @@
+{
+  "schemaVersion": "1.0.0",
+  "requiredTechnologies": ["bullmq", "nest_microservices"],
+  "requiredTopologies": [
+    "colocated",
+    "producer_only",
+    "consumer_only",
+    "multi_service",
+    "collision",
+    "missing_topology",
+    "ambiguous"
+  ],
+  "globalMustNotInfer": [
+    "broker_delivery_guaranteed",
+    "cross_service_causal_path",
+    "environment_from_repository_path",
+    "pattern_equality_proves_realm",
+    "remote_handler_execution",
+    "target_only_candidate_as_edge"
+  ],
+  "cases": [
+    {
+      "caseId": "bullmq-ambiguous-workers",
+      "technology": "bullmq",
+      "topology": "ambiguous",
+      "sources": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "fixture": "bullmq/report-api-producer.ts.txt"
+        },
+        {
+          "serviceNamespace": "report-worker-a",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "report-worker-b",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        },
+        {
+          "serviceNamespace": "report-worker-a",
+          "role": "consumer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        },
+        {
+          "serviceNamespace": "report-worker-b",
+          "role": "consumer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        }
+      ],
+      "expected": {
+        "state": "ambiguous",
+        "unmatchedReason": null,
+        "ambiguityReason": "multiple_job_consumers",
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "cross_service_causal_path"],
+      "rationale": "Two declared workers for one job remain explicit candidates; the corpus does not select a runtime worker."
+    },
+    {
+      "caseId": "bullmq-collision",
+      "technology": "bullmq",
+      "topology": "collision",
+      "sources": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "fixture": "bullmq/report-api-producer.ts.txt"
+        },
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "brokerAlias": "primary-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        },
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "brokerAlias": "shadow-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        }
+      ],
+      "expected": {
+        "state": "unmatched",
+        "unmatchedReason": "realm_mismatch",
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["pattern_equality_proves_realm", "target_only_candidate_as_edge"],
+      "rationale": "Identical queue and job text on explicitly different broker aliases cannot produce a candidate edge."
+    },
+    {
+      "caseId": "bullmq-colocated",
+      "technology": "bullmq",
+      "topology": "colocated",
+      "sources": [
+        {
+          "serviceNamespace": "reports-monolith",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "reports-monolith",
+          "role": "producer",
+          "fixture": "bullmq/report-api-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "reports-monolith",
+          "role": "consumer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        },
+        {
+          "serviceNamespace": "reports-monolith",
+          "role": "producer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        }
+      ],
+      "expected": {
+        "state": "declared_realm_candidate",
+        "unmatchedReason": null,
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "remote_handler_execution"],
+      "rationale": "Co-location and one explicit BullMQ realm establish only a declared conditional delivery candidate."
+    },
+    {
+      "caseId": "bullmq-consumer-only",
+      "technology": "bullmq",
+      "topology": "consumer_only",
+      "sources": [
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        }
+      ],
+      "expected": {
+        "state": "unmatched",
+        "unmatchedReason": "consumer_only",
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["cross_service_causal_path", "remote_handler_execution"],
+      "rationale": "A worker-only artifact remains inbound inventory and does not cause a synthetic producer to be created."
+    },
+    {
+      "caseId": "bullmq-missing-topology",
+      "technology": "bullmq",
+      "topology": "missing_topology",
+      "sources": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "fixture": "bullmq/report-api-producer.ts.txt"
+        },
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [],
+      "expected": {
+        "state": "target_only_candidate",
+        "unmatchedReason": null,
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": [
+        "environment_from_repository_path",
+        "pattern_equality_proves_realm",
+        "target_only_candidate_as_edge"
+      ],
+      "rationale": "Matching static job identity without an explicit environment and broker realm remains non-traversable target-only evidence."
+    },
+    {
+      "caseId": "bullmq-multi-service",
+      "technology": "bullmq",
+      "topology": "multi_service",
+      "sources": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "fixture": "bullmq/report-api-producer.ts.txt"
+        },
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "fixture": "bullmq/report-worker-consumer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        },
+        {
+          "serviceNamespace": "report-worker",
+          "role": "consumer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        }
+      ],
+      "expected": {
+        "state": "declared_realm_candidate",
+        "unmatchedReason": null,
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "cross_service_causal_path"],
+      "rationale": "Separate API and worker namespaces with one declared realm create a bounded candidate, never delivery proof."
+    },
+    {
+      "caseId": "bullmq-producer-only",
+      "technology": "bullmq",
+      "topology": "producer_only",
+      "sources": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "fixture": "bullmq/report-api-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"job\":\"generate-pdf\",\"queue\":\"reports\",\"targetKind\":\"job_queue\",\"technology\":\"bullmq\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "report-api",
+          "role": "producer",
+          "brokerAlias": "shared-bull",
+          "environmentAlias": "test",
+          "transport": "bullmq",
+          "destinationKind": "queue",
+          "destinationValue": "reports"
+        }
+      ],
+      "expected": {
+        "state": "unmatched",
+        "unmatchedReason": "producer_only",
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "remote_handler_execution"],
+      "rationale": "A producer-only artifact is normal open-world inventory and does not imply that a remote worker executed."
+    },
+    {
+      "caseId": "microservices-ambiguous-consumers",
+      "technology": "nest_microservices",
+      "topology": "ambiguous",
+      "sources": [
+        {
+          "serviceNamespace": "ctt-queue-a",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "ctt-queue-b",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "fixture": "microservices/ticket-service-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "ctt-queue-a",
+          "role": "consumer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        },
+        {
+          "serviceNamespace": "ctt-queue-b",
+          "role": "consumer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        }
+      ],
+      "expected": {
+        "state": "ambiguous",
+        "unmatchedReason": null,
+        "ambiguityReason": "multiple_request_consumers",
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "remote_handler_execution"],
+      "rationale": "Multiple request-response consumers in one declared realm remain ambiguity rather than request fan-out."
+    },
+    {
+      "caseId": "microservices-collision",
+      "technology": "nest_microservices",
+      "topology": "collision",
+      "sources": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "fixture": "microservices/ticket-service-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "brokerAlias": "shadow-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "brokerAlias": "primary-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        }
+      ],
+      "expected": {
+        "state": "unmatched",
+        "unmatchedReason": "realm_mismatch",
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["pattern_equality_proves_realm", "target_only_candidate_as_edge"],
+      "rationale": "The same RMQ queue and message pattern on distinct broker aliases cannot establish a cross-service candidate."
+    },
+    {
+      "caseId": "microservices-colocated",
+      "technology": "nest_microservices",
+      "topology": "colocated",
+      "sources": [
+        {
+          "serviceNamespace": "ticket-monolith",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "ticket-monolith",
+          "role": "producer",
+          "fixture": "microservices/ticket-service-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "ticket-monolith",
+          "role": "consumer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        },
+        {
+          "serviceNamespace": "ticket-monolith",
+          "role": "producer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        }
+      ],
+      "expected": {
+        "state": "declared_realm_candidate",
+        "unmatchedReason": null,
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "remote_handler_execution"],
+      "rationale": "A co-located producer and controller with one declared RMQ realm remain a conditional delivery candidate."
+    },
+    {
+      "caseId": "microservices-consumer-only",
+      "technology": "nest_microservices",
+      "topology": "consumer_only",
+      "sources": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        }
+      ],
+      "expected": {
+        "state": "unmatched",
+        "unmatchedReason": "consumer_only",
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["cross_service_causal_path", "remote_handler_execution"],
+      "rationale": "A consumer analysis remains independent inbound inventory until an explicit producer artifact is selected."
+    },
+    {
+      "caseId": "microservices-missing-topology",
+      "technology": "nest_microservices",
+      "topology": "missing_topology",
+      "sources": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "fixture": "microservices/ticket-service-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [],
+      "expected": {
+        "state": "target_only_candidate",
+        "unmatchedReason": null,
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": [
+        "environment_from_repository_path",
+        "pattern_equality_proves_realm",
+        "target_only_candidate_as_edge"
+      ],
+      "rationale": "The real pattern match without explicit environment and broker alias is retained only as non-traversable evidence."
+    },
+    {
+      "caseId": "microservices-multi-service-real-pair",
+      "technology": "nest_microservices",
+      "topology": "multi_service",
+      "sources": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "fixture": "microservices/ctt-queue-consumer.ts.txt"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "fixture": "microservices/ticket-service-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "ctt-queue-service",
+          "role": "consumer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        },
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        }
+      ],
+      "expected": {
+        "state": "declared_realm_candidate",
+        "unmatchedReason": null,
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": [
+        "broker_delivery_guaranteed",
+        "cross_service_causal_path",
+        "remote_handler_execution"
+      ],
+      "rationale": "The real ticket producer and CTT queue consumer share an explicitly declared RMQ realm and remain a delivery candidate only."
+    },
+    {
+      "caseId": "microservices-producer-only",
+      "technology": "nest_microservices",
+      "topology": "producer_only",
+      "sources": [
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "fixture": "microservices/ticket-service-producer.ts.txt"
+        }
+      ],
+      "contractKey": "{\"canonicalPattern\":\"\\\"tmf-update-ctt-list\\\"\",\"mode\":\"request_response\",\"patternKind\":\"scalar\",\"targetKind\":\"microservice_message\"}",
+      "realmBindings": [
+        {
+          "serviceNamespace": "ticket-service",
+          "role": "producer",
+          "brokerAlias": "shared-rmq",
+          "environmentAlias": "test",
+          "transport": "rmq",
+          "destinationKind": "queue",
+          "destinationValue": "intt_ctt_queue"
+        }
+      ],
+      "expected": {
+        "state": "unmatched",
+        "unmatchedReason": "producer_only",
+        "ambiguityReason": null,
+        "provenCrossServiceEdge": false
+      },
+      "mustNotInfer": ["broker_delivery_guaranteed", "remote_handler_execution"],
+      "rationale": "The ticket-service outbound interaction remains external inventory when no consumer artifact is selected."
+    }
+  ],
+  "realWorldBasis": {
+    "producerService": "ticket-service-example",
+    "consumerService": "ctt-queue-service-example",
+    "transport": "rmq",
+    "queue": "intt_ctt_queue",
+    "pattern": "tmf-update-ctt-list",
+    "producerToken": "MESSAGE_QUEUE_SERVICE",
+    "producerApis": ["ClientProxy.emit", "ClientProxy.send"],
+    "producerSourceFiles": [
+      "src/modules/ctt/ctt.service.ts",
+      "src/modules/ntt/ntt.service.ts",
+      "src/modules/ntt/ntt.module.ts"
+    ],
+    "consumerDecorator": "MessagePattern",
+    "consumerSourceFiles": ["src/main.ts", "src/modules/ctt/ctt.controller.ts"]
+  }
+}

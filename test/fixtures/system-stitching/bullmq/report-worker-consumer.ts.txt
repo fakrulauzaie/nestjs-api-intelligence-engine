@@ -1,0 +1,13 @@
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+
+// S0_SOURCE:bullmq-report-worker-consumer
+throw new Error('S0 BullMQ consumer fixture must never execute');
+
+@Processor('reports')
+export class ReportWorker extends WorkerHost {
+  async process(job: Job): Promise<unknown> {
+    if (job.name === 'generate-pdf') return { generated: true };
+    return null;
+  }
+}

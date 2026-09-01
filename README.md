@@ -17,6 +17,13 @@ The offline graph also provides a bounded repository architecture view with nume
 call/reach metrics and exact Nest module-ownership states; it never turns zero supported
 root reach into a dead-code claim.
 
+Completed analysis artifacts from separate services can be correlated without
+rescanning through the artifact-only `stitch` command. It requires explicit service
+namespaces and uses an optional strict topology manifest; target text alone never
+becomes a cross-service edge. `stitch --with-graph` additionally projects bounded HTTP
+roots and worker-side table/resource effects into a self-contained conditional system
+graph with typed topology policies.
+
 The MVP analyzes source; it does not start the target application, import target
 modules, connect to its database, or invoke its package scripts.
 
@@ -127,6 +134,9 @@ pnpm run cli -- graph C:\reports\after\analysis.json --baseline C:\reports\befor
 
 # Explicitly preview a successfully published graph in the default browser.
 pnpm run cli -- graph C:\reports\after\analysis.json --output C:\reports\graph --open
+
+# Correlate two completed artifacts and optionally publish the conditional system graph.
+pnpm run cli -- stitch ticket-service=C:\reports\ticket\.api-intel ctt-queue-service=C:\reports\ctt\analysis.json --topology test\fixtures\system-stitching\ticket-ctt.topology.json --output "C:\reports\ticket ctt system" --with-graph --open
 ```
 
 `scan`, `endpoints`, and `report` accept exact `--controller` and normalized exact
@@ -184,6 +194,12 @@ distributed-conditional effects are in
 Checker-proven `ClientProxy`, canonical scalar/object patterns, cold `send`
 activation, controller handlers, and TCP/Redis/RMQ/Kafka inventory are in
 [Nest Microservice Interactions](docs/nest-microservices.md).
+Cross-service artifact naming, topology declarations, correlation states, and the
+artifact-only command are documented in
+[System Analysis and Artifact Stitching](docs/system-analysis-contract.md).
+Conditional service/broker clusters, HTTP-to-worker paths, display limits, typed
+system policies, and offline protections are documented in the
+[Conditional System Graph and Policies](docs/system-report.md).
 The frozen, non-executable queue and microservice topology contracts that underpin the
 current distributed extractors and gate any future expansion are documented in
 [Distributed Gate D0](docs/distributed-gate-d0.md).
@@ -214,7 +230,8 @@ cancellation have distinct exit codes documented in the CLI workflow.
   `Patch`, `Delete`, `Options`, `Head`, and `All`.
 - Literal, no-substitution template, omitted, bounded immutable `const` chains,
   string-enum members, and repository-visible `as const` property paths.
-- Checker-resolved class constructor injection and direct calls through bound members.
+- Checker-resolved class constructor injection, direct calls through bound members,
+  same-class method calls, and directly invoked bound-callback wrapper forwarding.
 - Direct controller- and method-level `UseGuards` class arguments.
 - Bounded `Module`/`Global` metadata, module imports/providers/exports/controllers,
   `APP_GUARD` `useClass`/`useExisting`, and direct bootstrap `useGlobalGuards` calls.
@@ -300,6 +317,9 @@ canonical rule to executable tests.
   and input-document overwrite are deliberately unsupported.
 - The offline graph does not host or rescan a repository, request remote assets, infer
   missing edges, render an unbounded whole-repository graph, or create source links.
+- System stitching does not inspect repositories, source-control state, deployment
+  configuration, broker hosts, credentials, or payloads. A topology declaration is a
+  user-supplied correlation premise, not proof that any service is deployed or connected.
 - The default table fallback is the frozen lowercase class name; project naming
   strategies are not inferred.
 
@@ -355,6 +375,21 @@ Analysis v7 adds package-proven Redlock `using()` resources and explicit bounded
 critical-section records. Callback-contained calls and data/resource effects remain
 `critical_section_conditional`; the records do not prove acquisition, exclusivity,
 contention, timing, or release. See [Redlock Critical Sections](docs/redlock-critical-sections.md).
+
+Phase 45 defines the separate, strict `SystemAnalysisDocument`; Phase 46 implements
+artifact-only correlation and atomic JSON/Markdown publication. Service namespaces
+and explicit broker realms keep matching queue/message targets from becoming delivery
+claims. The supplied ticket-service to CTT-queue RMQ pair becomes a conditional
+declared-realm candidate only when both artifacts are explicitly assigned to the same
+realm. No cross-service delivery or causal execution is proven. See
+[System Analysis and Artifact Stitching](docs/system-analysis-contract.md).
+
+Phase 47 keeps that document boundary frozen and derives a separate validated system
+report. Only declared-realm candidates receive dashed conditional broker paths;
+target-only, ambiguous, and unmatched records remain non-traversable. Supported
+producer traces can begin at HTTP roots and supported consumer traces can end at
+worker-side table/resource effects, without upgrading the distributed segment to
+delivery or execution proof. See [Conditional System Graph and Policies](docs/system-report.md).
 
 ## Reproducible official-sample demo
 

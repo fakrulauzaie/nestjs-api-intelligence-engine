@@ -22,7 +22,7 @@ describe('Phase 23 offline-graph documentation', () => {
     expect(guide).toContain('accessible table');
     expect(guide).toContain('Defaults are 120 nodes and 180 edges per scene');
     expect(guide).toContain('No Git-facing workflow');
-    expect(workflow).toContain('ten complete commands');
+    expect(workflow).toContain('eleven complete commands');
     expect(workflow).toContain('api-intel graph <analysis.json>');
     expect(architecture).toContain('validated endpoint/handler/architecture graph views');
     expect(model).toContain('schema `1.0.0` remains readable for');

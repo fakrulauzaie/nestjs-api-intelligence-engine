@@ -30,6 +30,7 @@ replace or add facts to `AnalysisDocument`.
 | OpenAPI enrichment sidecar | `5.0.0` for analysis v5-v7; older analyses use capability-appropriate v1-v4 |
 | control-evidence JSON/CSV  | `5.0.0` for analysis v5-v7; older analyses use capability-appropriate v1-v4 |
 | `bundle.json`              | `1.0.0`                                                                     |
+| `system-analysis.json`     | `1.0.0`; separate artifact-only Phase 46 document                           |
 
 The scanner currently supports and enables `outbound_http`, `in_process_event`,
 `job_queue`, and `microservice_message`.
@@ -66,8 +67,46 @@ Important identity inputs include:
 - resource access: source method, package-proven technology/API, operation, resource
   kind, structural target/selector, call-site evidence, and extraction rule.
 
+System-analysis IDs use separate `system_analysis`, `system_service`, `system_record`,
+`system_endpoint`, `broker_realm`, `system_correlation`, and `system_diagnostic`
+prefixes. A service ID uses its explicit namespace; a system-record ID combines that
+namespace with the untouched source-analysis record ID. Repository or artifact paths
+are not identity inputs.
+
 The integrity validator rejects repeated IDs. It distinguishes an identical duplicate
 from an unequal-content stable-ID collision; neither is silently overwritten.
+
+## Phase 45–46 system-analysis contract
+
+`SystemAnalysisDocument` schema `1.0.0` is independent of every analysis, diff,
+impact, policy, structured-export, and graph schema. It stores source artifact headers,
+explicit broker realms, namespaced producer/consumer references, correlation states,
+and system diagnostics. Its strict root contains `sourceDocumentsEmbedded: false` and
+cannot contain source files, methods, assertions, or evidence from input analyses.
+
+Broker realm identity includes explicit environment and broker aliases, technology,
+transport, queue/topic/pattern destination, and optional prefix/namespace. Correlation
+integrity permits `declared_realm_candidate` only when an exact structural contract
+and one explicit realm are shared by every member. Target-only matches, ambiguities,
+and unmatched inventory cannot become declared candidates. No state proves delivery
+or handler execution. Phase 46's `stitch` writer validates each source analysis
+independently, retains cold/dynamic/registration-uncertain records as unsupported,
+and emits the strict system document plus a Markdown projection without embedding
+source collections. Source-proven transport cannot be contradicted by topology. The
+system ID covers service snapshot headers, endpoint contract/transport/realm facts,
+correlations, and diagnostics. See
+[System Analysis and Artifact Stitching](system-analysis-contract.md).
+
+`SystemReportDocument` schema `1.0.0` is a separate Phase 47 derived-view contract. It
+references system, service, correlation, and namespaced source-record IDs; it retains
+`sourceDocumentsEmbedded: false` and cannot contain source files, evidence snippets,
+or absolute paths. Its graph node/edge, conditional-path, diagnostic, display-limit,
+and typed-policy collections are strict and deterministically ordered. Only
+`declared_realm_candidate` may back `conditional_route`, `conditional_candidate`, or
+`conditional_effect` edges. Report identity covers the system snapshot, display
+limits, displayed graph IDs, full correlation/path/policy IDs, and diagnostics. The
+existing `SystemAnalysisDocument` schema remains `1.0.0`; the report does not migrate
+or mutate it. See [Conditional System Graph and Policies](system-report.md).
 
 ## Assertions and uncertainty
 

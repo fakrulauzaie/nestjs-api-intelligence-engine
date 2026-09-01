@@ -31,6 +31,8 @@ import { declarationBelongsToPackage, isPackageDecorator } from './package-symbo
 
 export const CLASS_INJECTION_RULE_ID = 'nest.di.class-constructor.v1';
 export const DIRECT_CALL_RULE_ID = 'nest.call.injected-member.v1';
+export const SAME_CLASS_CALL_RULE_ID = 'nest.call.same-class-method.v1';
+export const BOUND_CALLBACK_FORWARD_RULE_ID = 'nest.call.bound-callback-forward.v1';
 
 const NEST_COMMON_MODULE = '@nestjs/common';
 const NEST_BULLMQ_MODULE = '@nestjs/bullmq';
@@ -93,6 +95,34 @@ function nestedFunctionBoundary(
   allowedNestedFunctions: ReadonlySet<ts.Node>,
 ): boolean {
   return node !== root && ts.isFunctionLike(node) && !allowedNestedFunctions.has(node);
+}
+
+function directlyInvokesParameter(
+  method: ts.MethodDeclaration,
+  parameterIndex: number,
+  checker: ts.TypeChecker,
+): ts.CallExpression | null {
+  const parameter = method.parameters[parameterIndex];
+  if (parameter === undefined || !ts.isIdentifier(parameter.name) || method.body === undefined) {
+    return null;
+  }
+  const parameterSymbol = checker.getSymbolAtLocation(parameter.name);
+  if (parameterSymbol === undefined) return null;
+  let result: ts.CallExpression | null = null;
+  const visit = (node: ts.Node): void => {
+    if (result !== null || (node !== method.body && ts.isFunctionLike(node))) return;
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      checker.getSymbolAtLocation(node.expression) === parameterSymbol
+    ) {
+      result = node;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(method.body);
+  return result;
 }
 
 function externallyModeledConstructorType(
@@ -391,6 +421,142 @@ export function extractClassRelationships(input: {
         if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
           const calledProperty = node.expression;
           const receiver = calledProperty.expression;
+          if (receiver.kind === ts.SyntaxKind.ThisKeyword) {
+            const sourceRecord = ensureMethodRecord({ ...owner, method: sourceMethod });
+            const callEvidenceId = addEvidence(
+              createEvidenceForNode({
+                sourceFile: owner.source.sourceFile,
+                sourceFileRecord: owner.source.inventorySource.record,
+                node,
+                role: 'call_site',
+                snippetLimit: input.evidenceSnippetLimit,
+              }),
+            );
+            const calledSymbol = resolveAliasedSymbol(
+              input.checker,
+              input.checker.getSymbolAtLocation(calledProperty.name),
+            );
+            const localTargets = [
+              ...new Set(
+                (calledSymbol?.declarations ?? [])
+                  .filter(ts.isMethodDeclaration)
+                  .map((declaration) => methodByNode.get(declaration))
+                  .filter(
+                    (located): located is LocatedMethod =>
+                      located !== undefined &&
+                      located.indexedClass.node === owner.indexedClass.node,
+                  ),
+              ),
+            ];
+            for (const target of localTargets) {
+              const targetRecord = ensureMethodRecord(target);
+              const status = localTargets.length === 1 ? 'resolved' : 'ambiguous';
+              addAssertion({
+                id: makeAssertionId({
+                  subjectId: sourceRecord.id,
+                  predicate: 'METHOD_CALLS_METHOD',
+                  objectId: targetRecord.id,
+                  ruleId: SAME_CLASS_CALL_RULE_ID,
+                }),
+                subjectId: sourceRecord.id,
+                predicate: 'METHOD_CALLS_METHOD',
+                objectId: targetRecord.id,
+                status,
+                ruleId: SAME_CLASS_CALL_RULE_ID,
+                evidenceIds: [callEvidenceId],
+              });
+              directMethodCalls.push({
+                sourceMethodId: sourceRecord.id,
+                targetMethodId: targetRecord.id,
+                source: owner.source,
+                sourceClass: owner.indexedClass,
+                sourceMethod,
+                targetSource: target.source,
+                targetClass: target.indexedClass,
+                targetMethod: target.method,
+                call: node,
+                status,
+                callEvidenceId,
+                resolutionEvidenceId: targetRecord.declarationEvidenceId,
+              });
+
+              for (const [argumentIndex, argument] of node.arguments.entries()) {
+                if (
+                  !ts.isCallExpression(argument) ||
+                  !ts.isPropertyAccessExpression(argument.expression) ||
+                  argument.expression.name.text !== 'bind'
+                ) {
+                  continue;
+                }
+                const boundMethod = argument.expression.expression;
+                if (
+                  !ts.isPropertyAccessExpression(boundMethod) ||
+                  !isThisMember(boundMethod.expression)
+                ) {
+                  continue;
+                }
+                const binding = bindings.get(boundMethod.expression.name.text);
+                const boundThis = argument.arguments[0];
+                if (
+                  binding === undefined ||
+                  boundThis === undefined ||
+                  !isThisMember(boundThis) ||
+                  boundThis.name.text !== boundMethod.expression.name.text
+                ) {
+                  continue;
+                }
+                const invocation = directlyInvokesParameter(
+                  target.method.node,
+                  argumentIndex,
+                  input.checker,
+                );
+                if (invocation === null) continue;
+                const boundSymbol = resolveAliasedSymbol(
+                  input.checker,
+                  input.checker.getSymbolAtLocation(boundMethod.name),
+                );
+                const callbackTargets = [
+                  ...new Set(
+                    (boundSymbol?.declarations ?? [])
+                      .filter(ts.isMethodDeclaration)
+                      .map((declaration) => methodByNode.get(declaration))
+                      .filter((located): located is LocatedMethod => located !== undefined),
+                  ),
+                ];
+                const invocationEvidenceId = addEvidence(
+                  createEvidenceForNode({
+                    sourceFile: target.source.sourceFile,
+                    sourceFileRecord: target.source.inventorySource.record,
+                    node: invocation,
+                    role: 'call_site',
+                    snippetLimit: input.evidenceSnippetLimit,
+                  }),
+                );
+                for (const callbackTarget of callbackTargets) {
+                  ensureClassRecord(callbackTarget, ['provider']);
+                  const callbackRecord = ensureMethodRecord(callbackTarget);
+                  addAssertion({
+                    id: makeAssertionId({
+                      subjectId: sourceRecord.id,
+                      predicate: 'METHOD_CALLS_METHOD',
+                      objectId: callbackRecord.id,
+                      ruleId: BOUND_CALLBACK_FORWARD_RULE_ID,
+                    }),
+                    subjectId: sourceRecord.id,
+                    predicate: 'METHOD_CALLS_METHOD',
+                    objectId: callbackRecord.id,
+                    status: callbackTargets.length === 1 ? 'resolved' : 'ambiguous',
+                    ruleId: BOUND_CALLBACK_FORWARD_RULE_ID,
+                    evidenceIds: [
+                      callEvidenceId,
+                      binding.resolutionEvidenceId,
+                      invocationEvidenceId,
+                    ],
+                  });
+                }
+              }
+            }
+          }
           if (isThisMember(receiver)) {
             const binding = bindings.get(receiver.name.text);
             if (binding !== undefined) {

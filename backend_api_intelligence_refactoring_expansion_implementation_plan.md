@@ -330,7 +330,7 @@ Completion record:
 
 ### Phase 45 — System identity contract and stitching corpus
 
-Status: pending
+Status: complete
 
 Goal: define safe cross-analysis identity and topology semantics before correlating
 services.
@@ -349,9 +349,33 @@ Deliverables:
 Gate S0: target-name equality alone must be unable to produce a proven cross-service
 edge.
 
+Completion record:
+
+- Added independent `SystemAnalysisDocument` schema `1.0.0`, stable system/service/
+  realm/reference/correlation identities, strict runtime validation, cross-record
+  integrity checks, canonical ordering, and deterministic serialization. Source
+  analysis documents remain separately referenced and cannot be embedded or merged.
+- Broker realms require explicit environment and broker aliases plus technology,
+  transport, queue/topic/pattern destination, and optional prefix/namespace. Paths,
+  hostnames, credentials, payloads, and runtime configuration values are not identity
+  facts.
+- Correlation records distinguish `declared_realm_candidate`,
+  `target_only_candidate`, `ambiguous`, and `unmatched`. Only the first is eligible for
+  a future conditional candidate edge; no state proves delivery or handler execution.
+- Frozen 14-case BullMQ/Nest-microservice corpus covers co-located, producer-only,
+  consumer-only, multi-service, collision, missing-topology, and ambiguity. The real
+  ticket-service/CTT-queue RMQ relationship is preserved through queue
+  `intt_ctt_queue` and pattern `tmf-update-ctt-list`.
+- Gate S0 passes: same target with missing topology remains target-only, and the same
+  target on different explicit realms remains unmatched. Phase 46 artifact loading,
+  correlation execution, CLI, reports, and publication remain deferred.
+- Verification completed on 2026-08-31: the complete single-worker suite passed 132
+  files and 338 tests; typecheck, production build, ESLint with zero warnings, and
+  formatting checks passed.
+
 ### Phase 46 — Artifact-only stitch engine and CLI
 
-Status: pending
+Status: complete
 
 Goal: correlate completed analysis artifacts without scanning or source-control work.
 
@@ -364,9 +388,38 @@ Deliverables:
 4. Preserve unmatched and ambiguous boundaries explicitly.
 5. Emit canonical JSON and concise Markdown summaries with deterministic ordering.
 
+Completion record:
+
+- Added the `stitch` command for repeated `service-namespace=analysis.json-or-.api-intel`
+  inputs, optional strict topology JSON, explicit system naming, and atomic publication
+  of `system-analysis.json` plus `system-analysis.md`. It never enters repository
+  inventory, source compilation, source-control workflows, or target runtime code.
+- Added topology schema `1.0.0` with explicit environment/broker aliases, bounded
+  BullMQ/Nest-microservice realms, structural role bindings, optional exact source
+  record selectors, duplicate/reference/compatibility checks, and fail-closed unused
+  bindings. Paths, broker hosts, credentials, payloads, and runtime values are excluded.
+- Added deterministic namespaced projection and correlation for exact activated
+  producers and proven registered consumers. Queue-wide BullMQ workers remain
+  compatible with exact jobs; missing topology, realm mismatches, request/job fan-out,
+  dynamic identity, cold activation, uncertain registration, and incomplete source
+  capabilities remain explicit non-traversable states or diagnostics.
+- Retained source-proven transport on every system endpoint and reject topology that
+  contradicts it. System-document identity covers source snapshot headers, endpoint
+  contract/transport/realm facts, correlations, and diagnostics, so semantic topology
+  or uncertainty changes cannot reuse the prior document ID.
+- Froze the ticket/CTT topology declaration for RMQ queue `intt_ctt_queue` and pattern
+  `tmf-update-ctt-list`. The existing ticket artifact passed a built-CLI smoke test (15
+  endpoints projected with no absolute path retained). The supplied CTT source confirms
+  the queue and handler, but its absent installed dependencies prevent a trustworthy
+  real-service scan; the engine therefore relies on the frozen type-checked consumer
+  corpus rather than guessing through unresolved package symbols.
+- Focused Phase 45/46 verification passed 3 files and 13 tests. The final single-worker
+  suite passed 135 files and 347 tests. Typecheck, production build, ESLint with zero
+  warnings, and formatting checks passed.
+
 ### Phase 47 — System graph, policies, and hardening
 
-Status: pending
+Status: implementation complete; manual offline verification pending
 
 Goal: expose stitched conditional paths without overstating distributed behavior.
 
@@ -379,6 +432,37 @@ Deliverables:
    compatibility tests.
 5. Run full regression, built-CLI smoke verification through paths containing spaces,
    and manual offline-report verification.
+
+Implementation record:
+
+- Added strict `SystemReportDocument` schema `1.0.0`, deterministic IDs/ordering,
+  integrity validation, global display limits, source/system diagnostic provenance,
+  conditional-path records, and two typed proof-only system policies. The frozen
+  `SystemAnalysisDocument` schema and Gate S0 identity boundary remain unchanged.
+- `stitch --with-graph` now publishes `system-report.json`, `system-report.md`, and a
+  self-contained `api-intel-system-graph.html`; `--max-nodes`, `--max-edges`, and
+  post-publication `--open` follow the existing graph CLI boundaries. Only
+  `declared_realm_candidate` produces broker edges. All other correlation states are
+  visible but non-traversable.
+- Source-local endpoint traces can add HTTP roots, and consumer handler traces can add
+  table/resource effects. Service and broker compound clusters, dashed conditional
+  edges, accessible tables, policy rows, diagnostic counts, and the no-delivery
+  honesty boundary are embedded in the offline report.
+- Added checker-proven same-class call extraction plus a bounded bound-callback
+  forwarding rule. It requires the corresponding wrapper parameter to be invoked
+  directly and refuses retained/forwarded callbacks. This resolves the supplied CTT
+  `handleMessage(..., this.cttService.tmfSendUpdateCttList.bind(...))` pattern without
+  adding generic data-flow guesses.
+- Fresh built-CLI scans of the installed ticket/CTT repositories and a stitch through
+  output paths containing spaces produced three declared-realm conditional paths. One
+  begins at `POST /mobile/create`; all reach the CTT candidate handler and its
+  conditional `WRITE apim_log` effect. Existing source gaps remain explicit.
+- Automated focused, full-suite, typecheck, build, lint, format, deterministic,
+  compatibility, CSP/offline, and artifact checks are covered below. The in-app
+  browser security policy blocks local `file://` navigation, so user-run interactive
+  verification of the generated system graph remains the only closure item.
+- Final verification passed 137 test files and 353 tests in a single worker. Typecheck,
+  production build, ESLint with zero warnings, and formatting checks also passed.
 
 ## Explicitly not adopted
 

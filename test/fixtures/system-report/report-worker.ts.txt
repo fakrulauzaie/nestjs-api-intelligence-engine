@@ -1,0 +1,41 @@
+import { Controller, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { InjectRepository, TypeOrmModule } from '@nestjs/typeorm';
+import {
+  MessagePattern,
+  MicroserviceOptions,
+  Payload,
+  Transport,
+} from '@nestjs/microservices';
+import { Entity, PrimaryColumn, Repository } from 'typeorm';
+
+@Entity('report_job')
+export class ReportJob {
+  @PrimaryColumn()
+  declare status: string;
+}
+
+@Controller()
+export class ReportWorkerController {
+  constructor(@InjectRepository(ReportJob) private readonly jobs: Repository<ReportJob>) {}
+
+  @MessagePattern('report.generate')
+  async handle(@Payload() payload: unknown): Promise<void> {
+    await this.jobs.save({ status: payload === undefined ? 'empty' : 'queued' });
+  }
+}
+
+@Module({
+  imports: [TypeOrmModule.forFeature([ReportJob])],
+  controllers: [ReportWorkerController],
+})
+export class ReportWorkerModule {}
+
+async function bootstrap(): Promise<void> {
+  await NestFactory.createMicroservice<MicroserviceOptions>(ReportWorkerModule, {
+    transport: Transport.RMQ,
+    options: { queue: 'reports_queue' },
+  });
+}
+
+void bootstrap;

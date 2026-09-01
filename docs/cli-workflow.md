@@ -4,7 +4,7 @@ The synopsis uses the installed binary name `api-intel`. In this private reposit
 build first and replace that prefix with `pnpm run cli --`; for example,
 `pnpm run cli -- graph .api-intel/analysis.json --open`.
 
-The CLI has ten complete commands:
+The CLI has eleven complete commands:
 
 ```text
 api-intel scan <repository> [--config <path> | --no-config]
@@ -31,6 +31,9 @@ api-intel graph <analysis.json>
   [--baseline <before-analysis.json> | --impact-results <impact.json>]
   [--policy-results <policy-results.json>]
   [--max-nodes <10-500>] [--max-edges <10-1000>] [--output <directory>] [--open]
+api-intel stitch <service=analysis.json-or-.api-intel> [...]
+  [--topology <system-topology.json>] [--name <system-name>] [--output <directory>]
+  [--with-graph] [--max-nodes <10-500>] [--max-edges <10-1000>] [--open]
 ```
 
 `scan` defaults to the repository's primary `tsconfig.json`, writes to
@@ -133,6 +136,24 @@ headless platforms, missing launchers, and launch cancellation produce a warning
 retains the published path and exit code 0. Generation failures and cancellation before
 publication do not launch anything.
 
+`stitch` consumes one or more explicitly named completed analysis artifacts. Each
+positional value has the form `service-namespace=path`; `path` is either an
+`analysis.json` file or a directory literally named `.api-intel`. It never scans a
+repository or reads source-control state. Without topology, compatible target text is
+reported only as `target_only_candidate`. A strict topology manifest can declare
+broker realms and bind structural producer/consumer contracts to them; only exact,
+eligible members sharing one declared realm become `declared_realm_candidate`, which
+still does not prove broker delivery or handler execution. The command atomically
+publishes `system-analysis.json` and `system-analysis.md` to `.api-intel-system` by
+default. `--with-graph` also projects source-artifact HTTP roots and consumer-handler
+table/resource effects into validated `system-report.json`, concise
+`system-report.md`, and self-contained `api-intel-system-graph.html`. Only
+`declared_realm_candidate` records produce conditional broker edges. Display limits
+do not remove canonical path/correlation/policy summaries. `--open` is valid only with
+`--with-graph` and runs after publication. See
+[System Analysis and Artifact Stitching](system-analysis-contract.md) and
+[Conditional System Graph and Policies](system-report.md).
+
 ## Artifacts and overwrites
 
 The output directory contains:
@@ -172,6 +193,10 @@ collision-checked before commit. Each new file is fully staged beside its destin
 `bundle.json` is committed last as the completeness marker. Existing unrelated files
 are preserved. Interruption exits with code 130; staged temporary files are removed and
 a prior complete bundle survives cancellation before commit.
+
+System-stitch artifacts use their own output directory and are not inserted into a
+single-repository scan bundle. Source analyses remain separate and are referenced only
+by stable analysis and namespaced record identities.
 
 ## Result and error behavior
 

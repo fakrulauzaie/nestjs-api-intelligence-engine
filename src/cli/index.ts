@@ -13,6 +13,7 @@ import { openApiCommand } from './commands/openapi.js';
 import { reportCommand } from './commands/report.js';
 import { scanCommand } from './commands/scan.js';
 import { traceCommand } from './commands/trace.js';
+import { stitchCommand } from './commands/stitch.js';
 import { EXIT_CODE, reportMissingArgument } from './errors.js';
 import { processIo } from './output.js';
 import type { CliCommand, CliIo } from './types.js';
@@ -26,6 +27,7 @@ const commands: readonly CliCommand[] = [
   openApiCommand,
   controlsCommand,
   graphCommand,
+  stitchCommand,
   endpointsCommand,
   traceCommand,
   reportCommand,

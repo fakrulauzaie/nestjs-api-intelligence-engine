@@ -1,0 +1,15 @@
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+
+// S0_SOURCE:bullmq-report-api-producer
+throw new Error('S0 BullMQ producer fixture must never execute');
+
+@Injectable()
+export class ReportProducer {
+  constructor(@InjectQueue('reports') private readonly reports: Queue) {}
+
+  generate(payload: unknown) {
+    return this.reports.add('generate-pdf', payload);
+  }
+}

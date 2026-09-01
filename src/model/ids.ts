@@ -35,6 +35,19 @@ export const STABLE_ID_KINDS = [
   'authorization_enforcement',
   'resource_access',
   'critical_section',
+  'system_analysis',
+  'system_service',
+  'system_record',
+  'system_endpoint',
+  'broker_realm',
+  'system_correlation',
+  'system_diagnostic',
+  'system_report',
+  'system_graph_node',
+  'system_graph_edge',
+  'system_path',
+  'system_report_diagnostic',
+  'system_policy_result',
 ] as const;
 export type StableIdKind = (typeof STABLE_ID_KINDS)[number];
 

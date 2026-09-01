@@ -1,0 +1,31 @@
+import { Controller, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import {
+  MessagePattern,
+  MicroserviceOptions,
+  Payload,
+  Transport,
+} from '@nestjs/microservices';
+
+// S0_SOURCE:microservices-ctt-queue-consumer
+throw new Error('S0 ctt-queue consumer fixture must never execute');
+
+@Controller()
+export class CttQueueController {
+  @MessagePattern('tmf-update-ctt-list')
+  updateCttList(@Payload() payload: unknown): unknown {
+    return payload;
+  }
+}
+
+@Module({ controllers: [CttQueueController] })
+export class CttQueueModule {}
+
+async function bootstrap(): Promise<void> {
+  await NestFactory.createMicroservice<MicroserviceOptions>(CttQueueModule, {
+    transport: Transport.RMQ,
+    options: { queue: 'intt_ctt_queue' },
+  });
+}
+
+void bootstrap;

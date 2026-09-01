@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0.0",
+  "systemName": "ticket-ctt-system",
+  "brokerRealms": [
+    {
+      "brokerAlias": "ctt-rmq",
+      "environmentAlias": "selected-environment",
+      "technology": "nest_microservices",
+      "transport": "rmq",
+      "destination": {
+        "kind": "queue",
+        "value": "intt_ctt_queue"
+      },
+      "prefix": null,
+      "namespace": null
+    }
+  ],
+  "bindings": [
+    {
+      "serviceNamespace": "ticket-service",
+      "role": "producer",
+      "contract": {
+        "targetKind": "microservice_message",
+        "mode": "request_response",
+        "patternKind": "scalar",
+        "canonicalPattern": "\"tmf-update-ctt-list\""
+      },
+      "analysisRecordId": null,
+      "brokerAlias": "ctt-rmq",
+      "environmentAlias": "selected-environment"
+    },
+    {
+      "serviceNamespace": "ticket-service",
+      "role": "producer",
+      "contract": {
+        "targetKind": "microservice_message",
+        "mode": "event",
+        "patternKind": "scalar",
+        "canonicalPattern": "\"tmf-update-ctt-list\""
+      },
+      "analysisRecordId": null,
+      "brokerAlias": "ctt-rmq",
+      "environmentAlias": "selected-environment"
+    },
+    {
+      "serviceNamespace": "ctt-queue-service",
+      "role": "consumer",
+      "contract": {
+        "targetKind": "microservice_message",
+        "mode": "request_response",
+        "patternKind": "scalar",
+        "canonicalPattern": "\"tmf-update-ctt-list\""
+      },
+      "analysisRecordId": null,
+      "brokerAlias": "ctt-rmq",
+      "environmentAlias": "selected-environment"
+    }
+  ]
+}

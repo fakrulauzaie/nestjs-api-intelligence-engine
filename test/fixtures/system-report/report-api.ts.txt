@@ -1,0 +1,37 @@
+import { Controller, Inject, Injectable, Module, Post } from '@nestjs/common';
+import { ClientProxy, ClientsModule, Transport } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+
+@Injectable()
+export class ReportDispatchService {
+  constructor(@Inject('REPORT_QUEUE') private readonly client: ClientProxy) {}
+
+  enqueue(payload: unknown) {
+    return firstValueFrom(this.client.send('report.generate', payload));
+  }
+}
+
+@Controller('reports')
+export class ReportController {
+  constructor(private readonly reports: ReportDispatchService) {}
+
+  @Post()
+  create() {
+    return this.reports.enqueue({ requested: true });
+  }
+}
+
+@Module({
+  imports: [
+    ClientsModule.register([
+      {
+        name: 'REPORT_QUEUE',
+        transport: Transport.RMQ,
+        options: { queue: 'reports_queue' },
+      },
+    ]),
+  ],
+  controllers: [ReportController],
+  providers: [ReportDispatchService],
+})
+export class ReportApiModule {}

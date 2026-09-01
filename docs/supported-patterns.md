@@ -253,6 +253,45 @@ inside those callbacks trace as `critical_section_conditional`; dynamic/spread l
 callback references, lookalikes, and custom wrappers remain fail-closed gaps. See
 [Redlock Critical Sections](redlock-critical-sections.md).
 
+## Phase 45 cross-service contract boundary
+
+Phase 45 adds no static extractor and does not broaden `analysis.json`. It defines the
+separate system-analysis schema and Gate S0 corpus for `job_queue` and
+`microservice_message` artifacts. Supported contract behavior is limited to service
+namespacing, explicit BullMQ/Nest-microservice broker realms, structural target
+inventory, and the four non-proof correlation states. Target equality without a shared
+declared realm cannot create a candidate edge. See
+[System Identity and Stitching Contract](system-analysis-contract.md).
+
+## Phase 46 artifact-only stitching
+
+The `stitch` command accepts explicitly named interaction-capable analysis artifacts
+and optional strict topology. It projects exact BullMQ producers, queue-wide or exact
+proven workers, activated Nest `ClientProxy` producers, and proven registered
+message/event handlers into the separate system document. Exact queue/job or canonical
+mode/pattern compatibility is required. A shared topology-manifest realm yields only a
+`declared_realm_candidate`; target-only matches, realm mismatches, multiple job/request
+consumers, cold sends, dynamic identities, and uncertain registrations remain
+non-traversable states with diagnostics. The command does not scan source, discover
+deployment configuration, or infer broker delivery.
+
+## Phase 47 conditional system reporting
+
+`stitch --with-graph` consumes the same validated in-memory inputs and derives system
+report schema `1.0.0`. Supported producer `METHOD_INITIATES_INTERACTION` traces may
+add an HTTP root; supported consumer handler traces may add table and non-relational
+resource effects. Only `declared_realm_candidate` becomes a dashed conditional path.
+Target-only, ambiguous, and unmatched correlations stay policy/inventory records and
+never become graph edges. The two typed system rules evaluate declared-realm presence
+and correlation ambiguity only.
+
+Local call extraction also recognizes checker-resolved same-class method calls. A
+bound injected-member callback is forwarded only when it is passed directly to that
+same-class method and the corresponding wrapper parameter is directly invoked in the
+wrapper body (`nest.call.bound-callback-forward.v1`). Stored, returned, forwarded,
+dynamic, spread, or otherwise indirect callbacks remain unsupported. See
+[Conditional System Graph and Policies](system-report.md).
+
 Schema representation must not be interpreted as static-analysis support. The
 supported outbound subsets are defined in
 [Eager Outbound HTTP Analysis](outbound-http.md) and

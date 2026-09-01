@@ -61,6 +61,8 @@ references.
 - [Nest microservice interactions](nest-microservices.md)
 - [Non-relational resource access](non-relational-resource-access.md)
 - [Redlock critical sections](redlock-critical-sections.md)
+- [System analysis and artifact stitching](system-analysis-contract.md)
+- [Conditional system graph and policies](system-report.md)
 
 ## Historical and non-normative records
 
@@ -74,6 +76,10 @@ references.
 - [Distributed Gate D0](distributed-gate-d0.md) is the frozen distributed-interaction
   corpus decision. Its BullMQ portion was consumed by Phase 35; its microservice
   portion was consumed by Phase 36.
+- [System Stitching Gate S0](system-analysis-contract.md) defines the separate
+  cross-analysis identity/topology contract and frozen multi-service corpus. The same
+  living guide now documents Phase 46's artifact-only stitch command; the Gate S0
+  chronology remains historical.
 - [Phase 11 real-repository validation](real-repository-validation.md) and the
   associated `official-nestjs-typeorm` outputs are historical evidence, not current
   report-format examples.
