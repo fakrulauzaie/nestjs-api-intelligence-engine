@@ -49,6 +49,22 @@ producer is not reached from a supported HTTP endpoint in that source artifact. 
 not a dead-code claim and can represent scheduled, inbound-message, library, or
 otherwise unmodeled roots.
 
+## Graph views and layout
+
+The graph opens in **Conditional paths** view. This view includes only nodes connected
+by report edges plus their service and broker parents, so disconnected inventory does
+not force the meaningful architecture into a tiny initial zoom. A deterministic,
+compound-aware layered layout places producer services before broker realms and
+consumer services after them. Nodes inside each compound are placed in bounded rows
+instead of using force-directed repulsion.
+
+**All interactions** restores every displayed inventory node using the same compact
+layout. Selecting a correlation switches to a focused view containing its producer,
+consumer candidates, any associated path/effect nodes, and required compound parents.
+Unmatched and target-only records remain edge-free in that view; the renderer does not
+invent a relationship for layout purposes. **Fit view** recenters the current view,
+and resizing the window refits only the currently visible elements.
+
 Worker effects come from the independently validated consumer handler trace. Table
 labels retain direction and table name. Resource labels retain only technology,
 operation, and resource kind; payloads and runtime values are not copied. A path is

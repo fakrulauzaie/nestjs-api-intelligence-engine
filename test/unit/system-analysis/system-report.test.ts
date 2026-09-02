@@ -1,7 +1,9 @@
 import { readFile } from 'node:fs/promises';
+import { Script } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { scanRepository } from '../../../src/analysis/scan-repository.js';
 import { renderOfflineSystemReport } from '../../../src/system-report/html.js';
+import { OFFLINE_SYSTEM_REPORT_APP } from '../../../src/system-report/app-script.js';
 import { serializeCanonicalSystemReport } from '../../../src/system-report/ordering.js';
 import { buildSystemReportDocument } from '../../../src/system-report/project.js';
 import { validateSystemReportDocument } from '../../../src/system-report/validate.js';
@@ -41,6 +43,15 @@ async function scanFixture(name: 'report-api' | 'report-worker') {
 }
 
 describe('Phase 47 system report', () => {
+  it('ships a syntactically valid path-first compound layout application', () => {
+    expect(() => new Script(OFFLINE_SYSTEM_REPORT_APP)).not.toThrow();
+    expect(OFFLINE_SYSTEM_REPORT_APP).toContain("layout: { name: 'preset', fit: false }");
+    expect(OFFLINE_SYSTEM_REPORT_APP).toContain('compactGroupLayout');
+    expect(OFFLINE_SYSTEM_REPORT_APP).toContain('showPaths();');
+    expect(OFFLINE_SYSTEM_REPORT_APP).not.toContain("layout: { name: 'cose'");
+    expect(OFFLINE_SYSTEM_REPORT_APP).not.toContain('nodeRepulsion');
+  });
+
   it('continues an HTTP root through only a declared broker candidate to worker effects', async () => {
     const [producer, consumer] = await Promise.all([
       scanFixture('report-api'),
@@ -93,6 +104,13 @@ describe('Phase 47 system report', () => {
       expect(html).toContain("connect-src 'none'");
       expect(html).toContain('Accessible graph table');
       expect(html).toContain('delivery not proven');
+      expect(html).toContain('Conditional paths');
+      expect(html).toContain('All interactions');
+      expect(html).toContain('Fit view');
+      expect(html).toContain("layout: { name: 'preset', fit: false }");
+      expect(html).toContain("selector: '.hidden'");
+      expect(html).not.toContain("layout: { name: 'cose'");
+      expect(html).not.toContain('nodeRepulsion');
       expect(html).not.toMatch(/(?:src|href)\s*=\s*["']\s*(?:https?:|\/\/)/iu);
     } finally {
       await Promise.all([producer.project.cleanup(), consumer.project.cleanup()]);

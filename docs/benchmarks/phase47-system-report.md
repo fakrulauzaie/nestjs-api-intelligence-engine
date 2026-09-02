@@ -29,11 +29,16 @@ retaining the callback creates no forwarded edge.
 Static artifact checks found no HTTP, HTTPS, or protocol-relative resources, no
 closing-script sequence in embedded JSON, and a CSP with `connect-src 'none'` plus
 hash-authorized scripts/styles. The report uses a relative-positioned Cytoscape
-container and does not override wheel sensitivity. The in-app browser's URL security
-policy rejects local `file://` navigation, so interactive visual verification remains
-a user-run closure item; no alternative automation surface was used to bypass that
-policy.
+container and does not override wheel sensitivity. User verification confirmed that
+the offline page loads and correlation navigation works, and identified excessive
+zoom from applying force-directed repulsion to all disconnected compound children.
+The corrected default view contains the seven edge-connected leaves plus their three
+compound parents rather than all twenty-six inventory nodes. An executable headless
+Cytoscape test proves disconnected inventory starts hidden, producer/broker/consumer
+compounds are ordered left-to-right, and **All interactions** restores every node.
+The in-app browser's URL security policy still rejects local `file://` navigation; no
+alternative automation surface was used to bypass that policy.
 
-The final single-worker repository suite passed 137 files and 353 tests in 134.15
+The final single-worker repository suite passed 138 files and 355 tests in 239.80
 seconds. Typecheck, production build, ESLint with zero warnings, and formatting checks
 also passed.

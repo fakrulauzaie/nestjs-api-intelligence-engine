@@ -461,8 +461,15 @@ Implementation record:
   compatibility, CSP/offline, and artifact checks are covered below. The in-app
   browser security policy blocks local `file://` navigation, so user-run interactive
   verification of the generated system graph remains the only closure item.
-- Final verification passed 137 test files and 353 tests in a single worker. Typecheck,
+- Final verification passed 138 test files and 355 tests in a single worker. Typecheck,
   production build, ESLint with zero warnings, and formatting checks also passed.
+- User verification confirmed the offline artifact loads and the correlation page is
+  functional, but exposed extreme initial zoom caused by force-directed repulsion over
+  disconnected children inside compound nodes. The renderer now defaults to a
+  path-first view and uses a deterministic compound-aware service → broker → service
+  layout. All inventory remains available through **All interactions**, correlation
+  selection provides a bounded focused view, and **Fit view** refits only visible
+  elements. No synthetic graph edges are introduced for layout purposes.
 
 ## Explicitly not adopted
 
