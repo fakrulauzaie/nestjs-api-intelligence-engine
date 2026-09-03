@@ -154,6 +154,33 @@ validated before/after paths. A directly changed endpoint, a potentially impacte
 endpoint, and an incomplete/unknown impact have different text and styles. Supplying
 impact does not turn every edge in an affected endpoint scene into a changed edge.
 
+## Interactive layout
+
+Endpoint and interaction-handler scenes use a deterministic, label-aware left-to-right
+layout. Directed breadth determines causal depth. When a depth layer's measured node
+and label height exceeds the available canvas capacity, that layer is folded into two
+or three bounded subcolumns inside one wider rank band. Subsequent layers begin after
+the complete band, so folding does not imply a different causal depth. Nodes within a
+layer use deterministic connectivity-aware ordering to reduce avoidable crossings.
+Architecture scenes retain their top-down breadth-first orientation.
+
+Same-class helper methods use a compact `.method()` canvas label when every incoming
+method caller in the scene has the same owner. Cross-class calls and entry methods stay
+qualified. The original complete label remains in the graph data, hover status,
+evidence inspector, search-derived view data, and accessible table.
+
+The renderer expands the graph canvas to a bounded height and initially fits the
+complete scene without a hard minimum zoom that could push most of the graph offscreen.
+Small scenes are capped at 100% initial zoom. When a complete overview falls below the
+soft readability threshold, the toolbar says so; selecting a node or edge automatically
+fits its causal path, capped at 125%. **Fit all** fits the current positions, while
+**Reset layout** restores deterministic automatic positions and the complete view.
+
+Resolved routine edge labels are shown on hover and when their path is selected.
+Uncertain and impacted edge labels remain visible without interaction. The accessible
+table always contains every displayed edge label, so progressive disclosure changes
+only canvas presentation and never report data.
+
 ## Display limits
 
 Defaults are 120 nodes and 180 edges per scene. `--max-nodes` accepts 10-500 and

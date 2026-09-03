@@ -46,3 +46,23 @@ This is a local workstation benchmark, not a cross-machine service-level objecti
 The input snapshot and feature set differ from the original Phase 12 analyzer corpus,
 so analyzer scan timings are not compared. Future report benchmarks should preserve
 the command shape, input analysis, runtime, iteration count, and clean output boundary.
+
+## 2026-09-02 readability maintenance
+
+A real ticket-service endpoint scene with 22 nodes and 26 edges exposed a presentation
+defect: the breadth-first renderer used `spacingFactor: 1.15` while excluding labels
+from node dimensions. Eleven callees could therefore occupy one tightly packed row as
+if their nodes were only 30 px wide, even though wrapped labels were up to 130 px.
+
+The first presentation-only correction used label-aware spacing, left-to-right causal
+flow, bounded adaptive canvas height, and a hard readable zoom floor. User verification
+showed that the floor kept labels clear but moved most high-fan-out scenes offscreen.
+
+The 2026-09-03 revision replaces that trade-off with deterministic measured-rank
+packing. Same-class helper labels are shortened only on the canvas, overloaded depth
+layers fold into bounded rank bands, and connectivity-aware ordering reduces avoidable
+crossings. The initial view always fits the complete scene and caps enlargement at
+100%; selecting a node or edge fits its causal path up to 125%. Resolved routine edge
+labels continue to use hover/focused-path disclosure, while uncertainty and impact
+labels stay visible. Architecture remains top-down. The graph schema, full labels,
+accessible table, and canonical scene contents are unchanged.

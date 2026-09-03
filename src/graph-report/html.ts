@@ -133,8 +133,9 @@ export async function renderOfflineGraphReport(
         <div class="workspace">
           <section class="graph-card" aria-labelledby="graph-label">
             <h3 id="graph-label" class="visually-hidden">Interactive evidence graph</h3>
+            <div class="graph-toolbar" role="group" aria-label="Graph layout controls"><button id="graph-relayout" type="button" disabled>Reset layout</button><button id="graph-fit" type="button" disabled>Fit all</button><span id="graph-layout-status" role="status" aria-live="polite">No graph selected</span></div>
             <div id="graph" aria-hidden="true"></div>
-            <p class="graph-caption">Select a node or edge to highlight its static path and inspect retained evidence. Dashed labels and borders name uncertainty without relying on color. Architecture heat is also published numerically in the accessible table and percentile legend. Selecting a handler or endpoint root opens its dedicated view.</p>
+            <p class="graph-caption">Endpoint and handler flows use a label-aware adaptive left-to-right layout that folds overloaded depth layers without changing their causal rank; architecture uses a top-down layout. Same-class helper labels are shortened only on the canvas, with complete identities retained in the inspector and accessible table. Resolved edge labels appear on hover or a focused path, while uncertain and impacted labels remain visible. Dashed borders and state labels name uncertainty without relying on color. Reset layout restores the complete automatic view; Fit all preserves manually moved positions. Architecture heat is also published numerically in the accessible table and percentile legend. Selecting a node or edge highlights and fits its static causal path and retained evidence.</p>
           </section>
           <aside class="inspector" aria-live="polite" aria-label="Evidence inspector">
             <div id="inspector-content"><p class="inspector-empty">Select an endpoint to inspect evidence.</p></div>

@@ -20,7 +20,7 @@ describe('Phase 47 system report documentation', () => {
         readFile(resolve('docs/benchmarks/phase47-system-report.md'), 'utf8'),
       ]);
 
-    expect(plan).toMatch(/### Phase 47[\s\S]*?Status: implementation complete/u);
+    expect(plan).toMatch(/### Phase 47[\s\S]*?Status: done/u);
     expect(readme).toContain('--with-graph --open');
     expect(workflow).toContain('[--with-graph] [--max-nodes <10-500>]');
     expect(architecture).toContain('SystemReportDocument` schema `1.0.0`');

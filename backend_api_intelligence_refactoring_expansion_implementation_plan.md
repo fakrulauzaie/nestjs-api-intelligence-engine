@@ -419,7 +419,7 @@ Completion record:
 
 ### Phase 47 — System graph, policies, and hardening
 
-Status: implementation complete; manual offline verification pending
+Status: done
 
 Goal: expose stitched conditional paths without overstating distributed behavior.
 
@@ -459,8 +459,8 @@ Implementation record:
   conditional `WRITE apim_log` effect. Existing source gaps remain explicit.
 - Automated focused, full-suite, typecheck, build, lint, format, deterministic,
   compatibility, CSP/offline, and artifact checks are covered below. The in-app
-  browser security policy blocks local `file://` navigation, so user-run interactive
-  verification of the generated system graph remains the only closure item.
+  browser security policy blocks local `file://` navigation, so final interaction and
+  readability verification was performed by the user against the generated artifact.
 - Final verification passed 138 test files and 355 tests in a single worker. Typecheck,
   production build, ESLint with zero warnings, and formatting checks also passed.
 - User verification confirmed the offline artifact loads and the correlation page is
@@ -470,6 +470,8 @@ Implementation record:
   layout. All inventory remains available through **All interactions**, correlation
   selection provides a bounded focused view, and **Fit view** refits only visible
   elements. No synthetic graph edges are introduced for layout purposes.
+- User verification confirmed the corrected stitch layout is clean and readable;
+  Phase 47 is closed.
 
 ## Explicitly not adopted
 

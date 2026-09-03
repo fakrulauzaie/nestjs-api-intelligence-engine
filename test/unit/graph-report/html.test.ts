@@ -45,6 +45,20 @@ describe('Phase 23 self-contained HTML rendering', () => {
     expect(cytoscapeStyleHash).toBe('pgvDUBa4IjFA2yuSJ2cqcyxmNYJMborsd0ORcRv9vw8=');
     expect(OFFLINE_GRAPH_REPORT_STYLES).toContain('#graph { position: relative;');
     expect(OFFLINE_GRAPH_REPORT_APP).not.toContain('wheelSensitivity');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain('nodeDimensionsIncludeLabels: true');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain('applyFoldedLayerLayout(rootId)');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain('Math.ceil(unfoldedHeight / heightCapacity)');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain("sameOwner ? '.' + parts.member + '()'");
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain('fullLabel: node.label');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain('complete overview at');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain('fitFocusedPath(path)');
+    expect(OFFLINE_GRAPH_REPORT_APP).not.toContain('readableFloor');
+    expect(OFFLINE_GRAPH_REPORT_APP).not.toContain('minZoom: 0.25');
+    expect(first).toContain('Reset layout');
+    expect(first).toContain('Fit all');
+    expect(first).toContain('folds overloaded depth layers without changing their causal rank');
+    expect(first).toContain('complete identities retained in the inspector and accessible table');
+    expect(first).toContain('Resolved edge labels appear on hover or a focused path');
     const scripts = [...first.matchAll(/<script(?: [^>]*)?>([\s\S]*?)<\/script>/gu)].map(
       (match) => match[1]!,
     );

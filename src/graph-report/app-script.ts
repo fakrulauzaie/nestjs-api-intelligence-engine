@@ -27,6 +27,11 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   var inspector = document.getElementById('inspector-content');
   var tableBody = document.getElementById('fallback-body');
   var facts = document.getElementById('facts-grid');
+  var graphElement = document.getElementById('graph');
+  var relayoutButton = document.getElementById('graph-relayout');
+  var fitButton = document.getElementById('graph-fit');
+  var layoutStatus = document.getElementById('graph-layout-status');
+  var persistentLayoutStatus = 'No graph selected';
 
   function element(name, className, text) {
     var node = document.createElement(name);
@@ -215,13 +220,248 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
     });
   }
 
+  function clearGraph() {
+    if (graph) {
+      graph.destroy();
+      graph = null;
+    }
+    graphElement.replaceChildren();
+    graphElement.style.minHeight = '';
+    relayoutButton.disabled = true;
+    fitButton.disabled = true;
+    relayoutButton.onclick = null;
+    fitButton.onclick = null;
+    setLayoutStatus('No graph selected');
+  }
+
+  function setLayoutStatus(message) {
+    persistentLayoutStatus = message;
+    layoutStatus.textContent = message;
+  }
+
+  function fitGraph() {
+    if (!graph || graph.elements().length === 0) return;
+    graph.resize();
+    graph.fit(graph.elements(), 42);
+    setLayoutStatus('Fit all · ' + Math.round(graph.zoom() * 100) + '% zoom');
+  }
+
+  function methodNameParts(label) {
+    var separator = label.lastIndexOf('.');
+    if (separator <= 0 || separator === label.length - 1) return null;
+    return { owner: label.slice(0, separator), member: label.slice(separator + 1) };
+  }
+
+  function displayLabelForNode(node, scene, architectureMode) {
+    if (architectureMode || node.kind !== 'method') return node.label;
+    var parts = methodNameParts(node.label);
+    if (!parts) return node.label;
+    var nodesById = new Map(scene.nodes.map(function (candidate) { return [candidate.id, candidate]; }));
+    var callers = scene.edges
+      .filter(function (edge) { return edge.target === node.id; })
+      .map(function (edge) { return nodesById.get(edge.source); })
+      .filter(function (candidate) { return candidate && candidate.kind === 'method'; });
+    if (callers.length === 0) return node.label;
+    var sameOwner = callers.every(function (caller) {
+      var callerParts = methodNameParts(caller.label);
+      return callerParts && callerParts.owner === parts.owner;
+    });
+    return sameOwner ? '.' + parts.member + '()' : node.label;
+  }
+
+  function nodeLayoutMetrics(node) {
+    var bounds = node.boundingBox({ includeLabels: true, includeOverlays: false });
+    var position = node.position();
+    return {
+      node: node,
+      width: bounds.w,
+      height: bounds.h,
+      topOffset: position.y - bounds.y1,
+      bottomOffset: bounds.y2 - position.y
+    };
+  }
+
+  function directedDepths(rootId) {
+    var depths = new Map();
+    var queue = [];
+    var root = graph.getElementById(rootId);
+    if (root.length > 0) {
+      depths.set(rootId, 0);
+      queue.push(root);
+    }
+    for (var index = 0; index < queue.length; index += 1) {
+      var source = queue[index];
+      var nextDepth = depths.get(source.id()) + 1;
+      source.outgoers('edge').forEach(function (edge) {
+        var target = edge.target();
+        if (!depths.has(target.id())) {
+          depths.set(target.id(), nextDepth);
+          queue.push(target);
+        }
+      });
+    }
+    var fallbackDepth = depths.size === 0 ? 0 : Math.max.apply(null, Array.from(depths.values())) + 1;
+    graph.nodes().forEach(function (node) {
+      if (!depths.has(node.id())) depths.set(node.id(), fallbackDepth);
+    });
+    return depths;
+  }
+
+  function orderedDepthLayers(rootId) {
+    var depths = directedDepths(rootId);
+    var layers = new Map();
+    graph.nodes().forEach(function (node) {
+      var depth = depths.get(node.id());
+      if (!layers.has(depth)) layers.set(depth, []);
+      layers.get(depth).push(node);
+    });
+    var priorOrder = new Map();
+    return Array.from(layers.keys()).sort(function (left, right) { return left - right; }).map(function (depth) {
+      var nodes = layers.get(depth);
+      nodes.sort(function (left, right) {
+        function barycenter(node) {
+          var positions = node.incomers('edge').map(function (edge) {
+            var sourceOrder = priorOrder.get(edge.source().id());
+            return sourceOrder === undefined ? null : sourceOrder;
+          }).filter(function (value) { return value !== null; });
+          if (positions.length === 0) return Number.POSITIVE_INFINITY;
+          return positions.reduce(function (sum, value) { return sum + value; }, 0) / positions.length;
+        }
+        var leftCenter = barycenter(left);
+        var rightCenter = barycenter(right);
+        if (Number.isFinite(leftCenter) && !Number.isFinite(rightCenter)) return -1;
+        if (!Number.isFinite(leftCenter) && Number.isFinite(rightCenter)) return 1;
+        if (leftCenter !== rightCenter) return leftCenter - rightCenter;
+        return String(left.data('label')).localeCompare(String(right.data('label'))) || left.id().localeCompare(right.id());
+      });
+      nodes.forEach(function (node, index) { priorOrder.set(node.id(), index); });
+      return nodes;
+    });
+  }
+
+  function laneHeight(items, rowGap) {
+    return items.reduce(function (height, item, index) {
+      return height + item.height + (index === 0 ? 0 : rowGap);
+    }, 0);
+  }
+
+  function planFoldedLayer(nodes, heightCapacity) {
+    var rowGap = 24;
+    var metrics = nodes.map(nodeLayoutMetrics);
+    var unfoldedHeight = laneHeight(metrics, rowGap);
+    var laneCount = Math.min(3, Math.max(1, Math.ceil(unfoldedHeight / heightCapacity)));
+    var rowsPerLane = Math.ceil(metrics.length / laneCount);
+    var lanes = [];
+    for (var laneIndex = 0; laneIndex < laneCount; laneIndex += 1) {
+      var items = metrics.slice(laneIndex * rowsPerLane, (laneIndex + 1) * rowsPerLane);
+      if (items.length > 0) {
+        lanes.push({
+          items: items,
+          width: Math.max.apply(null, items.map(function (item) { return item.width; })),
+          height: laneHeight(items, rowGap)
+        });
+      }
+    }
+    return {
+      lanes: lanes,
+      width: lanes.reduce(function (width, lane, index) { return width + lane.width + (index === 0 ? 0 : 44); }, 0),
+      height: Math.max.apply(null, lanes.map(function (lane) { return lane.height; })),
+      folded: lanes.length > 1,
+      rowGap: rowGap
+    };
+  }
+
+  function applyFoldedLayerLayout(rootId) {
+    var heightCapacity = Math.max(600, (Math.min(900, Math.max(520, window.innerHeight - 180)) - 84) / 0.68);
+    var plans = orderedDepthLayers(rootId).map(function (nodes) { return planFoldedLayer(nodes, heightCapacity); });
+    var maxHeight = Math.max.apply(null, plans.map(function (plan) { return plan.height; }));
+    var nextX = 42;
+    var foldedLayers = 0;
+    graph.batch(function () {
+      plans.forEach(function (plan) {
+        if (plan.folded) foldedLayers += 1;
+        var laneX = nextX;
+        plan.lanes.forEach(function (lane) {
+          var currentY = (maxHeight - lane.height) / 2 + 42;
+          lane.items.forEach(function (item) {
+            item.node.position({
+              x: laneX + lane.width / 2,
+              y: currentY + item.topOffset
+            });
+            currentY += item.height + plan.rowGap;
+          });
+          laneX += lane.width + 44;
+        });
+        nextX += plan.width + 92;
+      });
+    });
+    return foldedLayers;
+  }
+
+  function fitInitialGraph(directionLabel, foldedLayers) {
+    graph.resize();
+    graph.fit(graph.elements(), 42);
+    var fittedZoom = graph.zoom();
+    if (fittedZoom > 1) {
+      graph.zoom(1);
+      graph.center(graph.elements());
+    }
+    var actualZoom = graph.zoom();
+    var detail = foldedLayers > 0 ? ' · ' + foldedLayers + ' folded layer' + (foldedLayers === 1 ? '' : 's') : '';
+    if (actualZoom < 0.62) {
+      setLayoutStatus(directionLabel + detail + ' · complete overview at ' + Math.round(actualZoom * 100) + '%; select a node to fit its path');
+    } else {
+      setLayoutStatus(directionLabel + detail + ' · complete fit at ' + Math.round(actualZoom * 100) + '%');
+    }
+  }
+
+  function fitFocusedPath(path) {
+    if (!graph || path.length === 0) return;
+    graph.fit(path, 58);
+    if (graph.zoom() > 1.25) {
+      graph.zoom(1.25);
+      graph.center(path);
+    }
+    setLayoutStatus('Selected causal path · ' + Math.round(graph.zoom() * 100) + '% zoom; Reset layout restores the complete view');
+  }
+
+  function applyReadableLayout(rootId, architectureMode) {
+    if (!graph || graph.elements().length === 0) return;
+    graphElement.style.minHeight = '520px';
+    graph.resize();
+    var foldedLayers = 0;
+    if (architectureMode) {
+      graph.layout({
+        name: 'breadthfirst',
+        directed: true,
+        roots: graph.getElementById(rootId),
+        direction: 'downward',
+        nodeDimensionsIncludeLabels: true,
+        padding: 42,
+        spacingFactor: 1.15,
+        fit: false,
+        depthSort: function (left, right) {
+          return String(left.data('label')).localeCompare(String(right.data('label'))) || left.id().localeCompare(right.id());
+        }
+      }).run();
+    } else {
+      foldedLayers = applyFoldedLayerLayout(rootId);
+    }
+    var bounds = graph.elements().boundingBox({ includeLabels: true });
+    var heightLimit = architectureMode ? 960 : 900;
+    var desiredHeight = Math.min(heightLimit, Math.max(520, Math.ceil(bounds.h + 96)));
+    graphElement.style.minHeight = desiredHeight + 'px';
+    graph.resize();
+    fitInitialGraph(architectureMode ? 'Top-down architecture' : 'Adaptive left-to-right flow', foldedLayers);
+  }
+
   function renderGraph(record, rootId, rootLabel, architectureMode) {
     if (graph) graph.destroy();
     var elements = record.scene.nodes.map(function (node) {
       var suffix = node.uncertainty === 'resolved' ? '' : ' · ' + node.uncertainty;
       var metric = (node.architectureMetrics || []).find(function (candidate) { return candidate.metric === controls.metric.value; });
       var metricSuffix = architectureMode && metric ? ' · ' + metric.value : '';
-      var data = { id: node.id, label: node.label + suffix + metricSuffix, kind: node.kind, uncertainty: node.uncertainty, impact: node.impact, evidenceIds: node.evidenceIds, heat: metric ? metric.heat : 'zero', metricValue: metric ? metric.value : null, reachability: node.architectureReachability || null, ownership: node.moduleOwnership ? node.moduleOwnership.state : null };
+      var data = { id: node.id, label: displayLabelForNode(node, record.scene, Boolean(architectureMode)) + suffix + metricSuffix, fullLabel: node.label + suffix + metricSuffix, kind: node.kind, uncertainty: node.uncertainty, impact: node.impact, evidenceIds: node.evidenceIds, heat: metric ? metric.heat : 'zero', metricValue: metric ? metric.value : null, reachability: node.architectureReachability || null, ownership: node.moduleOwnership ? node.moduleOwnership.state : null };
       if (node.parentId) data.parent = node.parentId;
       return { data: data };
     }).concat(record.scene.edges.map(function (edge) {
@@ -229,13 +469,12 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       return { data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label + suffix, kind: edge.kind, uncertainty: edge.uncertainty, impact: edge.impact, evidenceIds: edge.evidenceIds } };
     }));
     graph = cytoscape({
-      container: document.getElementById('graph'),
+      container: graphElement,
       elements: elements,
-      minZoom: 0.25,
       maxZoom: 2.5,
       layout: { name: 'preset' },
       style: [
-        { selector: 'node', style: { 'label': 'data(label)', 'font-size': 10, 'text-wrap': 'wrap', 'text-max-width': 130, 'text-valign': 'bottom', 'text-margin-y': 7, 'background-color': '#52647f', 'border-width': 2, 'border-color': '#334057', 'width': 30, 'height': 30 } },
+        { selector: 'node', style: { 'label': 'data(label)', 'font-size': 11, 'text-wrap': 'wrap', 'text-max-width': 150, 'text-valign': 'bottom', 'text-margin-y': 8, 'text-background-color': '#fbfcfe', 'text-background-opacity': 0.92, 'text-background-padding': 2, 'background-color': '#52647f', 'border-width': 2, 'border-color': '#334057', 'width': 30, 'height': 30 } },
         { selector: 'node[kind="endpoint"]', style: { 'shape': 'round-rectangle', 'width': 48, 'height': 32, 'background-color': '#2457d6' } },
         { selector: 'node[kind="repository"]', style: { 'shape': 'round-rectangle', 'width': 64, 'height': 38, 'background-color': '#172033' } },
         { selector: 'node[kind="module"]', style: { 'shape': 'round-rectangle', 'background-color': '#dbe5f7', 'border-color': '#2457d6', 'padding': 18, 'text-valign': 'top', 'text-margin-y': -8 } },
@@ -259,18 +498,27 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
         { selector: 'node[heat="medium"]', style: { 'background-color': '#d19a00' } },
         { selector: 'node[heat="high"]', style: { 'background-color': '#d06413' } },
         { selector: 'node[heat="very_high"]', style: { 'background-color': '#b42318' } },
-        { selector: 'edge', style: { 'label': 'data(label)', 'font-size': 8, 'text-background-color': '#ffffff', 'text-background-opacity': 0.9, 'text-background-padding': 2, 'curve-style': 'bezier', 'line-color': '#93a1b5', 'target-arrow-color': '#93a1b5', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.8, 'width': 2 } },
+        { selector: 'edge', style: { 'label': '', 'font-size': 8, 'text-background-color': '#ffffff', 'text-background-opacity': 0.92, 'text-background-padding': 2, 'curve-style': 'bezier', 'line-color': '#93a1b5', 'target-arrow-color': '#93a1b5', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.8, 'width': 2 } },
         { selector: 'edge[kind="provenance"]', style: { 'line-style': 'dashed', 'line-color': '#6f42c1', 'target-arrow-color': '#6f42c1' } },
         { selector: 'edge[kind="interaction"]', style: { 'line-style': 'dashed', 'line-color': '#b54708', 'target-arrow-color': '#b54708' } },
         { selector: 'edge[kind="architecture"]', style: { 'line-color': '#b9c3d3', 'target-arrow-color': '#b9c3d3', 'width': 1 } },
         { selector: 'edge[uncertainty != "resolved"]', style: { 'line-style': 'dotted', 'line-color': '#b42318', 'target-arrow-color': '#b42318' } },
         { selector: 'edge[impact="direct"]', style: { 'line-color': '#b42318', 'target-arrow-color': '#b42318', 'width': 5 } },
         { selector: 'edge[impact="potential"]', style: { 'line-color': '#d19a00', 'target-arrow-color': '#d19a00', 'width': 5 } },
+        { selector: 'edge[uncertainty != "resolved"], edge[impact != "none"], edge.focus, edge.edge-label-visible', style: { 'label': 'data(label)' } },
         { selector: '.dim', style: { 'opacity': 0.14 } },
         { selector: '.focus', style: { 'opacity': 1, 'z-index': 20 } }
       ]
     });
-    graph.layout({ name: 'breadthfirst', directed: true, roots: graph.getElementById(rootId), padding: 28, spacingFactor: 1.15 }).run();
+    relayoutButton.disabled = false;
+    fitButton.disabled = false;
+    relayoutButton.onclick = function () { applyReadableLayout(rootId, Boolean(architectureMode)); };
+    fitButton.onclick = fitGraph;
+    applyReadableLayout(rootId, Boolean(architectureMode));
+    graph.on('mouseover', 'edge', function (event) { event.target.addClass('edge-label-visible'); });
+    graph.on('mouseout', 'edge', function (event) { event.target.removeClass('edge-label-visible'); });
+    graph.on('mouseover', 'node', function (event) { layoutStatus.textContent = event.target.data('fullLabel'); });
+    graph.on('mouseout', 'node', function () { layoutStatus.textContent = persistentLayoutStatus; });
     graph.on('tap', 'node', function (event) {
       graph.elements().removeClass('dim focus');
       var target = event.target;
@@ -300,7 +548,8 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
         renderList();
         return;
       }
-      showEvidence(record, target.data('label'), target.data('evidenceIds') || []);
+      fitFocusedPath(path);
+      showEvidence(record, target.data('fullLabel'), target.data('evidenceIds') || []);
     });
     graph.on('tap', 'edge', function (event) {
       graph.elements().removeClass('dim focus');
@@ -308,6 +557,7 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       var path = target.source().predecessors().union(target.target().successors()).union(target).union(target.source()).union(target.target());
       graph.elements().not(path).addClass('dim');
       path.addClass('focus');
+      fitFocusedPath(path);
       showEvidence(record, target.data('label'), target.data('evidenceIds') || []);
     });
     graph.on('tap', function (event) {
@@ -376,8 +626,7 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       tableBody.replaceChildren();
       inspector.replaceChildren(element('p', 'inspector-empty', 'Select an endpoint to inspect evidence.'));
       limitNotice.hidden = true;
-      if (graph) { graph.destroy(); graph = null; }
-      document.getElementById('graph').replaceChildren();
+      clearGraph();
       return;
     }
     title.textContent = endpoint.httpMethod + ' ' + endpoint.path;
@@ -406,8 +655,7 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       tableBody.replaceChildren();
       inspector.replaceChildren(element('p', 'inspector-empty', 'Select an interaction handler to inspect evidence.'));
       limitNotice.hidden = true;
-      if (graph) { graph.destroy(); graph = null; }
-      document.getElementById('graph').replaceChildren();
+      clearGraph();
       return;
     }
     title.textContent = handler.kind.replaceAll('_', ' ') + ' · ' + handler.target;
@@ -438,8 +686,7 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
       facts.replaceChildren();
       tableBody.replaceChildren();
       limitNotice.hidden = true;
-      if (graph) { graph.destroy(); graph = null; }
-      document.getElementById('graph').replaceChildren();
+      clearGraph();
       return;
     }
     title.textContent = 'Repository architecture overview';
