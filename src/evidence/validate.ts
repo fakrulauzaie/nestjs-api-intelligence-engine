@@ -1236,6 +1236,7 @@ export function validateAnalysisDocument(input: unknown): AnalysisValidationResu
               'METHOD_READS_TABLE',
               'METHOD_WRITES_TABLE',
               'METHOD_ACCESSES_RESOURCE',
+              'METHOD_INITIATES_INTERACTION',
             ].includes(assertion.predicate))
         ) {
           issues.push({

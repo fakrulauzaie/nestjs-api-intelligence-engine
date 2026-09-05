@@ -504,8 +504,12 @@ function handlerTiming(expression: ts.Expression | undefined): {
     : { timing: 'synchronous', ruleId: EVENT_HANDLER_RULE_IDS.synchronous, known: true };
 }
 
-function nestedFunctionBoundary(node: ts.Node, root: ts.MethodDeclaration): boolean {
-  return node !== root && ts.isFunctionLike(node);
+function nestedFunctionBoundary(
+  node: ts.Node,
+  root: ts.MethodDeclaration,
+  allowedNestedFunctions: ReadonlySet<ts.Node>,
+): boolean {
+  return node !== root && ts.isFunctionLike(node) && !allowedNestedFunctions.has(node);
 }
 
 export function extractNestEventEmitter(input: {
@@ -516,7 +520,9 @@ export function extractNestEventEmitter(input: {
   readonly modules: readonly ModuleRecord[];
   readonly moduleAssertions: readonly AssertionRecord[];
   readonly maxFanOutPerInteraction: number;
+  readonly allowedNestedFunctions?: ReadonlySet<ts.Node>;
 }): NestEventEmitterExtraction {
+  const allowedNestedFunctions = input.allowedNestedFunctions ?? new Set();
   const sourceByAbsolutePath = new Map(
     input.sourceIndex.sourceFiles.map((source) => [
       absolutePathKey(source.sourceFile.fileName),
@@ -1001,7 +1007,7 @@ export function extractNestEventEmitter(input: {
       for (const method of indexedClass.methods) {
         const located = { source, indexedClass, method };
         const visit = (node: ts.Node): void => {
-          if (nestedFunctionBoundary(node, method.node)) return;
+          if (nestedFunctionBoundary(node, method.node, allowedNestedFunctions)) return;
           if (!ts.isCallExpression(node)) {
             ts.forEachChild(node, visit);
             return;

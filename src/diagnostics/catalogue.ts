@@ -248,6 +248,26 @@ export const DIAGNOSTIC_CATALOGUE: Readonly<Record<DiagnosticCode, DiagnosticDef
     summary:
       'A package-proven Redlock using() call has a callback form whose lexical effects cannot be bounded safely.',
   },
+  CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN: {
+    defaultSeverity: 'warning',
+    summary:
+      'A verified critical-section wrapper is called with a callback form that cannot be mapped to an inline lexical boundary.',
+  },
+  CRITICAL_SECTION_WRAPPER_TARGET_AMBIGUOUS: {
+    defaultSeverity: 'warning',
+    summary:
+      'A call has multiple repository method targets including a verified critical-section wrapper, so no callback is authorized.',
+  },
+  CRITICAL_SECTION_WRAPPER_CYCLE_TRUNCATED: {
+    defaultSeverity: 'warning',
+    summary:
+      'A callback forwarding cycle connected to a package-proven Redlock terminal was truncated deterministically.',
+  },
+  CRITICAL_SECTION_WRAPPER_LIMIT_REACHED: {
+    defaultSeverity: 'warning',
+    summary:
+      'Verified critical-section wrapper analysis reached a forwarding, state, or target-candidate safety limit.',
+  },
 };
 
 export function createDiagnostic(input: {

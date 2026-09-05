@@ -664,8 +664,12 @@ function activationFor(
       };
 }
 
-function nestedFunctionBoundary(node: ts.Node, root: ts.MethodDeclaration): boolean {
-  return node !== root && ts.isFunctionLike(node);
+function nestedFunctionBoundary(
+  node: ts.Node,
+  root: ts.MethodDeclaration,
+  allowedNestedFunctions: ReadonlySet<ts.Node>,
+): boolean {
+  return node !== root && ts.isFunctionLike(node) && !allowedNestedFunctions.has(node);
 }
 
 export function extractNestHttpService(input: {
@@ -673,7 +677,9 @@ export function extractNestHttpService(input: {
   readonly checker: ts.TypeChecker;
   readonly repositoryRevision: string | null;
   readonly evidenceSnippetLimit: number;
+  readonly allowedNestedFunctions?: ReadonlySet<ts.Node>;
 }): NestHttpServiceExtraction {
+  const allowedNestedFunctions = input.allowedNestedFunctions ?? new Set();
   const sourceByAbsolutePath = new Map(
     input.sourceIndex.sourceFiles.map((source) => [
       absolutePathKey(source.sourceFile.fileName),
@@ -974,7 +980,7 @@ export function extractNestHttpService(input: {
           return true;
         };
         const visit = (node: ts.Node): void => {
-          if (nestedFunctionBoundary(node, method.node)) return;
+          if (nestedFunctionBoundary(node, method.node, allowedNestedFunctions)) return;
           if (ts.isCallExpression(node) && !analyzeAxiosRef(node)) analyzeHttpService(node);
           ts.forEachChild(node, visit);
         };

@@ -41,7 +41,7 @@ describe('Phase 40 BullMQ branch extraction and propagation', () => {
     );
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.interactionHandlerDispatches).toEqual([
         expect.objectContaining({ state: 'complete' }),
       ]);
@@ -184,7 +184,7 @@ describe('Phase 40 BullMQ branch extraction and propagation', () => {
     const { project, result } = await scanSource('test/fixtures/phase39/bullmq/unsupported.ts.txt');
     try {
       const { analysis } = result;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.interactionHandlerDispatches.map(({ state }) => state).sort()).toEqual([
         'partial',
         'partial',

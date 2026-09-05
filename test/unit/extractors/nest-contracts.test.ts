@@ -34,8 +34,8 @@ describe('Phase 19 request/response and column contracts', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      expect(analysis.schemaVersion).toBe('7.0.0');
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      expect(analysis.schemaVersion).toBe('8.0.0');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(validateAnalysisDocument(analysis)).toMatchObject({ success: true });
 
       const methods = new Map(analysis.methods.map((method) => [method.id, method]));
@@ -241,8 +241,8 @@ describe('Phase 19 request/response and column contracts', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      expect(analysis.schemaVersion).toBe('7.0.0');
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      expect(analysis.schemaVersion).toBe('8.0.0');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       const sameNamed = analysis.contractTypes.filter((type) => type.displayName === 'SharedDto');
       expect(sameNamed).toHaveLength(2);
       expect(new Set(sameNamed.map((type) => type.id)).size).toBe(2);

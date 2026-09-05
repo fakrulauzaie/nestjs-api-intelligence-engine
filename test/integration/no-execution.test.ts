@@ -58,7 +58,8 @@ describe('static-analysis safety', () => {
           scanned.analysis.schemaVersion === '4.0.0' ||
           scanned.analysis.schemaVersion === '5.0.0' ||
           scanned.analysis.schemaVersion === '6.0.0' ||
-          scanned.analysis.schemaVersion === '7.0.0'
+          scanned.analysis.schemaVersion === '7.0.0' ||
+          scanned.analysis.schemaVersion === '8.0.0'
           ? scanned.analysis.interactions
           : [],
       ).toHaveLength(2);

@@ -10,6 +10,7 @@ export const SUPPORTED_COMPARISON_ANALYSIS_SCHEMA_VERSIONS = [
   '5.0.0',
   '6.0.0',
   '7.0.0',
+  '8.0.0',
 ] as const;
 
 export interface NormalizedComparisonAnalysis {

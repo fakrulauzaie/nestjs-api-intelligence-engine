@@ -8,10 +8,11 @@ causal database effects, and bounded BullMQ queue/worker candidate paths whose
 database effects remain distributed-conditional. It also inventories bounded Nest
 `ClientProxy` `send`/`emit` interactions and transport-compatible
 `@MessagePattern`/`@EventPattern` delivery candidates under the
-`microservice_message` kind. Analysis v7 also records package-proven `cache-manager`
+`microservice_message` kind. Analysis v8 also records package-proven `cache-manager`
 and direct `ioredis` key/hash access as non-relational resource facts, keeping key
 structure while excluding payload and runtime values, plus package-proven Redlock
-`using()` dependencies and bounded callback scopes. Its
+`using()` dependencies, bounded direct callback scopes, and checker-proven wrapper
+flows into those package terminals. Its
 output is deterministic, runtime-validated, evidence-backed, and explicit about gaps.
 The offline graph also provides a bounded repository architecture view with numeric
 call/reach metrics and exact Nest module-ownership states; it never turns zero supported
@@ -49,7 +50,7 @@ POST /users
   -> WRITE user
 ```
 
-Each edge cites repository-relative source coordinates. See the current v7
+Each edge cites repository-relative source coordinates. See the current v8
 [endpoint catalogue](docs/examples/current/endpoints.md),
 [read trace](docs/examples/current/read-trace.md),
 [write trace](docs/examples/current/write-trace.md), and
@@ -348,7 +349,7 @@ no absolute checkout path or timing; volatile run metadata is separate. Publicat
 stages complete files, commits canonical analysis last, and preserves unrelated files.
 See [Architecture](docs/architecture.md) and the [Canonical Model Contract](docs/model-contract.md).
 
-The current scanner publishes strict analysis schema `7.0.0` and advertises
+The current scanner publishes strict analysis schema `8.0.0` and advertises
 `outbound_http`, `in_process_event`, `job_queue`, and `microservice_message` as
 supported and enabled. Phase 30 originally introduced empty
 interaction collections; frozen v1/v2 documents remain readable, and missing
@@ -375,6 +376,13 @@ Analysis v7 adds package-proven Redlock `using()` resources and explicit bounded
 critical-section records. Callback-contained calls and data/resource effects remain
 `critical_section_conditional`; the records do not prove acquisition, exclusivity,
 contention, timing, or release. See [Redlock Critical Sections](docs/redlock-critical-sections.md).
+
+Analysis v8 adds automatic, checker-proven propagation through repository-visible
+critical-section wrappers. Only unchanged callable parameters that reach a direct
+package-proven `redlock.using()` callback are eligible, and only an inline callback at
+an exact call site is opened to downstream extractors. Ambiguity, unsupported callback
+forms, and bounded terminal-connected paths produce explicit diagnostics; names and
+configuration cannot manufacture proof.
 
 Phase 45 defines the separate, strict `SystemAnalysisDocument`; Phase 46 implements
 artifact-only correlation and atomic JSON/Markdown publication. Service namespaces

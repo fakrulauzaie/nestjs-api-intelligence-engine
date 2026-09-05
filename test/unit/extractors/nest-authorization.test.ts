@@ -128,7 +128,7 @@ describe('NestJS authorization metadata and composite decorators', () => {
           },
         },
       });
-      expect(result.analysis.schemaVersion).toBe('7.0.0');
+      expect(result.analysis.schemaVersion).toBe('8.0.0');
       expect(analysisHasAuthorizationFacts(result.analysis)).toBe(true);
       if (!analysisHasAuthorizationFacts(result.analysis)) return;
 

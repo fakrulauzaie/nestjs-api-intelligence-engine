@@ -253,7 +253,7 @@ removes staging files and does not replace an existing complete bundle.
 ## Extension boundary
 
 The current implementation stops at the patterns in [Supported Static-Analysis
-Patterns](supported-patterns.md). Polymorphic/callback request flow, dynamic or
+Patterns](supported-patterns.md). General polymorphic or higher-order callback flow, dynamic or
 non-PostgreSQL SQL, pipes/interceptors/serialization behavior, unsupported HTTP
 clients and general RxJS data flow, persistence history, monorepos, unsupported
 messaging transports, PDF certification, fuzzy OpenAPI matching, hosted graph
@@ -262,7 +262,7 @@ phases.
 New facts should enter through a deterministic
 extractor and the same canonical validation boundary before any reporter consumes them.
 
-### Analysis v7 interaction, branch, authorization, resource, and critical-section boundary
+### Analysis v8 interaction, branch, authorization, resource, and critical-section boundary
 
 The current scanner supports `outbound_http`, `in_process_event`, `job_queue`, and
 `microservice_message`. The chronology below
@@ -367,6 +367,20 @@ remove those assertions from the ordinary synchronous path and traverse them und
 `critical_section_conditional`; graph v9 renders the lexical scope explicitly. This
 pipeline reports dependency and bounded scope without inferring acquisition,
 exclusivity, timing, contention, callback execution, or release.
+
+Analysis v8 extends that same pass with internal, non-canonical callback-flow
+summaries. It starts only at a package-proven `redlock.using()` terminal, identifies a
+directly invoked callable parameter, and propagates the proof backwards through exact
+repository method symbols and unchanged positional arguments under fixed hop, state,
+and target-candidate limits. At an exact call site, only a proven inline callback is
+added to the shared allowed-nested-function set. Existing call, persistence, SQL,
+resource, and interaction extractors then traverse that lexical callback normally;
+the critical-section containment pass assigns their canonical assertions to the
+caller-owned scope. Wrapper-derived resources use
+`resource.redlock.verified-wrapper.v1` and a dynamic target rather than copying a
+callee-owned key expression. Ambiguity, unsupported callback form, terminal-connected
+cycles, and exhausted bounds fail closed and produce v8 diagnostics. No wrapper
+selector configuration or naming heuristic can create proof.
 
 Phase 45 leaves this repository-analysis pipeline unchanged. It introduces a separate
 `SystemAnalysisDocument` validation boundary for artifact-only stitching.

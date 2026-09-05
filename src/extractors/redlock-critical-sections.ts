@@ -24,8 +24,21 @@ import {
 } from './canonical-records.js';
 import { packageMember, unwrapExpression } from './outbound-http.js';
 import { isPackageDecorator } from './package-symbols.js';
+import {
+  analyzeVerifiedCriticalSectionWrapperCallSites,
+  propagateCriticalSectionCallbackParameters,
+  sortDirectCriticalSectionCallbackParameterSummaries,
+  summarizeDirectCriticalSectionCallbackParameters,
+  type CriticalSectionCallbackParameterFlowSummary,
+  type CriticalSectionWrapperCallSiteIssue,
+  type CriticalSectionWrapperFlowIssue,
+  type DirectCriticalSectionCallbackParameterSummary,
+  type VerifiedCriticalSectionWrapperCallSiteProjection,
+} from './critical-section-wrapper-flow.js';
 
 export const REDLOCK_CRITICAL_SECTION_RULE_ID = 'resource.redlock.using.v1';
+export const REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID =
+  'resource.redlock.verified-wrapper.v1';
 const REDLOCK_MODULE = 'redlock';
 const NEST_COMMON_MODULE = '@nestjs/common';
 const NEST_BULLMQ_MODULE = '@nestjs/bullmq';
@@ -46,6 +59,11 @@ export interface RedlockCriticalSectionExtraction {
   readonly evidence: readonly EvidenceRecord[];
   readonly diagnostics: readonly DiagnosticRecord[];
   readonly allowedNestedFunctions: ReadonlySet<ts.FunctionLikeDeclaration>;
+  readonly directCallbackParameterSummaries: readonly DirectCriticalSectionCallbackParameterSummary[];
+  readonly callbackParameterFlowSummaries: readonly CriticalSectionCallbackParameterFlowSummary[];
+  readonly wrapperCallSiteProjections: readonly VerifiedCriticalSectionWrapperCallSiteProjection[];
+  readonly wrapperCallSiteIssues: readonly CriticalSectionWrapperCallSiteIssue[];
+  readonly wrapperFlowIssues: readonly CriticalSectionWrapperFlowIssue[];
   readonly state: 'complete' | 'incomplete';
 }
 
@@ -158,6 +176,18 @@ export function extractRedlockCriticalSections(input: {
   const evidenceById = new Map<string, EvidenceRecord>();
   const diagnosticById = new Map<string, DiagnosticRecord>();
   const allowedNestedFunctions = new Set<ts.FunctionLikeDeclaration>();
+  const directCallbackParameterSummaries: DirectCriticalSectionCallbackParameterSummary[] = [];
+  const locatedMethodByNode = new Map<ts.MethodDeclaration, LocatedMethod>();
+  for (const source of input.sourceIndex.sourceFiles) {
+    for (const indexedClass of source.classes) {
+      if (recognizedRoles(indexedClass).length === 0) continue;
+      for (const method of indexedClass.methods) {
+        if (method.node.body !== undefined) {
+          locatedMethodByNode.set(method.node, { source, indexedClass, method });
+        }
+      }
+    }
+  }
 
   const addEvidence = (record: EvidenceRecord): string => {
     evidenceById.set(record.id, record);
@@ -249,6 +279,14 @@ export function extractRedlockCriticalSections(input: {
               }
               const callbackEvidenceId = evidenceForNode(callback, 'resolution_basis', false);
               if (callbackEvidenceId === null) return;
+              directCallbackParameterSummaries.push(
+                ...summarizeDirectCriticalSectionCallbackParameters({
+                  checker: input.checker,
+                  method: indexedMethod,
+                  terminalCall: node,
+                  criticalSectionCallback: callback,
+                }),
+              );
               const resolution = lockTargets(node.arguments[0], input.checker);
               if (resolution.issue !== null) {
                 const basisId =
@@ -334,6 +372,170 @@ export function extractRedlockCriticalSections(input: {
     }
   }
 
+  const sortedDirectSummaries = sortDirectCriticalSectionCallbackParameterSummaries(
+    directCallbackParameterSummaries,
+  );
+  const wrapperFlow = propagateCriticalSectionCallbackParameters({
+    sourceIndex: input.sourceIndex,
+    checker: input.checker,
+    directSummaries: sortedDirectSummaries,
+  });
+  const wrapperCallSites = analyzeVerifiedCriticalSectionWrapperCallSites({
+    sourceIndex: input.sourceIndex,
+    checker: input.checker,
+    sourceMethods: [...locatedMethodByNode.values()].map(({ method }) => method),
+    summaries: wrapperFlow.summaries,
+  });
+  const wrapperCallSiteProjections = wrapperCallSites.projections;
+  const provenForwardingCalls = new Set(
+    wrapperFlow.summaries.flatMap(({ flow }) =>
+      flow.flatMap((step) => (step.relation === 'forwarded_unchanged' ? [step.call] : [])),
+    ),
+  );
+  // A forwarding wrapper is also a syntactic call site whose argument is a
+  // parameter rather than an inline function. The call-site analyzer correctly
+  // refuses to project that parameter as a callback, but the propagation proof
+  // has already established its exact, unchanged path to Redlock. Do not publish
+  // a contradictory unproven-flow diagnostic for the same AST call. Unsupported
+  // caller method references and transformed callbacks remain actionable issues.
+  const wrapperCallSiteIssues = wrapperCallSites.issues.filter(
+    (issue) => issue.kind !== 'callback_flow_unproven' || !provenForwardingCalls.has(issue.call),
+  );
+
+  for (const issue of wrapperFlow.issues) {
+    if (issue.kind === 'candidate_limit') continue;
+    const located = locatedMethodByNode.get(issue.method.node);
+    if (located === undefined) continue;
+    const method = ensureMethod(located);
+    const callEvidenceId = evidenceForNode(issue.call.expression, 'call_site');
+    const parameterEvidenceId = evidenceForNode(
+      issue.method.parameters[issue.callbackParameterIndex]!.node,
+      'resolution_basis',
+      false,
+    );
+    if (callEvidenceId === null) continue;
+    addDiagnostic(
+      method.id,
+      issue.kind === 'cycle'
+        ? 'CRITICAL_SECTION_WRAPPER_CYCLE_TRUNCATED'
+        : 'CRITICAL_SECTION_WRAPPER_LIMIT_REACHED',
+      [callEvidenceId, ...(parameterEvidenceId === null ? [] : [parameterEvidenceId])],
+    );
+  }
+
+  for (const issue of wrapperCallSiteIssues) {
+    const located = locatedMethodByNode.get(issue.sourceMethod.node);
+    if (located === undefined) continue;
+    const method = ensureMethod(located);
+    const callEvidenceId = evidenceForNode(issue.call.expression, 'call_site');
+    if (callEvidenceId === null) continue;
+    const argument = issue.call.arguments[issue.callbackArgumentIndex];
+    const argumentEvidenceId =
+      argument === undefined ? null : evidenceForNode(argument, 'resolution_basis', false);
+    const candidateEvidenceIds = issue.candidateMethods.flatMap((candidate) => {
+      const id = evidenceForNode(candidate.node.name, 'resolution_basis', false);
+      return id === null ? [] : [id];
+    });
+    addDiagnostic(
+      method.id,
+      issue.kind === 'target_ambiguous'
+        ? 'CRITICAL_SECTION_WRAPPER_TARGET_AMBIGUOUS'
+        : issue.kind === 'target_candidate_limit'
+          ? 'CRITICAL_SECTION_WRAPPER_LIMIT_REACHED'
+          : 'CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN',
+      [
+        callEvidenceId,
+        ...(argumentEvidenceId === null ? [] : [argumentEvidenceId]),
+        ...candidateEvidenceIds,
+      ],
+    );
+  }
+
+  for (const projection of wrapperCallSiteProjections) {
+    const located = locatedMethodByNode.get(projection.sourceMethod.node);
+    if (located === undefined) continue;
+    const method = ensureMethod(located);
+    const callEvidenceId = evidenceForNode(projection.call.expression, 'call_site');
+    const callbackEvidenceId = evidenceForNode(projection.callback, 'resolution_basis', false);
+    if (callEvidenceId === null || callbackEvidenceId === null) continue;
+    const flowEvidenceIds = projection.evidenceNodes.flatMap(({ role, node }) => {
+      if (role === 'call_site' || role === 'callback_argument') return [];
+      // Retain only the symbol-bearing portion needed by the graph inspector. Full
+      // forwarding calls and callback declarations may contain lock keys, payloads,
+      // durations, or other values that are deliberately outside the public fact.
+      const conciseNode =
+        (role === 'parameter_forwarding' || role === 'callback_invocation') &&
+        ts.isCallExpression(node)
+          ? unwrapExpression(node.expression)
+          : role === 'callback_parameter' && ts.isParameter(node)
+            ? node.name
+            : node;
+      const id = evidenceForNode(conciseNode, 'resolution_basis');
+      return id === null ? [] : [id];
+    });
+    const evidenceIds = [
+      ...new Set([callEvidenceId, callbackEvidenceId, ...flowEvidenceIds]),
+    ].sort();
+    const target = { kind: 'dynamic' as const };
+    const accessId = makeResourceAccessId({
+      sourceMethodId: method.id,
+      technology: 'redlock',
+      resourceKind: 'distributed_lock',
+      operation: 'critical_section',
+      api: projection.targetMethod.name,
+      targetKey: resourceTargetKey(target),
+      selectorKey: null,
+      // The callback evidence distinguishes independent callback parameters at one
+      // wrapper call while the record still retains the concrete call-site evidence.
+      callEvidenceId: callbackEvidenceId,
+      ruleId: REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID,
+    });
+    accessById.set(accessId, {
+      id: accessId,
+      resourceKind: 'distributed_lock',
+      operation: 'critical_section',
+      technology: 'redlock',
+      api: projection.targetMethod.name,
+      sourceMethodId: method.id,
+      target,
+      selector: null,
+      ruleId: REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID,
+      evidenceIds,
+    });
+    const assertion: AssertionRecord = {
+      id: makeAssertionId({
+        subjectId: method.id,
+        predicate: 'METHOD_ACCESSES_RESOURCE',
+        objectId: accessId,
+        ruleId: REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID,
+      }),
+      subjectId: method.id,
+      predicate: 'METHOD_ACCESSES_RESOURCE',
+      objectId: accessId,
+      status: 'resolved',
+      ruleId: REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID,
+      evidenceIds,
+    };
+    assertionById.set(assertion.id, assertion);
+    const sectionId = makeCriticalSectionId({
+      sourceMethodId: method.id,
+      lockResourceAccessIds: [accessId],
+      callbackEvidenceId,
+      ruleId: REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID,
+    });
+    sectionById.set(sectionId, {
+      id: sectionId,
+      sourceMethodId: method.id,
+      lockResourceAccessIds: [accessId],
+      callbackKind: ts.isArrowFunction(projection.callback) ? 'inline_arrow' : 'inline_function',
+      callbackEvidenceId,
+      effectAssertionIds: [],
+      ruleId: REDLOCK_VERIFIED_WRAPPER_CRITICAL_SECTION_RULE_ID,
+      evidenceIds,
+    });
+    allowedNestedFunctions.add(projection.callback);
+  }
+
   return {
     classes: [...classById.values()],
     methods: [...methodById.values()],
@@ -343,6 +545,11 @@ export function extractRedlockCriticalSections(input: {
     evidence: [...evidenceById.values()],
     diagnostics: [...diagnosticById.values()],
     allowedNestedFunctions,
+    directCallbackParameterSummaries: sortedDirectSummaries,
+    callbackParameterFlowSummaries: wrapperFlow.summaries,
+    wrapperCallSiteProjections,
+    wrapperCallSiteIssues,
+    wrapperFlowIssues: wrapperFlow.issues,
     state: diagnosticById.size === 0 ? 'complete' : 'incomplete',
   };
 }

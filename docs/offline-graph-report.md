@@ -64,7 +64,7 @@ The graph command never scans source, starts NestJS, imports target modules, con
 to a database, or reads repository state outside its explicit inputs. Its independently
 versioned `GraphReportDocument` schema is `1.0.0` for analysis v1/v2 reports,
 `4.0.0` for analysis v3, `5.0.0` for analysis v4, `7.0.0` for analysis v5, and
-`8.0.0` for analysis v6 and `9.0.0` for current analysis v7 reports. Historical graph
+`8.0.0` for analysis v6 and `9.0.0` for current analysis v7/v8 reports. Historical graph
 schemas `2.0.0` and `3.0.0` remain readable but are no longer emitted. Graph v4 adds
 one bounded handler-rooted scene per canonical interaction handler. Graph v5 adds
 BullMQ branch nodes, branch-effect edges, and selected endpoint branch IDs. Graph v6
@@ -74,6 +74,13 @@ overview and adds canonical cache/Redis resource-access nodes to endpoint, handl
 and architecture views. Graph v9 adds Redlock resource and bounded critical-section
 scope nodes. The
 HTML is a rendering of the validated document, not a second fact graph.
+
+For analysis v8 wrapper projections, the critical-section node is explicitly labeled
+`verified wrapper critical section` and its derived scope edge is labeled
+`static wrapper callback projection`. Selecting either item shows concise,
+symbol-bearing proof locations for the wrapper chain while omitting call arguments and
+callback bodies. No intermediate wrapper call node or delivery/execution edge is
+invented, and the inspector states that the evidence is static and conditional.
 
 ## Endpoint, handler, and architecture exploration
 

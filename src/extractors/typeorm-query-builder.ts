@@ -128,6 +128,7 @@ export interface QueryBuilderMethodAnalysis {
 export interface QueryBuilderAnalysisInput {
   readonly body: ts.Block;
   readonly checker: ts.TypeChecker;
+  readonly allowedNestedFunctions?: ReadonlySet<ts.Node>;
   readonly resolveRootReceiver: (receiver: ts.Expression) => QueryBuilderRootResolution;
   readonly resolveTableTarget: (target: ts.Expression) => QueryBuilderTargetResolution;
   readonly evidenceForNode: (node: ts.Node, role: EvidenceRecord['role']) => string;
@@ -224,6 +225,7 @@ function relationString(expression: ts.Expression): boolean {
 export function analyzeTypeOrmQueryBuilders(
   input: QueryBuilderAnalysisInput,
 ): QueryBuilderMethodAnalysis {
+  const allowedNestedFunctions = input.allowedNestedFunctions ?? new Set();
   const accesses: QueryBuilderAccess[] = [];
   const writeSinks: QueryBuilderWriteSink[] = [];
   const diagnosticsByKey = new Map<string, QueryBuilderDiagnostic>();
@@ -659,7 +661,7 @@ export function analyzeTypeOrmQueryBuilders(
 
   const allCalls: ts.CallExpression[] = [];
   const visit = (node: ts.Node): void => {
-    if (node !== input.body && ts.isFunctionLike(node)) return;
+    if (node !== input.body && ts.isFunctionLike(node) && !allowedNestedFunctions.has(node)) return;
     if (ts.isCallExpression(node)) allCalls.push(node);
     ts.forEachChild(node, visit);
   };

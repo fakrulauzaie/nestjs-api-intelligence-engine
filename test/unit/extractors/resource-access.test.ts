@@ -41,7 +41,7 @@ describe('non-relational resource access extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
 
       expect(analysis.resourceAccessAnalysis).toEqual({
         supportedTechnologies: ['cache_manager', 'ioredis', 'redlock'],
@@ -204,7 +204,7 @@ describe('non-relational resource access extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(
         analysis.interactionHandlerBranchEffects.filter(({ kind }) => kind === 'accesses_resource'),
       ).toEqual([

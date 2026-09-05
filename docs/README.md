@@ -2,7 +2,7 @@
 
 This index separates current product documentation from historical evidence. Unless a
 document is explicitly marked historical, it describes the current `0.1.0` tool,
-analysis schema `7.0.0`, and the capabilities listed in
+analysis schema `8.0.0`, and the capabilities listed in
 [Supported Static-Analysis Patterns](supported-patterns.md).
 
 ## Source-of-truth hierarchy

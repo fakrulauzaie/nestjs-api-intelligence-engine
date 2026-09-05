@@ -51,7 +51,7 @@ describe('eager outbound HTTP extraction', () => {
         configuration: { maxCallDepth: 1 },
       });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method.qualifiedName]));
       const outbound = analysis.interactions.filter(
         (interaction) => interaction.kind === 'outbound_http',
@@ -272,7 +272,7 @@ describe('eager outbound HTTP extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.interactions).toHaveLength(1);
       expect(analysis.interactions[0]).toMatchObject({
         kind: 'outbound_http',

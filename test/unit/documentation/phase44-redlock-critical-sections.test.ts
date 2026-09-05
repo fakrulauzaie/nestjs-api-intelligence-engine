@@ -24,7 +24,7 @@ describe('Phase 44 Redlock critical-section documentation', () => {
     expect(guide).toContain('package-proven');
     expect(guide).toContain('`critical_section_conditional`');
     expect(guide).toMatch(/never claim lock\s+acquisition/u);
-    expect(guide).toContain('custom lock abstractions');
+    expect(guide).toContain('declaration-only/external wrappers');
     expect(architecture).toContain('CriticalSectionRecord.effectAssertionIds');
     expect(model).toContain('Analysis v7 Redlock critical sections');
     expect(patterns).toContain('resource.redlock.using.v1');

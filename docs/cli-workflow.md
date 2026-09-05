@@ -99,10 +99,10 @@ with only documented Nest `:name` to OpenAPI `{name}` conversion and an optional
 explicit path prefix. The source document is never overwritten. `controls` publishes
 one strict JSON and formula-safe CSV row per canonical endpoint, optionally attaching
 validated policy results for the same analysis snapshot. Both commands derive facts
-only from validated inputs. Analysis v7 outputs separately expose outbound
+only from validated inputs. Analysis v8 outputs separately expose outbound
 interactions, local interactions/effects, and—when BullMQ records exist—distributed
 interactions and distributed-conditional effects without changing synchronous
-`dbReads`/`dbWrites`. The v5 structured-export schema is retained for analysis v6/v7;
+`dbReads`/`dbWrites`. The v5 structured-export schema is retained for analysis v6-v8;
 non-relational resource facts remain available in canonical/Markdown/graph consumers
 and are not silently added to the frozen export shape. See
 [Structured Evidence Exports](structured-evidence-exports.md).
@@ -113,11 +113,12 @@ snapshot. Node/edge options bound each endpoint-centered scene; omitted counts r
 visible. The file embeds pinned Cytoscape.js, uses hash-authorized scripts plus
 `connect-src 'none'`, and includes an accessible node/edge table. See [Offline
 Interactive Graph Report](offline-graph-report.md).
-Current v6 reports use graph schema v8 and distinguish interaction, handler, boundary,
+Current v8 reports use graph schema v9 and distinguish interaction, handler, boundary,
 external-target, and BullMQ branch nodes. Interaction edges say `initiates`,
 `dispatches`, `matches local handler`, or identify a branch effect; they never claim
 delivery. Endpoint facts also list redacted authorization requirements and their
-`proven_enforced`, `configured_relationship`, or `enforcement_unknown` state.
+`proven_enforced`, `configured_relationship`, or `enforcement_unknown` state, plus
+package-proven Redlock and verified-wrapper critical-section scopes.
 Graph v9 also provides one bounded repository architecture view with numeric direct-call
 and supported-root reach metrics, percentile legends, and explicit Nest module
 ownership. Zero reach is labeled only `not_reached_from_supported_roots`.

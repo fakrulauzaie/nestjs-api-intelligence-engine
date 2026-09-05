@@ -212,11 +212,12 @@ function scopedAssertionSource(input: {
   addNode(input.nodes, canonicalNode(section.id, input.indexes, input.impact));
   const scopeEdgeId = `critical-scope:${section.id}`;
   if (!input.edges.some(({ id }) => id === scopeEdgeId)) {
+    const verifiedWrapper = section.ruleId === 'resource.redlock.verified-wrapper.v1';
     input.edges.push({
       id: scopeEdgeId,
       source: section.sourceMethodId,
       target: section.id,
-      label: 'bounded critical callback',
+      label: verifiedWrapper ? 'static wrapper callback projection' : 'bounded critical callback',
       kind: 'assertion',
       relation: null,
       uncertainty: 'resolved',
@@ -229,7 +230,7 @@ function scopedAssertionSource(input: {
         id: `critical-lock:${section.id}:${accessId}`,
         source: accessId,
         target: section.id,
-        label: 'bounds callback',
+        label: verifiedWrapper ? 'package-proven boundary' : 'bounds callback',
         kind: 'assertion',
         relation: null,
         uncertainty: 'resolved',
@@ -293,9 +294,10 @@ function canonicalNode(
   }
   const criticalSection = indexes.criticalSections.get(id);
   if (criticalSection !== undefined) {
+    const verifiedWrapper = criticalSection.ruleId === 'resource.redlock.verified-wrapper.v1';
     return {
       id,
-      label: `critical section (${criticalSection.lockResourceAccessIds.length} lock resource${criticalSection.lockResourceAccessIds.length === 1 ? '' : 's'})`,
+      label: `${verifiedWrapper ? 'verified wrapper ' : ''}critical section (${criticalSection.lockResourceAccessIds.length} lock resource${criticalSection.lockResourceAccessIds.length === 1 ? '' : 's'})`,
       kind: 'critical_section',
       uncertainty: 'resolved',
       impact,

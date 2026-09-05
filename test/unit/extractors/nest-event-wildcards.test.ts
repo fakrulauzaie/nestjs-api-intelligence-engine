@@ -70,7 +70,7 @@ describe('configured EventEmitter2 wildcard extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       const methodNames = new Map(
         analysis.methods.map(({ id, qualifiedName }) => [id, qualifiedName]),
       );

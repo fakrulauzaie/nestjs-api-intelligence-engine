@@ -1,9 +1,10 @@
 # Architecture Overview and Bounded Refactoring Metrics
 
 Graph schema v7 introduced one repository-level architecture view beside the existing
-endpoint and interaction-handler scenes for analysis v5. Current analysis v7 emits
-graph v8, which retains that view and extends eligible reach records with canonical
-non-relational resource accesses. The derived view does not add canonical facts.
+endpoint and interaction-handler scenes for analysis v5. Current analysis v8 emits
+graph v9, which retains that view and extends eligible reach records with canonical
+non-relational resource accesses and Redlock critical-section scopes. The derived view
+does not add canonical facts.
 
 ## Metric definitions
 
@@ -36,7 +37,7 @@ patterns, code beyond configured limits, or genuinely unused code. The engine ne
 labels it dead code, unreachable in all executions, or safe to delete.
 
 Analysis v1/v2 have no interaction-handler root family, so handler-root capability is
-explicitly `unavailable` rather than a proven empty set. Current analysis v7 exposes
+explicitly `unavailable` rather than a proven empty set. Current analysis v8 exposes
 both endpoint and handler root counts.
 
 ## Percentile heat

@@ -1,0 +1,272 @@
+{
+  "schemaVersion": "1.0.0",
+  "verifiedOn": "2026-09-04",
+  "compatibilityTarget": {
+    "packages": [
+      {
+        "name": "@nestjs/common",
+        "version": "0.0.0-test"
+      },
+      {
+        "name": "@nestjs/typeorm",
+        "version": "0.0.0-test"
+      },
+      {
+        "name": "redlock",
+        "version": "5.0.0-beta.2-test"
+      },
+      {
+        "name": "typeorm",
+        "version": "0.0.0-test"
+      }
+    ]
+  },
+  "schemaDecision": {
+    "currentAnalysisVersion": "7.0.0",
+    "targetAnalysisVersion": "8.0.0",
+    "v7Frozen": true,
+    "phaseW0PublishesWrapperFacts": false
+  },
+  "bounds": {
+    "maxForwardingHops": 3,
+    "unchangedPositionalParametersOnly": true,
+    "inlineCallSiteCallbacksOnly": true
+  },
+  "requiredEvidenceRoles": [
+    "call_site",
+    "callback_argument",
+    "callback_invocation",
+    "callback_parameter",
+    "parameter_forwarding",
+    "redlock_terminal"
+  ],
+  "globalMustNotInfer": [
+    "callback_invocation_guaranteed",
+    "configured_name_proves_wrapper_identity",
+    "critical_section_entered",
+    "delayed_callback_runs_under_lock",
+    "lock_acquired",
+    "lock_release_completed",
+    "method_reference_invoked",
+    "mutual_exclusion_guaranteed",
+    "outside_invocation_is_lock_scoped",
+    "spread_argument_mapping",
+    "technology_from_configuration",
+    "transformed_callback_forwarding",
+    "wrapper_cycle_reaches_terminal"
+  ],
+  "cases": [
+    {
+      "caseId": "csw0-cycle",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:cycle", "CSW0_NEGATIVE:cycle-one", "CSW0_NEGATIVE:cycle-two"],
+      "entryMethod": "UnsupportedCaller.cycle",
+      "callbackArgumentIndex": 0,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_WRAPPER_CYCLE_TRUNCATED",
+      "counterpartCaseIds": ["csw0-two-level-wrapper"],
+      "mustNotInfer": ["wrapper_cycle_reaches_terminal"],
+      "rationale": "A forwarding cycle with no package-proven terminal cannot authorize callback traversal."
+    },
+    {
+      "caseId": "csw0-direct-wrapper",
+      "fixture": "verified.ts.txt",
+      "classification": "eligible",
+      "sourceMarkers": ["CSW0_CASE:direct-wrapper", "CSW0_FLOW:direct-terminal"],
+      "entryMethod": "TicketService.forceResolveTicket",
+      "callbackArgumentIndex": 1,
+      "expectedFlow": [
+        {
+          "method": "RedisLockService.executeWithLock",
+          "callbackParameterIndex": 1,
+          "relation": "invoked_in_proven_section"
+        }
+      ],
+      "expectedEffects": ["TicketData.updateStatus"],
+      "derivedTechnology": "redlock",
+      "terminalApi": "Redlock.using",
+      "diagnostic": null,
+      "counterpartCaseIds": ["csw0-method-reference"],
+      "mustNotInfer": [
+        "callback_invocation_guaranteed",
+        "critical_section_entered",
+        "lock_acquired"
+      ],
+      "rationale": "An inline function maps directly to the parameter invoked inside the proven Redlock callback."
+    },
+    {
+      "caseId": "csw0-ignored-callback",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:ignored-callback", "CSW0_NEGATIVE:ignored-callback"],
+      "entryMethod": "UnsupportedCaller.ignored",
+      "callbackArgumentIndex": 0,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-direct-wrapper"],
+      "mustNotInfer": ["configured_name_proves_wrapper_identity"],
+      "rationale": "A similarly shaped wrapper that never invokes its callback has no critical-section path."
+    },
+    {
+      "caseId": "csw0-method-reference",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:method-reference"],
+      "entryMethod": "UnsupportedCaller.methodReference",
+      "callbackArgumentIndex": 1,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-direct-wrapper"],
+      "mustNotInfer": ["method_reference_invoked"],
+      "rationale": "The first release authorizes inline callback syntax only and keeps method references closed."
+    },
+    {
+      "caseId": "csw0-nested-scheduler",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:nested-scheduler", "CSW0_NEGATIVE:nested-scheduler"],
+      "entryMethod": "UnsupportedCaller.scheduled",
+      "callbackArgumentIndex": 0,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-direct-wrapper"],
+      "mustNotInfer": ["delayed_callback_runs_under_lock"],
+      "rationale": "Passing the callback into another higher-order API is not a direct invocation proof."
+    },
+    {
+      "caseId": "csw0-outside-section",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:outside-section", "CSW0_NEGATIVE:outside-section"],
+      "entryMethod": "UnsupportedCaller.outside",
+      "callbackArgumentIndex": 0,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-direct-wrapper"],
+      "mustNotInfer": ["outside_invocation_is_lock_scoped"],
+      "rationale": "Invoking the callback before a separate Redlock call does not place its effects under that lock."
+    },
+    {
+      "caseId": "csw0-spread-forwarding",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:spread-forwarding", "CSW0_NEGATIVE:spread-forwarding"],
+      "entryMethod": "UnsupportedCaller.spread",
+      "callbackArgumentIndex": 1,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-two-level-wrapper"],
+      "mustNotInfer": ["spread_argument_mapping"],
+      "rationale": "Tuple spreading is outside exact positional forwarding and remains unsupported initially."
+    },
+    {
+      "caseId": "csw0-stored-callback",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:stored-callback", "CSW0_NEGATIVE:stored-callback"],
+      "entryMethod": "UnsupportedCaller.stored",
+      "callbackArgumentIndex": 0,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-direct-wrapper"],
+      "mustNotInfer": ["delayed_callback_runs_under_lock"],
+      "rationale": "A stored callback may execute later and therefore has no proven lexical critical-section scope."
+    },
+    {
+      "caseId": "csw0-transformed-forwarding",
+      "fixture": "unsupported.ts.txt",
+      "classification": "unsupported",
+      "sourceMarkers": ["CSW0_CASE:transformed-forwarding", "CSW0_NEGATIVE:transformed-forwarding"],
+      "entryMethod": "UnsupportedCaller.transformed",
+      "callbackArgumentIndex": 1,
+      "expectedFlow": [],
+      "expectedEffects": [],
+      "derivedTechnology": null,
+      "terminalApi": null,
+      "diagnostic": "CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN",
+      "counterpartCaseIds": ["csw0-two-level-wrapper"],
+      "mustNotInfer": ["transformed_callback_forwarding"],
+      "rationale": "Wrapping a callback in a newly created closure requires a separate nested-flow contract."
+    },
+    {
+      "caseId": "csw0-two-level-wrapper",
+      "fixture": "verified.ts.txt",
+      "classification": "eligible",
+      "sourceMarkers": [
+        "CSW0_CASE:two-level-wrapper",
+        "CSW0_FLOW:direct-terminal",
+        "CSW0_FLOW:unchanged-forwarding"
+      ],
+      "entryMethod": "TicketService.resolveTicket",
+      "callbackArgumentIndex": 1,
+      "expectedFlow": [
+        {
+          "method": "RedisLockService.executeWithNttLock",
+          "callbackParameterIndex": 1,
+          "relation": "forwarded_unchanged"
+        },
+        {
+          "method": "RedisLockService.executeWithLock",
+          "callbackParameterIndex": 1,
+          "relation": "invoked_in_proven_section"
+        }
+      ],
+      "expectedEffects": ["TicketData.updateStatus", "TicketService.finalizeResolveTicket"],
+      "derivedTechnology": "redlock",
+      "terminalApi": "Redlock.using",
+      "diagnostic": null,
+      "counterpartCaseIds": ["csw0-cycle", "csw0-spread-forwarding", "csw0-transformed-forwarding"],
+      "mustNotInfer": [
+        "callback_invocation_guaranteed",
+        "critical_section_entered",
+        "technology_from_configuration"
+      ],
+      "rationale": "The callback is forwarded unchanged through one exact wrapper call to the proven terminal parameter."
+    }
+  ],
+  "realWorldBasis": {
+    "repository": "ticket-service-example",
+    "callerSourceFile": "src/modules/ntt/ntt.service.ts",
+    "wrapperSourceFile": "src/modules/redis/redis-lock.service.ts",
+    "entryMethod": "NttService.resolveTicket",
+    "wrapperChain": [
+      "RedisLockService.executeWithNttLock",
+      "RedisLockService.executeWithLock",
+      "Redlock.using"
+    ],
+    "callbackArgumentIndex": 1
+  },
+  "review": {
+    "semanticStatus": "approved",
+    "extractorImplementationPresent": false,
+    "nextPhase": "W1",
+    "decisions": [
+      "Automatic repository-visible proof precedes any optional configuration selector.",
+      "Class-name and callback-index configuration cannot establish wrapper semantics.",
+      "Only direct invocation and unchanged positional forwarding are initially eligible.",
+      "Technology identity is derived from the package-proven Redlock terminal."
+    ]
+  }
+}

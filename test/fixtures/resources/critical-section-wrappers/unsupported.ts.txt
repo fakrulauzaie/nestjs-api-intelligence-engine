@@ -1,0 +1,123 @@
+import { Injectable } from '@nestjs/common';
+import Redlock from 'redlock';
+
+@Injectable()
+class UnsupportedLockWrappers {
+  private deferred: (() => Promise<void>) | undefined;
+
+  constructor(private readonly redlock: Redlock) {}
+
+  async executeWithLock<T>(lockKey: string, task: () => Promise<T>): Promise<T> {
+    return this.redlock.using([lockKey], 5_000, async () => task());
+  }
+
+  // CSW0_NEGATIVE:ignored-callback
+  async neverInvokes<T>(_task: () => Promise<T>): Promise<T> {
+    return undefined as T;
+  }
+
+  // CSW0_NEGATIVE:outside-section
+  async invokesOutsideSection<T>(task: () => Promise<T>): Promise<T> {
+    const result = await task();
+    await this.redlock.using(['lock:outside'], 5_000, async () => undefined);
+    return result;
+  }
+
+  // CSW0_NEGATIVE:stored-callback
+  async storesForLater(task: () => Promise<void>): Promise<void> {
+    this.deferred = task;
+  }
+
+  // CSW0_NEGATIVE:nested-scheduler
+  async schedulesInsideSection<T>(task: () => Promise<T>): Promise<T> {
+    return this.redlock.using(['lock:scheduled'], 5_000, async () => Promise.resolve().then(task));
+  }
+
+  // CSW0_NEGATIVE:transformed-forwarding
+  async transformsCallback<T>(lockKey: string, task: () => Promise<T>): Promise<T> {
+    return this.executeWithLock(lockKey, async () => task());
+  }
+
+  // CSW0_NEGATIVE:spread-forwarding
+  async spreadsArguments<T>(lockKey: string, task: () => Promise<T>): Promise<T> {
+    const forwarded = [lockKey, task] as const;
+    return this.executeWithLock(...forwarded);
+  }
+
+  // CSW0_NEGATIVE:cycle-one
+  async cycleOne<T>(task: () => Promise<T>): Promise<T> {
+    return this.cycleTwo(task);
+  }
+
+  // CSW0_NEGATIVE:cycle-two
+  async cycleTwo<T>(task: () => Promise<T>): Promise<T> {
+    return this.cycleOne(task);
+  }
+}
+
+class RedlockLookalike {
+  async using<T>(task: () => Promise<T>): Promise<T> {
+    return task();
+  }
+}
+
+@Injectable()
+class LookalikeWrapper {
+  constructor(private readonly redlock: RedlockLookalike) {}
+
+  // CSW0_NEGATIVE:package-lookalike
+  async execute<T>(task: () => Promise<T>): Promise<T> {
+    return this.redlock.using(task);
+  }
+}
+
+@Injectable()
+class UnsupportedCaller {
+  private readonly complete = async (): Promise<void> => undefined;
+
+  constructor(private readonly locks: UnsupportedLockWrappers) {}
+
+  // CSW0_CASE:ignored-callback
+  ignored(): Promise<string> {
+    return this.locks.neverInvokes(async () => 'ignored');
+  }
+
+  // CSW0_CASE:outside-section
+  outside(): Promise<string> {
+    return this.locks.invokesOutsideSection(async () => 'outside');
+  }
+
+  // CSW0_CASE:stored-callback
+  stored(): Promise<void> {
+    return this.locks.storesForLater(async () => undefined);
+  }
+
+  // CSW0_CASE:nested-scheduler
+  scheduled(): Promise<string> {
+    return this.locks.schedulesInsideSection(async () => 'scheduled');
+  }
+
+  // CSW0_CASE:transformed-forwarding
+  transformed(): Promise<string> {
+    return this.locks.transformsCallback('lock:transformed', async () => 'transformed');
+  }
+
+  // CSW0_CASE:spread-forwarding
+  spread(): Promise<string> {
+    return this.locks.spreadsArguments('lock:spread', async () => 'spread');
+  }
+
+  // CSW0_CASE:cycle
+  cycle(): Promise<string> {
+    return this.locks.cycleOne(async () => 'cycle');
+  }
+
+  // CSW0_CASE:method-reference
+  methodReference(): Promise<void> {
+    return this.locks.executeWithLock('lock:reference', this.complete);
+  }
+}
+
+if (Date.now() < 0) {
+  throw new Error('CSW0 unsupported wrapper fixture must never execute');
+}

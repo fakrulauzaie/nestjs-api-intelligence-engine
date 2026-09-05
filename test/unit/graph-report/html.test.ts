@@ -52,6 +52,9 @@ describe('Phase 23 self-contained HTML rendering', () => {
     expect(OFFLINE_GRAPH_REPORT_APP).toContain('fullLabel: node.label');
     expect(OFFLINE_GRAPH_REPORT_APP).toContain('complete overview at');
     expect(OFFLINE_GRAPH_REPORT_APP).toContain('fitFocusedPath(path)');
+    expect(OFFLINE_GRAPH_REPORT_APP).toContain(
+      'This is static conditional evidence, not proof of acquisition or callback execution.',
+    );
     expect(OFFLINE_GRAPH_REPORT_APP).not.toContain('readableFloor');
     expect(OFFLINE_GRAPH_REPORT_APP).not.toContain('minZoom: 0.25');
     expect(first).toContain('Reset layout');

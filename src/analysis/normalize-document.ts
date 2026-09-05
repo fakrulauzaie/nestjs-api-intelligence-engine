@@ -7,6 +7,7 @@ import type {
   AnalysisDocumentV5,
   AnalysisDocumentV6,
   AnalysisDocumentV7,
+  AnalysisDocumentV8,
   InteractionAnalysisDocument,
 } from '../model/analysis.js';
 import { analysisHasInteractionFacts } from '../model/analysis.js';
@@ -30,12 +31,14 @@ export interface NormalizedAnalysisDocument {
     | AnalysisDocumentV5
     | AnalysisDocumentV6
     | AnalysisDocumentV7
+    | AnalysisDocumentV8
     | null;
   readonly v3: AnalysisDocumentV3 | null;
   readonly v4: AnalysisDocumentV4 | null;
   readonly v5: AnalysisDocumentV5 | null;
   readonly v6: AnalysisDocumentV6 | null;
   readonly v7: AnalysisDocumentV7 | null;
+  readonly v8: AnalysisDocumentV8 | null;
   readonly interactions: InteractionAnalysisDocument | null;
 }
 
@@ -54,20 +57,27 @@ export function normalizeAnalysisDocument(input: unknown): NormalizedAnalysisDoc
         analysis.schemaVersion === '4.0.0' ||
         analysis.schemaVersion === '5.0.0' ||
         analysis.schemaVersion === '6.0.0' ||
-        analysis.schemaVersion === '7.0.0'
+        analysis.schemaVersion === '7.0.0' ||
+        analysis.schemaVersion === '8.0.0'
           ? 'available'
           : 'unavailable',
       authorizationFamilies:
         analysis.schemaVersion === '5.0.0' ||
         analysis.schemaVersion === '6.0.0' ||
-        analysis.schemaVersion === '7.0.0'
+        analysis.schemaVersion === '7.0.0' ||
+        analysis.schemaVersion === '8.0.0'
           ? 'available'
           : 'unavailable',
       resourceAccessFamilies:
-        analysis.schemaVersion === '6.0.0' || analysis.schemaVersion === '7.0.0'
+        analysis.schemaVersion === '6.0.0' ||
+        analysis.schemaVersion === '7.0.0' ||
+        analysis.schemaVersion === '8.0.0'
           ? 'available'
           : 'unavailable',
-      criticalSectionFamilies: analysis.schemaVersion === '7.0.0' ? 'available' : 'unavailable',
+      criticalSectionFamilies:
+        analysis.schemaVersion === '7.0.0' || analysis.schemaVersion === '8.0.0'
+          ? 'available'
+          : 'unavailable',
     },
     v2: analysis.schemaVersion === '1.0.0' ? null : analysis,
     v3: analysis.schemaVersion === '3.0.0' ? analysis : null,
@@ -75,6 +85,7 @@ export function normalizeAnalysisDocument(input: unknown): NormalizedAnalysisDoc
     v5: analysis.schemaVersion === '5.0.0' ? analysis : null,
     v6: analysis.schemaVersion === '6.0.0' ? analysis : null,
     v7: analysis.schemaVersion === '7.0.0' ? analysis : null,
+    v8: analysis.schemaVersion === '8.0.0' ? analysis : null,
     interactions: analysisHasInteractionFacts(analysis) ? analysis : null,
   };
 }

@@ -1,0 +1,80 @@
+import { Controller, Injectable, Post } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Repository } from 'typeorm';
+import Redlock from 'redlock';
+
+@Entity('ticket')
+class Ticket {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column()
+  status!: string;
+}
+
+@Injectable()
+class TicketData {
+  constructor(@InjectRepository(Ticket) private readonly tickets: Repository<Ticket>) {}
+
+  async updateStatus(ticketId: string): Promise<void> {
+    await this.tickets.update(ticketId, { status: 'resolved' });
+  }
+}
+
+@Injectable()
+class RedisLockService {
+  constructor(private readonly redlock: Redlock) {}
+
+  // CSW0_FLOW:direct-terminal
+  async executeWithLock<T>(lockKey: string, task: () => Promise<T>): Promise<T> {
+    return this.redlock.using([lockKey], 5_000, async () => task());
+  }
+
+  // CSW0_FLOW:unchanged-forwarding
+  async executeWithNttLock<T>(nttId: string, task: () => Promise<T>): Promise<T> {
+    return this.executeWithLock(`lock:ntt:${nttId}`, task);
+  }
+}
+
+@Injectable()
+class TicketService {
+  constructor(
+    private readonly locks: RedisLockService,
+    private readonly ticketData: TicketData,
+  ) {}
+
+  // CSW0_CASE:direct-wrapper
+  async forceResolveTicket(ticketId: string): Promise<string> {
+    const ticketData = this.ticketData;
+    return this.locks.executeWithLock(`lock:ticket:${ticketId}`, async function () {
+      await ticketData.updateStatus(ticketId);
+      return 'forced';
+    });
+  }
+
+  // CSW0_CASE:two-level-wrapper
+  async resolveTicket(ticketId: string): Promise<string> {
+    return this.locks.executeWithNttLock(ticketId, async () => {
+      await this.ticketData.updateStatus(ticketId);
+      return this.finalizeResolveTicket(ticketId);
+    });
+  }
+
+  async finalizeResolveTicket(ticketId: string): Promise<string> {
+    return `resolved:${ticketId}`;
+  }
+}
+
+@Controller('tickets')
+class TicketController {
+  constructor(private readonly tickets: TicketService) {}
+
+  @Post(':id/resolve')
+  resolveTicket(): Promise<string> {
+    return this.tickets.resolveTicket('runtime-id');
+  }
+}
+
+if (Date.now() < 0) {
+  throw new Error('CSW0 verified wrapper fixture must never execute');
+}

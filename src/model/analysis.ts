@@ -60,9 +60,10 @@ export const ANALYSIS_SCHEMA_V4_VERSION = '4.0.0' as const;
 export const ANALYSIS_SCHEMA_V5_VERSION = '5.0.0' as const;
 export const ANALYSIS_SCHEMA_V6_VERSION = '6.0.0' as const;
 export const ANALYSIS_SCHEMA_V7_VERSION = '7.0.0' as const;
+export const ANALYSIS_SCHEMA_V8_VERSION = '8.0.0' as const;
 /** Frozen v1 authoring constant retained for compatibility fixtures. */
 export const ANALYSIS_SCHEMA_VERSION = ANALYSIS_SCHEMA_V1_VERSION;
-export const CURRENT_ANALYSIS_SCHEMA_VERSION = ANALYSIS_SCHEMA_V7_VERSION;
+export const CURRENT_ANALYSIS_SCHEMA_VERSION = ANALYSIS_SCHEMA_V8_VERSION;
 
 export const ANALYSIS_RESULT_STATES = [
   'completed',
@@ -229,12 +230,17 @@ export interface AnalysisDocumentV7 extends AnalysisDocumentBase {
   readonly criticalSections: readonly CriticalSectionRecord[];
 }
 
+export interface AnalysisDocumentV8 extends Omit<AnalysisDocumentV7, 'schemaVersion'> {
+  readonly schemaVersion: typeof ANALYSIS_SCHEMA_V8_VERSION;
+}
+
 export type InteractionAnalysisDocument =
   | AnalysisDocumentV3
   | AnalysisDocumentV4
   | AnalysisDocumentV5
   | AnalysisDocumentV6
-  | AnalysisDocumentV7;
+  | AnalysisDocumentV7
+  | AnalysisDocumentV8;
 
 export type AnalysisDocument =
   | AnalysisDocumentV1
@@ -243,7 +249,8 @@ export type AnalysisDocument =
   | AnalysisDocumentV4
   | AnalysisDocumentV5
   | AnalysisDocumentV6
-  | AnalysisDocumentV7;
+  | AnalysisDocumentV7
+  | AnalysisDocumentV8;
 
 export function analysisHasInteractionFacts(
   analysis: AnalysisDocument,
@@ -253,41 +260,53 @@ export function analysisHasInteractionFacts(
     analysis.schemaVersion === '4.0.0' ||
     analysis.schemaVersion === '5.0.0' ||
     analysis.schemaVersion === '6.0.0' ||
-    analysis.schemaVersion === '7.0.0'
+    analysis.schemaVersion === '7.0.0' ||
+    analysis.schemaVersion === '8.0.0'
   );
 }
 
 export function analysisHasJobQueueBranchFacts(
   analysis: AnalysisDocument,
-): analysis is AnalysisDocumentV4 | AnalysisDocumentV5 | AnalysisDocumentV6 | AnalysisDocumentV7 {
+): analysis is
+  | AnalysisDocumentV4
+  | AnalysisDocumentV5
+  | AnalysisDocumentV6
+  | AnalysisDocumentV7
+  | AnalysisDocumentV8 {
   return (
     analysis.schemaVersion === '4.0.0' ||
     analysis.schemaVersion === '5.0.0' ||
     analysis.schemaVersion === '6.0.0' ||
-    analysis.schemaVersion === '7.0.0'
+    analysis.schemaVersion === '7.0.0' ||
+    analysis.schemaVersion === '8.0.0'
   );
 }
 
 export function analysisHasAuthorizationFacts(
   analysis: AnalysisDocument,
-): analysis is AnalysisDocumentV5 | AnalysisDocumentV6 | AnalysisDocumentV7 {
+): analysis is AnalysisDocumentV5 | AnalysisDocumentV6 | AnalysisDocumentV7 | AnalysisDocumentV8 {
   return (
     analysis.schemaVersion === '5.0.0' ||
     analysis.schemaVersion === '6.0.0' ||
-    analysis.schemaVersion === '7.0.0'
+    analysis.schemaVersion === '7.0.0' ||
+    analysis.schemaVersion === '8.0.0'
   );
 }
 
 export function analysisHasResourceAccessFacts(
   analysis: AnalysisDocument,
-): analysis is AnalysisDocumentV6 | AnalysisDocumentV7 {
-  return analysis.schemaVersion === '6.0.0' || analysis.schemaVersion === '7.0.0';
+): analysis is AnalysisDocumentV6 | AnalysisDocumentV7 | AnalysisDocumentV8 {
+  return (
+    analysis.schemaVersion === '6.0.0' ||
+    analysis.schemaVersion === '7.0.0' ||
+    analysis.schemaVersion === '8.0.0'
+  );
 }
 
 export function analysisHasCriticalSectionFacts(
   analysis: AnalysisDocument,
-): analysis is AnalysisDocumentV7 {
-  return analysis.schemaVersion === '7.0.0';
+): analysis is AnalysisDocumentV7 | AnalysisDocumentV8 {
+  return analysis.schemaVersion === '7.0.0' || analysis.schemaVersion === '8.0.0';
 }
 
 export const PROJECT_CONFIGURATION_SOURCE_KINDS = ['none', 'discovered', 'explicit'] as const;

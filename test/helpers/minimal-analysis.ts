@@ -5,6 +5,9 @@ import {
   type AnalysisDocumentV3,
   type AnalysisDocumentV4,
   type AnalysisDocumentV5,
+  type AnalysisDocumentV6,
+  type AnalysisDocumentV7,
+  type AnalysisDocumentV8,
   type EvidenceRecord,
   type SourceRange,
 } from '../../src/model/index.js';
@@ -255,5 +258,38 @@ export function createMinimalAnalysisDocumentV5(): AnalysisDocumentV5 {
     },
     authorizationMetadata: [],
     authorizationEnforcements: [],
+  };
+}
+
+export function createMinimalAnalysisDocumentV6(): AnalysisDocumentV6 {
+  return {
+    ...createMinimalAnalysisDocumentV5(),
+    schemaVersion: '6.0.0',
+    resourceAccesses: [],
+    resourceAccessAnalysis: {
+      supportedTechnologies: ['cache_manager', 'ioredis'],
+      enabledTechnologies: ['cache_manager', 'ioredis'],
+      state: 'complete',
+    },
+  };
+}
+
+export function createMinimalAnalysisDocumentV7(): AnalysisDocumentV7 {
+  return {
+    ...createMinimalAnalysisDocumentV6(),
+    schemaVersion: '7.0.0',
+    resourceAccessAnalysis: {
+      supportedTechnologies: ['cache_manager', 'ioredis', 'redlock'],
+      enabledTechnologies: ['cache_manager', 'ioredis', 'redlock'],
+      state: 'complete',
+    },
+    criticalSections: [],
+  };
+}
+
+export function createMinimalAnalysisDocumentV8(): AnalysisDocumentV8 {
+  return {
+    ...createMinimalAnalysisDocumentV7(),
+    schemaVersion: '8.0.0',
   };
 }

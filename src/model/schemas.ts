@@ -8,6 +8,7 @@ import {
   ANALYSIS_SCHEMA_V5_VERSION,
   ANALYSIS_SCHEMA_V6_VERSION,
   ANALYSIS_SCHEMA_V7_VERSION,
+  ANALYSIS_SCHEMA_V8_VERSION,
   DIRECT_GUARD_STATES,
   EFFECTIVE_GUARD_STATES,
   GLOBAL_ANALYSIS_COMPLETENESS_STATES,
@@ -36,6 +37,7 @@ import {
   DIAGNOSTIC_CODES_V4,
   DIAGNOSTIC_CODES_V5,
   DIAGNOSTIC_CODES_V6,
+  DIAGNOSTIC_CODES_V7,
   DIAGNOSTIC_SEVERITIES,
 } from './diagnostics.js';
 import {
@@ -385,6 +387,9 @@ const diagnosticRecordV5Schema = diagnosticRecordSchema.extend({
 });
 const diagnosticRecordV6Schema = diagnosticRecordSchema.extend({
   code: z.enum(DIAGNOSTIC_CODES_V6),
+});
+const diagnosticRecordV7Schema = diagnosticRecordSchema.extend({
+  code: z.enum(DIAGNOSTIC_CODES_V7),
 });
 
 export const moduleRecordSchema = z
@@ -1198,10 +1203,15 @@ export const analysisDocumentV6Schema = analysisDocumentV5Schema.extend({
 
 export const analysisDocumentV7Schema = analysisDocumentV6Schema.extend({
   schemaVersion: z.literal(ANALYSIS_SCHEMA_V7_VERSION),
-  diagnostics: z.array(diagnosticRecordSchema),
+  diagnostics: z.array(diagnosticRecordV7Schema),
   resourceAccesses: z.array(resourceAccessRecordSchema),
   resourceAccessAnalysis: resourceAccessAnalysisMetadataSchema,
   criticalSections: z.array(criticalSectionRecordSchema),
+});
+
+export const analysisDocumentV8Schema = analysisDocumentV7Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V8_VERSION),
+  diagnostics: z.array(diagnosticRecordSchema),
 });
 
 export const analysisDocumentSchema: z.ZodType<AnalysisDocument> = z.discriminatedUnion(
@@ -1214,6 +1224,7 @@ export const analysisDocumentSchema: z.ZodType<AnalysisDocument> = z.discriminat
     analysisDocumentV5Schema,
     analysisDocumentV6Schema,
     analysisDocumentV7Schema,
+    analysisDocumentV8Schema,
   ],
 ) as z.ZodType<AnalysisDocument>;
 
@@ -1386,6 +1397,11 @@ const runDocumentV6Schema = runDocumentV5Schema.extend({
 
 const runDocumentV7Schema = runDocumentV6Schema.extend({
   schemaVersion: z.literal(ANALYSIS_SCHEMA_V7_VERSION),
+  diagnostics: z.array(diagnosticRecordV7Schema),
+});
+
+const runDocumentV8Schema = runDocumentV7Schema.extend({
+  schemaVersion: z.literal(ANALYSIS_SCHEMA_V8_VERSION),
   diagnostics: z.array(diagnosticRecordSchema),
 });
 
@@ -1397,6 +1413,7 @@ export const runDocumentSchema: z.ZodType<RunDocument> = z.discriminatedUnion('s
   runDocumentV5Schema,
   runDocumentV6Schema,
   runDocumentV7Schema,
+  runDocumentV8Schema,
 ]) as z.ZodType<RunDocument>;
 
 const endpointTraceGuardSchema = z
@@ -1453,6 +1470,7 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
       ANALYSIS_SCHEMA_V5_VERSION,
       ANALYSIS_SCHEMA_V6_VERSION,
       ANALYSIS_SCHEMA_V7_VERSION,
+      ANALYSIS_SCHEMA_V8_VERSION,
     ]),
     analysisId: stableIdSchema,
     endpoint: z
@@ -1502,6 +1520,7 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
           ANALYSIS_SCHEMA_V5_VERSION,
           ANALYSIS_SCHEMA_V6_VERSION,
           ANALYSIS_SCHEMA_V7_VERSION,
+          ANALYSIS_SCHEMA_V8_VERSION,
         ] as const
       ).includes(trace.schemaVersion as typeof ANALYSIS_SCHEMA_V3_VERSION) !==
       (trace.causalSummary !== undefined)
@@ -1509,19 +1528,23 @@ export const endpointTraceViewSchema: z.ZodType<EndpointTraceView> = z
       context.addIssue({
         code: 'custom',
         path: ['causalSummary'],
-        message: 'Only v3-v7 endpoint traces must carry an explicit causal summary.',
+        message: 'Only v3-v8 endpoint traces must carry an explicit causal summary.',
       });
     }
     if (
-      ([ANALYSIS_SCHEMA_V6_VERSION, ANALYSIS_SCHEMA_V7_VERSION] as const).includes(
-        trace.schemaVersion as typeof ANALYSIS_SCHEMA_V6_VERSION,
-      ) !==
+      (
+        [
+          ANALYSIS_SCHEMA_V6_VERSION,
+          ANALYSIS_SCHEMA_V7_VERSION,
+          ANALYSIS_SCHEMA_V8_VERSION,
+        ] as const
+      ).includes(trace.schemaVersion as typeof ANALYSIS_SCHEMA_V6_VERSION) !==
       (trace.resourceTerminals !== undefined)
     ) {
       context.addIssue({
         code: 'custom',
         path: ['resourceTerminals'],
-        message: 'Only v6-v7 endpoint traces must carry resource-access terminals.',
+        message: 'Only v6-v8 endpoint traces must carry resource-access terminals.',
       });
     }
   });
@@ -1536,6 +1559,7 @@ export const interactionHandlerTraceViewSchema: z.ZodType<InteractionHandlerTrac
       ANALYSIS_SCHEMA_V5_VERSION,
       ANALYSIS_SCHEMA_V6_VERSION,
       ANALYSIS_SCHEMA_V7_VERSION,
+      ANALYSIS_SCHEMA_V8_VERSION,
     ]),
     analysisId: stableIdSchema,
     handler: interactionHandlerRecordSchema,
@@ -1547,15 +1571,19 @@ export const interactionHandlerTraceViewSchema: z.ZodType<InteractionHandlerTrac
   .strict()
   .superRefine((trace, context) => {
     if (
-      ([ANALYSIS_SCHEMA_V6_VERSION, ANALYSIS_SCHEMA_V7_VERSION] as const).includes(
-        trace.schemaVersion as typeof ANALYSIS_SCHEMA_V6_VERSION,
-      ) !==
+      (
+        [
+          ANALYSIS_SCHEMA_V6_VERSION,
+          ANALYSIS_SCHEMA_V7_VERSION,
+          ANALYSIS_SCHEMA_V8_VERSION,
+        ] as const
+      ).includes(trace.schemaVersion as typeof ANALYSIS_SCHEMA_V6_VERSION) !==
       (trace.resourceTerminals !== undefined)
     ) {
       context.addIssue({
         code: 'custom',
         path: ['resourceTerminals'],
-        message: 'Only v6-v7 handler traces must carry resource-access terminals.',
+        message: 'Only v6-v8 handler traces must carry resource-access terminals.',
       });
     }
   });

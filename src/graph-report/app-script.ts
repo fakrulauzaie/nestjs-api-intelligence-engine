@@ -203,6 +203,9 @@ export const OFFLINE_GRAPH_REPORT_APP = String.raw`
   function showEvidence(record, heading, evidenceIds) {
     inspector.replaceChildren();
     inspector.appendChild(element('h3', '', heading));
+    if (heading.indexOf('verified wrapper critical section') === 0 || heading.indexOf('static wrapper callback projection') === 0) {
+      inspector.appendChild(element('p', '', 'These bounded source locations collectively prove an exact inline callback path to package-proven Redlock. This is static conditional evidence, not proof of acquisition or callback execution.'));
+    }
     var byId = evidenceMap(record);
     var records = evidenceIds.map(function (id) { return byId.get(id); }).filter(Boolean);
     if (records.length === 0) {

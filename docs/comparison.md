@@ -103,18 +103,18 @@ can match while changed evidence content remains visible.
 
 ## Current compatibility boundary
 
-The normalization boundary accepts analysis schemas `1.0.0` through `7.0.0`.
+The normalization boundary accepts analysis schemas `1.0.0` through `8.0.0`.
 V1 module and effective-global-guard facts normalize to explicit unavailable/unknown
-state; v2-v7 facts remain evidence-backed and available. Interaction families are
-explicitly unavailable in v1/v2 and available, possibly empty, in v3-v7. Branch
-families are unavailable in v1-v3 and available in v4-v7. Authorization families are
-unavailable in v1-v4 and available, possibly empty, in v5-v7. Resource-access
-families are unavailable in v1-v5 and available, possibly empty, in v6/v7. Critical-section
-families are unavailable in v1-v6 and available only in v7. Authorization metadata,
+state; v2-v8 facts remain evidence-backed and available. Interaction families are
+explicitly unavailable in v1/v2 and available, possibly empty, in v3-v8. Branch
+families are unavailable in v1-v3 and available in v4-v8. Authorization families are
+unavailable in v1-v4 and available, possibly empty, in v5-v8. Resource-access
+families are unavailable in v1-v5 and available, possibly empty, in v6-v8. Critical-section
+families are unavailable in v1-v6 and available in v7/v8. Authorization metadata,
 redacted value shape, and enforcement-state changes are endpoint modification reasons.
 Unknown
 analysis or diff schema versions are rejected rather than interpreted best-effort.
-Frozen schema `1.0.0` bytes remain unchanged for comparisons that contain no v3-v7
+Frozen schema `1.0.0` bytes remain unchanged for comparisons that contain no v3-v8
 input.
 
 ## Exit behavior

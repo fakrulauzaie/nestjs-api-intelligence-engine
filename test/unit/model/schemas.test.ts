@@ -17,6 +17,9 @@ import {
   createMinimalAnalysisDocumentV2,
   createMinimalAnalysisDocumentV3,
   createMinimalAnalysisDocumentV4,
+  createMinimalAnalysisDocumentV6,
+  createMinimalAnalysisDocumentV7,
+  createMinimalAnalysisDocumentV8,
 } from '../../helpers/minimal-analysis.js';
 
 describe('canonical runtime schemas', () => {
@@ -107,6 +110,54 @@ describe('canonical runtime schemas', () => {
         globalGuardAnalysis: { completeness: 'complete', state: 'none_proven' },
       }).success,
     ).toBe(true);
+  });
+
+  it('keeps analysis v7 frozen while accepting v8 wrapper-flow diagnostics', () => {
+    const v6 = createMinimalAnalysisDocumentV6();
+    const v7 = createMinimalAnalysisDocumentV7();
+    const wrapperDiagnostic = createDiagnostic({
+      code: 'CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN',
+    });
+    const v8 = {
+      ...createMinimalAnalysisDocumentV8(),
+      diagnostics: [wrapperDiagnostic],
+    };
+
+    expect(analysisDocumentSchema.safeParse(v6).success).toBe(true);
+    expect(analysisDocumentSchema.safeParse(v7).success).toBe(true);
+    expect(analysisDocumentSchema.safeParse(v8).success).toBe(true);
+    expect(
+      analysisDocumentSchema.safeParse({ ...v7, diagnostics: [wrapperDiagnostic] }).success,
+      'v7 must reject diagnostics introduced by analysis v8',
+    ).toBe(false);
+
+    const runBase = {
+      analysisId: v7.analysisRun.id,
+      repositoryPath: 'C:\\work\\reference-app',
+      repositoryRevision: 'fixture-revision',
+      startedAt: '2026-09-05T01:00:00+08:00',
+      resultState: 'completed_with_gaps' as const,
+      tool: v7.analysisRun.tool,
+      configuration: v7.analysisRun.configuration,
+    };
+    expect(
+      runDocumentSchema.safeParse({ ...runBase, schemaVersion: '7.0.0', diagnostics: [] }).success,
+    ).toBe(true);
+    expect(
+      runDocumentSchema.safeParse({
+        ...runBase,
+        schemaVersion: '8.0.0',
+        diagnostics: [wrapperDiagnostic],
+      }).success,
+    ).toBe(true);
+    expect(
+      runDocumentSchema.safeParse({
+        ...runBase,
+        schemaVersion: '7.0.0',
+        diagnostics: [wrapperDiagnostic],
+      }).success,
+      'v7 run documents must also reject v8-only diagnostics',
+    ).toBe(false);
   });
 
   it('keeps raw-SQL provenance and configuration v2-only', () => {

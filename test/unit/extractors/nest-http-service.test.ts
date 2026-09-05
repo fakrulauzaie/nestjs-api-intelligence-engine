@@ -55,7 +55,7 @@ describe('Nest HttpService and symbolic outbound HTTP extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method.qualifiedName]));
       const outbound = analysis.interactions.filter(
         (interaction) => interaction.kind === 'outbound_http',
@@ -268,7 +268,7 @@ describe('Nest HttpService and symbolic outbound HTTP extraction', () => {
       expect(activatedFixture).not.toBe(fixture);
       await project.write('src/nest-http-service.ts', activatedFixture);
       const changed = await scanRepository({ repositoryRoot: project.path });
-      if (changed.analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (changed.analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       const interactionForColdMethod = (
         document: typeof analysis,
       ): (typeof document.interactions)[number] => {
@@ -337,7 +337,7 @@ describe('Nest HttpService and symbolic outbound HTTP extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.interactions).toHaveLength(1);
       expect(analysis.interactions[0]).toMatchObject({
         kind: 'outbound_http',

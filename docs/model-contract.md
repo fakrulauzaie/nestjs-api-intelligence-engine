@@ -22,13 +22,13 @@ replace or add facts to `AnalysisDocument`.
 
 | Artifact                   | Current writer behavior                                                     |
 | -------------------------- | --------------------------------------------------------------------------- |
-| `analysis.json`            | `7.0.0`; v1-v6 remain readable and frozen                                   |
-| `diff.json`                | `5.0.0` for analysis v6/v7; older analyses use capability-appropriate v1-v4 |
-| `impact.json`              | `2.0.0` for analysis v4-v7, otherwise `1.0.0`                               |
+| `analysis.json`            | `8.0.0`; v1-v7 remain readable and frozen                                   |
+| `diff.json`                | `5.0.0` for analysis v6-v8; older analyses use capability-appropriate v1-v4 |
+| `impact.json`              | `2.0.0` for analysis v4-v8, otherwise `1.0.0`                               |
 | `policy-results.json`      | `1.0.0`                                                                     |
-| graph view                 | `9.0.0` for analysis v7; older analyses use capability-appropriate v1-v8    |
-| OpenAPI enrichment sidecar | `5.0.0` for analysis v5-v7; older analyses use capability-appropriate v1-v4 |
-| control-evidence JSON/CSV  | `5.0.0` for analysis v5-v7; older analyses use capability-appropriate v1-v4 |
+| graph view                 | `9.0.0` for analysis v7/v8; older analyses use capability-appropriate v1-v8 |
+| OpenAPI enrichment sidecar | `5.0.0` for analysis v5-v8; older analyses use capability-appropriate v1-v4 |
+| control-evidence JSON/CSV  | `5.0.0` for analysis v5-v8; older analyses use capability-appropriate v1-v4 |
 | `bundle.json`              | `1.0.0`                                                                     |
 | `system-analysis.json`     | `1.0.0`; separate artifact-only Phase 46 document                           |
 
@@ -230,7 +230,33 @@ synchronous path and reintroduce them under `critical_section_conditional`. Down
 calls preserve that causal class; an existing `distributed_conditional` boundary
 remains dominant. The record proves lexical scope and package dependency only. It does
 not prove acquisition, mutual exclusion, contention, timing, callback execution, or
-release. Custom lock-wrapper propagation remains outside the supported boundary.
+release. Custom lock-wrapper propagation was outside the v7 boundary; v8's narrow
+verified-wrapper grammar is documented separately below.
+
+## Analysis v8 verified wrapper flows
+
+Analysis v8 preserves the complete v7 record shape and adds four diagnostic codes for
+verified critical-section wrapper analysis. It can propagate an exact callable
+parameter backwards from a package-proven `redlock.using()` callback through at most
+three unchanged positional forwarding hops. A repository call is projected only when
+the TypeScript checker identifies one exact summarized method and the proven argument
+is an inline arrow or function expression.
+
+Wrapper-derived scopes reuse `ResourceAccessRecord` and `CriticalSectionRecord` and
+use the distinct rule `resource.redlock.verified-wrapper.v1`. Their lock target is
+`dynamic`; the caller owns the resource, scope, callback-contained effects, and the
+ordered call-site/forwarding/terminal evidence. Existing downstream extractors may
+enter only that exact inline callback. No configuration is accepted for declaring a
+wrapper because configuration cannot establish callback flow or package identity.
+
+The v8-only diagnostics are
+`CRITICAL_SECTION_CALLBACK_FLOW_UNPROVEN`,
+`CRITICAL_SECTION_WRAPPER_TARGET_AMBIGUOUS`,
+`CRITICAL_SECTION_WRAPPER_CYCLE_TRUNCATED`, and
+`CRITICAL_SECTION_WRAPPER_LIMIT_REACHED`. They are emitted only for a call or bounded
+flow connected to a package-proven candidate; arbitrary callback helpers do not
+create wrapper diagnostics. These records still prove only a bounded static path and
+lexical scope, never lock acquisition, invocation, exclusivity, timing, or release.
 
 ## Result-state policy
 
@@ -300,7 +326,7 @@ matrix JSON; spreadsheet formula neutralization does not alter the underlying fa
 
 The graph view is independently versioned: schema `1.0.0` remains readable for
 analysis v1/v2, historical interaction reports may use `2.0.0` through `7.0.0`, and
-current analysis v7 reports emit graph schema `9.0.0`. Cross-record validation requires
+current analysis v7/v8 reports emit graph schema `9.0.0`. Cross-record validation requires
 snapshot identity, exactly one view per canonical endpoint, exactly one view per
 canonical interaction handler, unique node/edge/evidence IDs, complete scene
 references, canonical evidence closure, declared display limits, and summary

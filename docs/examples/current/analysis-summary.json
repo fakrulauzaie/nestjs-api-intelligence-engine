@@ -1,6 +1,6 @@
 {
   "artifactKind": "current-analysis-summary-not-complete-canonical-document",
-  "schemaVersion": "7.0.0",
+  "schemaVersion": "8.0.0",
   "resultState": "completed_with_gaps",
   "recordCounts": {
     "sourceFiles": 17,

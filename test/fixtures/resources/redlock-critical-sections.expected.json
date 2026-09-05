@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "7.0.0",
+  "schemaVersion": "8.0.0",
   "criticalSections": 3,
   "lockResources": 4,
   "callbackKinds": ["inline_arrow", "inline_function"],

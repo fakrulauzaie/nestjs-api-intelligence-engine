@@ -120,7 +120,7 @@ pnpm run cli -- stitch `
 
 Every positional input must use `service-namespace=path`. A directory input must be
 literally named `.api-intel`; otherwise pass its `analysis.json` file. The loader
-accepts interaction-capable schemas v3–v7 only and requires `completed` or
+accepts interaction-capable schemas v3–v8 only and requires `completed` or
 `completed_with_gaps`. It validates each source document independently and never
 embeds it in the output.
 

@@ -38,9 +38,9 @@ function normalizeGeneratedMarkdown(value: string): string {
 }
 
 describe('Documentation Gate D1 current examples', () => {
-  it('keeps the checked-in catalogue, traces, and summary equal to current v7 output', async () => {
+  it('keeps the checked-in catalogue, traces, and summary equal to current v8 output', async () => {
     const { analysis } = await scanRepository({ repositoryRoot: resolve('example-nestjs-app') });
-    if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected current analysis v7.');
+    if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected current analysis v8.');
 
     const [catalogue, readTrace, writeTrace, summaryText] = await Promise.all([
       readFile(resolve('docs/examples/current/endpoints.md'), 'utf8'),

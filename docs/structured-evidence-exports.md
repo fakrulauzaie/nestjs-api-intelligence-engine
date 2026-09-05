@@ -130,9 +130,9 @@ optional exact guard name, and evidence IDs. Control CSV v5 adds the
 mean the authorization extractor completed without finding a supported requirement;
 older schemas mean that fact family is unavailable.
 
-Analysis v6 resource-access and v7 critical-section facts do not change this frozen v5 export shape. They are
+Analysis v6-v8 resource-access and critical-section facts do not change this frozen v5 export shape. They are
 available in canonical analysis, endpoint/handler Markdown, comparison, impact, and
-graph v8; an export consumer must not interpret their absence here as proof that an
+the capability-appropriate graph schema; an export consumer must not interpret their absence here as proof that an
 endpoint has no cache or Redis access.
 
 `write` means at least one synchronous canonical write terminal is present. `non_write`

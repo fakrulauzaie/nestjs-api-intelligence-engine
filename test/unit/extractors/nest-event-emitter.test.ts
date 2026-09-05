@@ -53,7 +53,7 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
       const first = await scanRepository({ repositoryRoot: project.path });
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       const methods = new Map(analysis.methods.map((method) => [method.id, method.qualifiedName]));
       const events = analysis.interactions.filter(
         (interaction) => interaction.kind === 'in_process_event',
@@ -394,7 +394,7 @@ describe('Nest EventEmitter2 exact-event extraction', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.applications).toEqual([]);
       expect(analysis.interactions).toEqual([]);
       expect(analysis.interactionHandlers).toEqual([

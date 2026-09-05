@@ -285,6 +285,7 @@ export async function scanRepository(
     checker: project.checker,
     repositoryRevision,
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const nestHttpService = extractNestHttpService({
@@ -292,6 +293,7 @@ export async function scanRepository(
     checker: project.checker,
     repositoryRevision,
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const nestEventEmitter = extractNestEventEmitter({
@@ -302,6 +304,7 @@ export async function scanRepository(
     modules: moduleExtraction.modules,
     moduleAssertions: moduleExtraction.assertions,
     maxFanOutPerInteraction: configuration.interactions.maxFanOutPerInteraction,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const nestBullMq = extractNestBullMq({
@@ -311,6 +314,7 @@ export async function scanRepository(
     evidenceSnippetLimit: configuration.evidenceSnippetLimit,
     moduleAssertions: moduleExtraction.assertions,
     maxFanOutPerInteraction: configuration.interactions.maxFanOutPerInteraction,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const nestMicroservices = extractNestMicroservices({
@@ -321,6 +325,7 @@ export async function scanRepository(
     modules: moduleExtraction.modules,
     moduleAssertions: moduleExtraction.assertions,
     maxFanOutPerInteraction: configuration.interactions.maxFanOutPerInteraction,
+    allowedNestedFunctions: redlockCriticalSections.allowedNestedFunctions,
   });
   options.signal?.throwIfAborted();
   const resourceAccesses = extractResourceAccesses({

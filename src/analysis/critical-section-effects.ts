@@ -7,6 +7,7 @@ const SCOPED_EFFECT_PREDICATES = new Set<AssertionRecord['predicate']>([
   'METHOD_READS_TABLE',
   'METHOD_WRITES_TABLE',
   'METHOD_ACCESSES_RESOURCE',
+  'METHOD_INITIATES_INTERACTION',
 ]);
 
 function position(line: number, column: number): readonly [number, number] {

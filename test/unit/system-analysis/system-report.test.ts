@@ -16,6 +16,7 @@ import {
   writeFakeNestCore,
   writeFakeNestMicroservices,
   writeFakeNestTypeOrm,
+  writeFakeRedlock,
   writeFakeRxjs,
   writeFakeTypeOrm,
 } from '../../helpers/nest-project.js';
@@ -31,6 +32,7 @@ async function scanFixture(name: 'report-api' | 'report-worker') {
     writeFakeNestCore(project),
     writeFakeNestMicroservices(project),
     writeFakeNestTypeOrm(project),
+    writeFakeRedlock(project),
     writeFakeRxjs(project),
     writeFakeTypeOrm(project),
   ]);
@@ -83,13 +85,17 @@ describe('Phase 47 system report', () => {
         expect.objectContaining({
           boundary: 'conditional_candidate',
           httpRootNodeId: expect.any(String),
-          effectNodeIds: [expect.any(String)],
+          effectNodeIds: expect.arrayContaining([expect.any(String)]),
         }),
       ]);
       expect(report.graph.nodes).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ kind: 'http_endpoint', label: 'POST /reports' }),
           expect.objectContaining({ kind: 'table_effect', label: 'WRITE table report_job' }),
+          expect.objectContaining({
+            kind: 'resource_effect',
+            label: 'redlock critical_section distributed_lock',
+          }),
         ]),
       );
       expect(

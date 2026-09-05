@@ -1,6 +1,6 @@
 # Non-Relational Resource Access
 
-Analysis v7 preserves the v6 `cache-manager` and Redis `ResourceAccessRecord` facts. These facts
+Analysis v8 preserves the v6 `cache-manager` and Redis `ResourceAccessRecord` facts. These facts
 are separate from `InteractionRecord`: a cache command accesses a resource, while an
 interaction represents communication or dispatch across a local or external boundary.
 
@@ -66,7 +66,9 @@ supported command itself is proven.
 A resource fact does not prove command execution, success, cache hit/miss, key
 existence, expiry timing, atomicity, lock semantics, network reachability, or a runtime
 value. Package-proven Redlock scope is documented separately in
-[Redlock Critical Sections](redlock-critical-sections.md); custom wrappers remain out of scope.
+[Redlock Critical Sections](redlock-critical-sections.md). Analysis v8 also supports
+the narrow, automatically proven wrapper grammar documented there; arbitrary wrappers
+remain out of scope.
 
 ## Verification
 

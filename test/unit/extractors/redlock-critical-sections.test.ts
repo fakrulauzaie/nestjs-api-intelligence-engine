@@ -48,7 +48,7 @@ describe('package-proven Redlock critical sections', () => {
       const second = await scanRepository({ repositoryRoot: project.path });
       const { analysis } = first;
       expect(analysis.schemaVersion).toBe(expectation.schemaVersion);
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(validateAnalysisDocument(analysis)).toEqual({ success: true, data: analysis });
       expect(analysis.criticalSections).toHaveLength(expectation.criticalSections);
       expect(

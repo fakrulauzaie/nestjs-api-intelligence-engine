@@ -52,7 +52,7 @@ async function scanFixture(name: string) {
 }
 
 function microserviceRecords(analysis: Awaited<ReturnType<typeof scanRepository>>['analysis']) {
-  if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+  if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
   return {
     interactions: analysis.interactions.filter(
       (record): record is MicroserviceMessageInteractionRecord =>
@@ -73,8 +73,8 @@ describe('Nest microservices extraction', () => {
       const { interactions, handlers } = microserviceRecords(analysis);
       expect(interactions).toHaveLength(2);
       expect(handlers).toHaveLength(2);
-      expect(analysis.schemaVersion).toBe('7.0.0');
-      if (analysis.schemaVersion !== '7.0.0') return;
+      expect(analysis.schemaVersion).toBe('8.0.0');
+      if (analysis.schemaVersion !== '8.0.0') return;
       expect(analysis.applications).toEqual([
         expect.objectContaining({ kind: 'microservice', transport: 'rmq' }),
       ]);
@@ -329,7 +329,7 @@ describe('Nest microservices extraction', () => {
     try {
       const { analysis } = result;
       const { interactions, handlers } = microserviceRecords(analysis);
-      if (analysis.schemaVersion !== '7.0.0') return;
+      if (analysis.schemaVersion !== '8.0.0') return;
       expect(analysis.applications.map(({ transport }) => transport).sort()).toEqual([
         'kafka',
         'redis',
@@ -464,7 +464,7 @@ describe('Nest microservices extraction', () => {
       );
       await writeBasicTsconfig(project);
       const result = await scanRepository({ repositoryRoot: project.path });
-      if (result.analysis.schemaVersion !== '7.0.0') return;
+      if (result.analysis.schemaVersion !== '8.0.0') return;
       expect(result.analysis.applications).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

@@ -767,8 +767,10 @@ export function compareAnalysisDocuments(
   const v5 =
     beforeAnalysis.schemaVersion === '6.0.0' ||
     beforeAnalysis.schemaVersion === '7.0.0' ||
+    beforeAnalysis.schemaVersion === '8.0.0' ||
     afterAnalysis.schemaVersion === '6.0.0' ||
-    afterAnalysis.schemaVersion === '7.0.0';
+    afterAnalysis.schemaVersion === '7.0.0' ||
+    afterAnalysis.schemaVersion === '8.0.0';
   const v4 =
     v5 || beforeAnalysis.schemaVersion === '5.0.0' || afterAnalysis.schemaVersion === '5.0.0';
   const v3 =

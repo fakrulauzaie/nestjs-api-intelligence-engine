@@ -41,8 +41,8 @@ describe('effective endpoint guards', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      expect(analysis.schemaVersion).toBe('7.0.0');
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      expect(analysis.schemaVersion).toBe('8.0.0');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.globalGuardAnalysis).toEqual({ completeness: 'complete', state: 'declared' });
 
       const endpoint = analysis.endpoints.find(({ path }) => path === '/secure/both')!;
@@ -102,8 +102,8 @@ describe('effective endpoint guards', () => {
       await writeBasicTsconfig(project);
 
       const { analysis } = await scanRepository({ repositoryRoot: project.path });
-      expect(analysis.schemaVersion).toBe('7.0.0');
-      if (analysis.schemaVersion !== '7.0.0') throw new Error('Expected analysis v7.');
+      expect(analysis.schemaVersion).toBe('8.0.0');
+      if (analysis.schemaVersion !== '8.0.0') throw new Error('Expected analysis v8.');
       expect(analysis.globalGuardAnalysis).toEqual({
         completeness: 'complete',
         state: 'none_proven',

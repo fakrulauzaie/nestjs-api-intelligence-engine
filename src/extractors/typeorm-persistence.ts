@@ -1124,6 +1124,7 @@ export function extractTypeOrmPersistence(input: {
       const queryBuilder = analyzeTypeOrmQueryBuilders({
         body,
         checker: input.checker,
+        allowedNestedFunctions,
         resolveRootReceiver(receiver) {
           if (isThisMember(receiver)) {
             const memberRoot = memberRoots.get(receiver.name.text);

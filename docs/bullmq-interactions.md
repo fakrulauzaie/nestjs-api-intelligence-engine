@@ -125,7 +125,7 @@ schema `2.0.0` carries branch-aware reverse traversal so an exact branch effect 
 attached to an incompatible exact producer job.
 
 OpenAPI enrichment and control evidence use schema `4.0.0` for frozen analysis v4 and
-schema `5.0.0` for analysis v5, `6.0.0` for analysis v6, and `7.0.0` for current analysis v7. Resolved
+schema `5.0.0` for analysis v5-v8. Resolved
 endpoint facts include:
 
 - `distributedInteractions`, including sanitized queue/job labels; and

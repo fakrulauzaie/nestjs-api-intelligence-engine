@@ -36,7 +36,7 @@ const serviceSchema = z
     namespace: identifier,
     displayName: nonEmptyText,
     analysisId: idFor('analysis'),
-    analysisSchemaVersion: z.enum(['3.0.0', '4.0.0', '5.0.0', '6.0.0', '7.0.0']),
+    analysisSchemaVersion: z.enum(['3.0.0', '4.0.0', '5.0.0', '6.0.0', '7.0.0', '8.0.0']),
     analysisResultState: z.enum(['completed', 'completed_with_gaps']),
     artifactLabel: nonEmptyText,
   })
